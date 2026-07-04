@@ -1,0 +1,249 @@
+/* ===== ContactSection Styles ===== */
+
+.ct-section {
+  width: 94%;
+  margin: 0 auto;
+  padding: 48px 20px 64px;
+  box-sizing: border-box;
+}
+
+/* --- Fade-in utility --- */
+.ct-fade {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.ct-fade.ct-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* --- Headline --- */
+.ct-headline-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.ct-headline-bar {
+  width: 4px;
+  height: 32px;
+  background: var(--darkSecondary, #DEA806);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.ct-headline {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-geist-sans);
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.ct-subtitle {
+  font-size: 14px;
+  font-family: var(--font-inter);
+  color: #444;
+  line-height: 1.75;
+  margin: 0 0 40px 0;
+  max-width: 580px;
+}
+
+/* --- Category Grid --- */
+.ct-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  margin-bottom: 48px;
+  align-items: start;
+}
+
+/* --- Category Card --- */
+.ct-cat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ct-cat-title {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-geist-sans);
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.ct-cat-desc {
+  font-size: 13px;
+  font-family: var(--font-inter);
+  color: #555;
+  line-height: 1.7;
+  margin: 0;
+}
+
+.ct-cat-btn {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  background: transparent;
+  border: 2px solid var(--darkSecondary, #DEA806);
+  color: #1a1a1a;
+  font-size: 12.5px;
+  font-weight: 700;
+  font-family: var(--font-geist-mono);
+  letter-spacing: 0.05em;
+  padding: 9px 18px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.15s;
+}
+
+.ct-cat-btn:hover {
+  background: var(--secondary, #FFBF00);
+  transform: translateX(3px);
+}
+
+/* --- Office Chip --- */
+.ct-office-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 2px solid var(--darkSecondary, #DEA806);
+  padding: 12px 20px;
+  width: fit-content;
+  align-self: center;
+}
+
+.ct-office-label {
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font-geist-mono);
+  letter-spacing: 0.06em;
+  color: #1a1a1a;
+  text-transform: uppercase;
+}
+
+.ct-office-value {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-inter);
+  color: #1a1a1a;
+}
+
+/* --- Form Wrapper --- */
+.ct-form-wrap {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.ct-form-title {
+  font-size: 18px;
+  font-weight: 700;
+  font-family: var(--font-geist-sans);
+  color: #1a1a1a;
+  text-align: center;
+  margin: 0 0 20px 0;
+}
+
+/* --- Form Card --- */
+.ct-form-card {
+  background: #fffbea;
+  border: 2px solid var(--darkSecondary, #DEA806);
+  border-radius: 8px;
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- Fields --- */
+.ct-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ct-label {
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-geist-sans);
+  color: #1a1a1a;
+}
+
+.ct-input,
+.ct-textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #fff;
+  border: 1.5px solid #e2e6ea;
+  border-radius: 4px;
+  font-size: 13.5px;
+  font-family: var(--font-inter);
+  color: #1a1a1a;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  resize: none;
+}
+
+.ct-input:focus,
+.ct-textarea:focus {
+  border-color: var(--darkSecondary, #DEA806);
+  box-shadow: 0 0 0 3px rgba(222, 168, 6, 0.12);
+}
+
+.ct-input::placeholder,
+.ct-textarea::placeholder {
+  color: #aaa;
+}
+
+/* --- Send Button --- */
+.ct-send-btn {
+  width: fit-content;
+  background: #fff;
+  border: 2px solid #1a1a1a;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-geist-mono);
+  padding: 12px 36px;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, transform 0.15s;
+}
+
+.ct-send-btn:hover:not(:disabled) {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+.ct-send-btn--sending {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.ct-send-btn--sent {
+  background: var(--secondary, #FFBF00);
+  border-color: var(--darkSecondary, #DEA806);
+  color: #1a1a1a;
+  cursor: default;
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  .ct-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ct-headline {
+    font-size: 22px;
+  }
+
+  .ct-form-card {
+    padding: 22px 16px 20px;
+  }
+}

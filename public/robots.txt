@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://www.pedurentals.com
+
+# Sitemaps
+Sitemap: https://www.pedurentals.com/sitemap.xml

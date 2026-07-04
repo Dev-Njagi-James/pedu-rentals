@@ -1,0 +1,158 @@
+.section {
+   padding: 1rem 1.25rem;
+}
+
+.heading {
+   font-size: 1rem;
+   font-weight: 700;
+   font-family:var(--font-geist-sans);
+   color: #111827;
+   margin: 0 0 0.75rem 0;
+}
+
+/* ── Grid: slots card wider, other two share remaining space ── */
+.grid {
+   display: grid;
+   grid-template-columns: 1.6fr 1fr 1fr;
+   gap: 0.6rem;
+}
+
+/* ── Base card ── */
+.card {
+   border-radius: 8px;
+   padding: 0.75rem 0.9rem 0.6rem;
+   display: flex;
+   flex-direction: column;
+   gap: 0.25rem;
+   min-height: 90px;
+   position: relative;
+   overflow: hidden
+}
+
+.cardSlots {
+  background: var(--slots-bg);
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.cardSlots[style*="green"] {
+  --slots-bg: linear-gradient(135deg, #16a34a 0%, #4ade80 100%);
+}
+
+.cardSlots[style*="orange"] {
+  --slots-bg: linear-gradient(135deg, #ea580c 0%, #fb923c 100%);
+}
+
+.cardSlots[style*="red"] {
+  --slots-bg: linear-gradient(135deg, #dc2626 0%, #f87171 100%);
+}
+
+/* ── Tinted cards — light green like screenshot ── */
+.cardTint {
+   background: #f0fdf4;
+   border: 1px solid #bbf7d0;
+   justify-content: space-between;
+}
+
+.cardTint .cardLabel {
+   color: #166534;
+}
+
+.cardTint .cardBig {
+   color: #14532d;
+}
+
+/* ── Card internals ── */
+.cardTop {
+   display: flex;
+   align-items: flex-start;
+   justify-content: space-between;
+}
+
+.cardLabel {
+   font-size: 0.75rem;
+   font-family:var(--font-geist-sans);
+   font-weight: 600;
+   text-transform: uppercase;
+   letter-spacing: 0.04em;
+}
+
+.cardBig {
+   font-size: 2.2rem;
+   font-family:var(--font-geist-mono);
+   font-weight: 800;
+   line-height: 1;
+   letter-spacing: -0.03em;
+   align-self: flex-end;
+}
+
+/* ── Progress bar ── */
+.progressTrack {
+   width: 100%;
+   height: 6px;
+   background: rgba(0, 0, 0, 0.25);
+   border-radius: 99px;
+   overflow: hidden;
+}
+
+.progressFill {
+   height: 100%;
+   background: #111827;
+   border-radius: 99px;
+   transition: width 0.6s ease;
+}
+
+.progressLabel {
+   font-size: 0.68rem;
+   font-weight: 500;
+   font-family:var(--font-inter);
+   letter-spacing: 0.02em;
+}
+
+/* ── Responsive ── */
+@media (max-width: 980px) {
+   .cardBig {
+      font-size: 1.9rem;
+   }
+}
+
+@media (max-width: 780px) {
+   .grid {
+      grid-template-columns: 1fr 1fr;
+   }
+
+   .cardSlots {
+      grid-column: 1 / -1;
+   }
+}
+
+@media (max-width: 480px) {
+   .grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+   }
+
+   .cardSlots {
+      grid-column: 1 / -1;
+   }
+
+   .cardBig {
+      font-size: 1.7rem;
+   }
+
+   .section {
+      padding: 0.85rem 1rem;
+   }
+}
+
+@media (max-width: 320px) {
+   .cardBig {
+      font-size: 1.4rem;
+   }
+
+   .card {
+      padding: 0.6rem 0.7rem 0.5rem;
+      min-height: 76px;
+   }
+}

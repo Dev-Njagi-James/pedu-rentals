@@ -1,0 +1,82 @@
+
+.cardsSection {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+/* ── Card ── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px 20px;
+  background: #ffffff;
+  border: 1.5px solid #e8e8e4;
+  border-radius: 10px;
+  min-width: 0;
+  animation: cardIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.card:hover {
+  border-color: #d0d0cc;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+@keyframes cardIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Label ── */
+.cardLabel {
+  font-family: var(--font-geist-mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: #888;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Value ── */
+.cardValue {
+  font-family: var(--font-inter);
+  font-size: 28px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .cardsSection {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .cardsSection {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .card {
+    padding: 14px 16px 16px;
+  }
+
+  .cardValue {
+    font-size: 22px;
+  }
+}

@@ -1,0 +1,283 @@
+/* ── Header ── */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Wraps the counts to the right of the title */
+.headerMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Separator dot between counts */
+.metaDivider {
+  font-size: 0.8rem;
+  color: var(--color-muted, #bbb);
+  font-family: var(--font-geist-mono);
+  user-select: none;
+}
+
+/* Slot count turns amber when can_add is false */
+.countWarning {
+  color: #b45309;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text, #111);
+  font-family: var(--font-geist-sans);
+  margin: 0;
+}
+
+.count {
+  font-size: 0.8rem;
+  color: var(--color-muted, #888);
+  font-family: var(--font-geist-mono);
+}
+
+/* ── Grid — mirrors PropertyCard grid ── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+/* ── Card wrapper — positions delete strip below the card ── */
+.cardWrapper {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* Forces the PropertyCard inside to lose its own border-radius/shadow
+   since the wrapper now owns those */
+.cardWrapper>article {
+  border-radius: 0;
+  box-shadow: none;
+  flex: 1;
+}
+
+/* ── Delete strip ── */
+.cardActions {
+  background: var(--color-surface, #fafafa);
+  border-top: 1px solid var(--color-border, #eee);
+  padding: 0.5rem 0.75rem;
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--color-danger, #c0392b);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  font-weight: 500;
+  font-family: var(--font-geist-sans)
+}
+
+.deleteBtn:hover:not(:disabled) {
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.deleteBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.editBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--primary);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  transition: background 0.15s ease;
+  font-weight: 500;
+  font-family: var(--font-geist-sans);
+  margin-left: auto;
+}
+
+.editBtn:hover:not(:disabled) {
+  background: rgba(37, 99, 235, 0.08);
+}
+
+.editBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* ── Confirm row ── */
+.confirmRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.confirmText {
+  font-size: 0.75rem;
+  color: var(--color-text, #111);
+  font-family: var(--font-inter);
+  font-weight: 500;
+  flex: 1;
+}
+
+.confirmYes {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+
+  border: none;
+  cursor: pointer;
+  background: var(--color-danger, #c0392b);
+  color: #fff;
+  transition: opacity 0.15s;
+}
+
+.confirmYes:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirmNo {
+  font-size: 0.75rem;
+  font-weight: 500;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-border, #ddd);
+  background: none;
+  cursor: pointer;
+  color: var(--color-muted, #666);
+  transition: background 0.15s;
+}
+
+.confirmNo:hover:not(:disabled) {
+  background: var(--color-border, #eee);
+}
+
+/* ── Skeleton ── */
+.skeleton {
+  height: 320px;
+  border-radius: 12px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Empty / Error states ── */
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 1rem;
+  color: var(--color-muted, #999);
+  text-align: center;
+}
+
+.emptyState p {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.errorState {
+  padding: 1rem 1.25rem;
+  background: #fff5f5;
+  border: 1px solid #fdd;
+  border-radius: 8px;
+  color: var(--color-danger, #c0392b);
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+}
+
+.errorBanner {
+  padding: 0.75rem 1rem;
+  background: #fff5f5;
+  border: 1px solid #fdd;
+  border-radius: 8px;
+  color: var(--color-danger, #c0392b);
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+}
+
+/* ── Pagination — mirrors PropertiesClient ── */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.pageBtn {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 0.5rem;
+  border: 1px solid var(--color-border, #ddd);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--color-text, #333);
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--color-surface, #f5f5f5);
+}
+
+.pageBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pageBtnActive {
+  background: var(--color-primary, #111);
+  color: #fff;
+  border-color: var(--color-primary, #111);
+  font-weight: 600;
+}
+
+.pageBtnActive:hover {
+  background: var(--color-primary, #111);
+}
+
+.ellipsis {
+  font-size: 0.85rem;
+  color: var(--color-muted, #aaa);
+  padding: 0 0.25rem;
+  user-select: none;
+}

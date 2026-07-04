@@ -1,0 +1,227 @@
+/* ===== BrowseByCategorySection Styles ===== */
+
+:root {
+  --card-width: 240px;
+  --card-gap: 20px;
+}
+
+.bbc-section {
+  width: 94%;
+  margin: 0 auto;
+  padding: 48px 20px 56px;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* --- Headline --- */
+.bbc-headline-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.bbc-headline-bar {
+  width: 4px;
+  height: 28px;
+  background: var(--darkSecondary, #DEA806);
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.bbc-headline {
+  font-size: 26px;
+  font-weight: 700;
+  font-family: var(--font-geist-sans);
+  color: #1a1a1a;
+  margin: 0;
+  line-height: 1.3;
+}
+
+.bbc-subtitle {
+  font-size: 14px;
+  font-family: var(--font-inter);
+  color: #555;
+  line-height: 1.75;
+  margin: 0 0 20px 0;
+  max-width: 600px;
+}
+
+/* --- Controls Row: progress bar + arrows --- */
+.bbc-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.bbc-progress-wrap {
+  flex: 1;
+  height: 3px;
+  background: #e2e6ea;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.bbc-progress-fill {
+  height: 100%;
+  background: var(--darkSecondary, #DEA806);
+  border-radius: 2px;
+  min-width: 8%;
+  transition: width 0.35s ease;
+}
+
+.bbc-arrows {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.bbc-arrow {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: var(--secondary, #FFBF00);
+  color: #1a1a1a;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s, transform 0.15s;
+}
+
+.bbc-arrow:hover:not(.bbc-arrow--disabled) {
+  background: var(--darkSecondary, #DEA806);
+  transform: scale(1.08);
+}
+
+.bbc-arrow--disabled {
+  background: #e2e6ea;
+  color: #aaa;
+  cursor: default;
+}
+
+/* --- More label --- */
+.bbc-more {
+  font-size: 12px;
+  font-family: var(--font-geist-mono);
+  color: #888;
+  margin: 4px 0 20px auto;
+  text-align: right;
+  letter-spacing: 0.04em;
+}
+
+.bbc-more--bottom {
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+/* --- Carousel --- */
+.bbc-carousel-outer::-webkit-scrollbar {
+  display: none;
+}
+
+.bbc-carousel-outer {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+
+.bbc-carousel-track {
+  display: flex;
+  gap: var(--card-gap);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+/* --- Card --- */
+.bbc-card {
+  flex: 0 0 var(--card-width);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.bbc-card:focus-visible .bbc-card-img-wrap {
+  box-shadow: 0 0 0 3px var(--primary, #002EFF);
+}
+
+.bbc-card-img-wrap {
+  width: var(--card-width);
+  height: 180px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid var(--darkSecondary, #DEA806);
+  background: #f0f0f0;
+  position: relative;
+  transition: box-shadow 0.2s ease;
+}
+
+.bbc-card:hover .bbc-card-img-wrap {
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+}
+
+.bbc-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.4s ease;
+}
+
+.bbc-card:hover .bbc-card-img {
+  transform: scale(1.05);
+}
+
+/* fallback when image fails */
+.bbc-card-img-fallback {
+  background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+}
+
+.bbc-card-img-fallback::after {
+  content: "No Image";
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #999;
+  font-family: var(--font-inter);
+}
+
+.bbc-card-label {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: var(--font-geist-sans);
+  color: #1a1a1a;
+  margin: 0;
+  transition: color 0.18s;
+}
+
+.bbc-card:hover .bbc-card-label {
+  color: var(--primary, #002EFF);
+}
+
+/* --- Responsive --- */
+@media (max-width: 640px) {
+  :root {
+    --card-width: 160px;
+    --card-gap: 14px;
+  }
+
+  .bbc-headline {
+    font-size: 20px;
+  }
+
+  .bbc-card-img-wrap {
+    height: 130px;
+  }
+}

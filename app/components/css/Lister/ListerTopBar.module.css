@@ -1,0 +1,66 @@
+.bar {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 0 24px;
+   height: 48px;
+   background: #ffffff;
+   border: 1.5px solid #d0d0d0;
+   border-radius: 6px;
+   width: 94%;
+   margin: 0 auto;
+   margin-top: calc( var(--page-top-offset) + 12px);
+   box-sizing: border-box;
+}
+
+.greeting {
+   font-size: 0.875rem;
+   font-weight: 600;
+   font-family: var(--font-geist-sans);
+   color: var(--color-text, #111);
+   white-space: nowrap;
+   overflow: hidden;
+   text-overflow: ellipsis;
+}
+
+.actions {
+   display: flex;
+   align-items: center;
+   gap: 4px;
+   flex-shrink: 0;
+}
+
+.iconBtn {
+   width: 36px;
+   height: 36px;
+   border: none;
+   background: none;
+   border-radius: 8px;
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   color: var(--color-text, #555);
+   transition: background 0.15s;
+}
+
+.iconBtn:hover {
+   background: var(--secondary, #f0f0f0);
+}
+
+@media (max-width: 480px) {
+   .bar {
+      margin-top: calc(var(--page-top-offset) + 12px);
+      padding: 0 16px;
+      height: 52px;
+   }
+
+   .greeting {
+      font-size: 0.8rem;
+   }
+
+   .iconBtn {
+      width: 32px;
+      height: 32px;
+   }
+}

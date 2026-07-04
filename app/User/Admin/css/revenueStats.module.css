@@ -1,0 +1,225 @@
+.revenueSection {
+  display: flex;
+  align-items: flex-start;
+  gap: 2rem;
+  padding: 1.25rem 0;
+  margin-top: 1rem;
+}
+
+/* ── Control block (replaces durationBlock) ── */
+.controlBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 150px;
+  flex-shrink: 0;
+}
+
+.filterToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.filterCheckbox {
+  width: 14px;
+  height: 14px;
+  accent-color: #111827;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filterLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #111827;
+  font-family: var(--font-geist-mono);
+  user-select: none;
+}
+
+.dropdowns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dropdownsDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.dateLabel {
+   display: flex;
+   flex-direction: column;
+   flex-wrap:wrap;
+   gap: 4px;
+   font-size: 0.8rem;
+   font-family:var(--font-geist-sans)
+}
+
+.dateInput {
+   padding: 4px 8px;
+   border-radius: 4px;
+   border: 1px solid var(--border);
+   font-family:var(--font-geist-mono);
+   background: var(--surface);
+   color: var(--text);
+}
+
+.dateRangeInfo {
+   font-size: 0.8rem;
+   color: var(--text-muted);
+   font-family:var(--font-inter);
+   align-self: flex-end;
+   padding-bottom: 6px;
+}
+
+.dropdown {
+  padding: 6px 28px 6px 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font-family: var(--font-geist-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.dropdown:focus {
+  outline: none;
+  border-color: #111827;
+}
+
+.dropdownActive {
+  border-color: #111827;
+  font-weight: 600;
+}
+
+/* ── Control block── */
+.controlBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 150px;
+  flex-shrink: 0;
+}
+
+.filterToggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.filterCheckbox {
+  width: 14px;
+  height: 14px;
+  accent-color: #111827;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.filterLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #111827;
+  font-family: var(--font-geist-mono);
+  user-select: none;
+}
+
+.dropdowns {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dropdownsDisabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.dropdown {
+  padding: 6px 28px 6px 10px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #111827;
+  font-family: var(--font-geist-mono);
+  font-size: 0.8rem;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%23666' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  transition: border-color 0.2s;
+  width: 100%;
+}
+
+.dropdown:focus {
+  outline: none;
+  border-color: #111827;
+}
+
+.dropdownActive {
+  border-color: #111827;
+  font-weight: 600;
+}
+
+/* ── Revenue cards ── */
+.revenueCards {
+  display: flex;
+  gap: 1rem;
+  flex: 1;
+}
+
+.revenueCard {
+  flex: 1;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 22px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: #ffffff;
+  min-width: 0;
+}
+
+.revenueCardLabel {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+  font-family: var(--font-geist-sans);
+  line-height: 1.35;
+}
+
+.revenueCardValue {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+  font-family: var(--font-inter);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .revenueSection {
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .revenueCards {
+    flex-direction: column;
+  }
+
+  .durationBlock {
+    min-width: unset;
+  }
+}

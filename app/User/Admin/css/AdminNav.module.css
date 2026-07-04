@@ -1,0 +1,450 @@
+/* ─────────────────────────────────────────
+   AdminNav.module.css
+   Vertical collapsible sidebar + mobile bottom drawer
+───────────────────────────────────────── */
+
+.root {
+  --sb-width: 220px;
+  --sb-collapsed-width: 64px;
+  --sb-bg: #0f0f0f;
+  --sb-border: rgba(255, 255, 255, 0.07);
+  --sb-text: #a0a0a0;
+  --sb-text-active: #ffffff;
+  --sb-accent: #f5c518;
+  --sb-indicator-bg: rgba(245, 197, 24, 0.10);
+  --sb-radius: 8px;
+  --sb-tab-h: 46px;
+  --sb-transition: 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+
+  display: flex;
+  width: 100%;
+  min-height: calc(100vh - var(--page-top-offset));
+  margin-top: calc(var(--page-top-offset) - 68px);
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sb-width);
+  min-width: var(--sb-width);
+  min-height: 80vh;
+  margin-top:68px;          
+  background: var(--sb-bg);
+  border-right: 1px solid var(--sb-border);
+  display: flex;
+  flex-direction: column;
+  transition: width var(--sb-transition), min-width var(--sb-transition);
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+.sidebarCollapsed {
+  width: var(--sb-collapsed-width);
+  min-width: var(--sb-collapsed-width);
+}
+
+/* ── Brand ── */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid var(--sb-border);
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.brandIcon {
+  color: var(--sb-accent);
+  flex-shrink: 0;
+}
+
+.brandName {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  font-family: var(--font-geist-sans);
+}
+
+/* ── Role badge ── */
+.roleBadge {
+  margin: 12px 14px 8px;
+  padding: 4px 10px;
+  background: var(--sb-accent);
+  color: #0f0f0f;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  border-radius: 4px;
+  align-self: flex-start;
+  white-space: nowrap;
+  font-family: var(--font-geist-mono);
+}
+
+/* ── Nav ── */
+.nav {
+  overflow-x: hidden;
+  padding: 8px 0;
+}
+
+.tabList {
+  list-style: none;
+  margin: 0;
+  padding: 4px 8px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--font-inter);
+}
+
+/* Sliding indicator strip */
+.indicator {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  background: var(--sb-indicator-bg);
+  border-radius: var(--sb-radius);
+  border-left: 2.5px solid var(--sb-accent);
+  transition: top var(--sb-transition), height var(--sb-transition);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Tab button ── */
+.tab {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  height: var(--sb-tab-h);
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-radius: var(--sb-radius);
+  cursor: pointer;
+  color: var(--sb-text);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  transition: color 0.18s ease;
+}
+
+.tab:hover {
+  color: #d0d0d0;
+}
+
+.tabActive {
+  color: var(--sb-text-active);
+  font-weight: 600;
+}
+
+.tabIcon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+}
+
+.tabLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Collapse button ── */
+.collapseBtn {
+  display: flex;
+  margin-top:auto;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 14px 18px;
+  border: none;
+  border-top: 1px solid var(--sb-border);
+  background: transparent;
+  color: var(--sb-text);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: color 0.18s ease;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.collapseBtn:hover {
+  color: #ffffff;
+}
+
+.collapseIcon {
+  flex-shrink: 0;
+  transition: transform var(--sb-transition);
+}
+
+.collapseIconFlipped {
+  transform: rotate(180deg);
+}
+
+.collapseBtnLabel {
+  overflow: hidden;
+}
+
+/* ── Content area ── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  background: #f7f7f5;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin-top:64px;
+}
+
+.contentHeader {
+  padding: 28px 32px 20px;
+  border-bottom: 1px solid #e8e8e4;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: -0.03em;
+  font-family: var(--font-geist-sans);
+  margin: 0;
+}
+
+.panelWrap {
+  padding: 28px 32px;
+  flex: 1;
+}
+
+.defaultPanel {
+  padding: 32px 28px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e4e4e0;
+  color: #777;
+  font-size: 14px;
+  font-family: var(--font-inter);
+}
+
+/* ── Collapsed: icon-only ── */
+.sidebarCollapsed .tabList {
+  padding: 4px 6px;
+}
+
+.sidebarCollapsed .tab {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebarCollapsed .collapseBtn {
+  justify-content: center;
+  padding: 14px 0;
+}
+
+/* ── Mobile elements hidden on desktop ── */
+.mobileTrigger {
+  display: none;
+}
+
+.overlay {
+  display: none;
+}
+
+.drawer {
+  display: none;
+}
+
+/* ─────────────────────────────────────────
+   Mobile — ≤480px: hide sidebar, show drawer
+───────────────────────────────────────── */
+@media (max-width: 480px) {
+  .sidebar {
+    display: none;
+    
+  }
+
+  /* Floating bottom button */
+  .mobileTrigger {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 900;
+    padding: 12px 24px;
+    background: #0f0f0f;
+    color: #f5c518;
+    font-family: var(--font-geist-mono);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    border: 1px solid rgba(245, 197, 24, 0.35);
+    border-radius: 2px;
+    cursor: pointer;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    transition: background 0.2s ease, transform 0.15s ease;
+    white-space: nowrap;
+    max-width: calc(100vw - 48px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .mobileTrigger:hover {
+    background: #1a1a1a;
+    transform: translateX(-50%) translateY(-2px);
+  }
+
+  /* Overlay */
+  .overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    animation: fadeIn 0.2s ease forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Bottom drawer */
+  .drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1100;
+    background: #0f0f0f;
+    border-radius: 16px 16px 0 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    max-height: 80vh;
+    transform: translateY(100%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: 0 -8px 40px rgba(0, 0, 0, 0.5);
+  }
+
+  .drawerOpen {
+    transform: translateY(0);
+  }
+
+  .drawerHandle {
+    width: 36px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 2px;
+    margin: 12px auto 0;
+    flex-shrink: 0;
+  }
+
+  .drawerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px 14px;
+    flex-shrink: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .drawerBrand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .drawerBrandName {
+    font-size: 14px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    font-family: var(--font-geist-sans);
+  }
+
+  .drawerBadge {
+    padding: 3px 7px;
+    background: #f5c518;
+    color: #0f0f0f;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    border-radius: 3px;
+    font-family: var(--font-geist-mono);
+  }
+
+  .drawerClose {
+    background: none;
+    border: none;
+    font-size: 1rem;
+    color: #666;
+    cursor: pointer;
+    padding: 4px;
+    line-height: 1;
+    transition: color 0.15s ease;
+  }
+
+  .drawerClose:hover {
+    color: #ffffff;
+  }
+
+  .drawerScroll {
+    overflow-y: auto;
+    flex: 1;
+    padding: 8px 0 24px;
+    scrollbar-width: none;
+  }
+
+  .drawerScroll::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Override tab styles inside drawer — always expanded */
+  .drawerScroll .tabList {
+    padding: 4px 12px;
+  }
+
+  .drawerScroll .tab {
+    justify-content: flex-start;
+    padding: 0 12px;
+    color: #a0a0a0;
+  }
+
+  .drawerScroll .tabActive {
+    color: #ffffff;
+  }
+
+  /* Content takes full width on mobile */
+  .content {
+    width: 100%;
+    margin-top:94px;
+  }
+
+  .contentHeader {
+    padding: 20px 20px 16px;
+  }
+
+  .pageTitle {
+    font-size: 18px;
+  }
+
+  .panelWrap {
+    padding: 20px;
+  }
+}

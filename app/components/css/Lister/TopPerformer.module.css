@@ -1,0 +1,493 @@
+/* ── Wrapper ── */
+.wrapper {
+  display: grid;
+  grid-template-columns: 1fr 290px;
+  width: 96%;
+  margin: 0 auto 0.75rem;
+  gap: 8px;
+  margin-bottom: 0.75rem;
+}
+
+/* ── Skeleton ── */
+.skeleton {
+  grid-column: 1 / -1;
+  height: 185px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* ── Main card ── */
+.mainCard {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  height: 260px;
+}
+
+/* ── Image block ── */
+.imageBlock {
+  width: 38%;
+  flex-shrink: 0;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid #e5e7eb;
+}
+
+.propImage {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.imagePlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #e5e7eb;
+}
+
+/* ── Details ── */
+.details {
+  flex: 1;
+  padding: 0.65rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.detailsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  text-transform: none;
+  font-family: var(--font-geist-sans);
+  letter-spacing: 0;
+  color: #6b7280;
+}
+
+.moreInfo {
+  font-size: 0.62rem;
+  font-weight: 600;
+  font-family: var(--font-geist-mono);
+  color: #111827;
+  text-decoration: none;
+  white-space: nowrap;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+}
+
+.moreInfo:hover {
+  opacity: 1;
+}
+
+/* ── Property name ── */
+.propName {
+  font-size: 1rem;
+  font-weight: 700;
+  font-family: var(--font-geist-sans);
+  color: #111827;
+  margin: 0;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Location chips ── */
+.location {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.locChip {
+  display: flex;
+  align-items: center;
+  font-family: var(--font-inter);
+  gap: 0.18rem;
+  font-size: 0.68rem;
+  color: #16a34a;
+  font-weight: 500;
+}
+
+.locChip svg {
+  flex-shrink: 0;
+  stroke: #16a34a;
+}
+
+/* ── Price ── */
+.price {
+  display: flex;
+  align-items: baseline;
+  font-family: var(--font-inter);
+  gap: 0.25rem;
+  margin-top: 0.05rem;
+}
+
+.priceAmount {
+  font-size: 1.85rem;
+  font-family: var(--font-geist-sans);
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.priceMo {
+  font-size: 0.68rem;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+/* ── Metrics ── */
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  margin-top: auto;
+  font-family: var(--font-geist-sans);
+}
+
+.metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.metricRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.metricLabel {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  letter-spacing: 0;
+}
+
+.metricValue {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #111827;
+  font-family: var(--font-inter);
+}
+
+.metricTrack {
+  width: 100%;
+  height: 15px;
+  background: #e5e7eb;
+  border-radius: 99px;
+  font-family: var(--font-geist-sans);
+}
+
+.metricFill {
+  height: 100%;
+  min-width: 5px;
+  background: #16a34a;
+  border-radius: 99px;
+  transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Side stack ── */
+.sideStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+/* ── Review card ── */
+.reviewCard {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  flex: 1;
+}
+
+.reviewCardLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: none;
+  font-family:var(--font-geist-sans);
+  letter-spacing: 0;
+  color: #374151;
+  line-height: 1.3;
+}
+
+.reviewCardBig {
+  font-size: 2.2rem;
+  font-family:var(--font-inter);
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+/* ── Rating card ── */
+.ratingCard {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
+}
+
+.ratingLabel {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: none;
+  font-family:var(--font-geist-sans);
+  letter-spacing: 0;
+  color: #374151;
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.ratingNum {
+  font-size: 1.05rem;
+  font-family:var(--font-inter);
+  font-weight: 800;
+  color: #111827;
+  letter-spacing: -0.02em;
+}
+
+.stars {
+  display: flex;
+  gap: 1px;
+  align-items: center;
+}
+
+.star {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.starFull {
+  color: #f59e0b;
+}
+
+.starHalf {
+  color: #f59e0b;
+  opacity: 0.55;
+}
+
+.starEmpty {
+  color: #d1d5db;
+}
+
+/* ── Second card ── */
+.secondCard {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f3f4f6;
+  padding: 0.55rem 0.65rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  flex: 1;
+  min-height: 56px;
+}
+
+.secondCardPlaceholder {
+  justify-content: center;
+}
+
+.placeholderText {
+  font-size: 0.68rem;
+  color: #9ca3af;
+  font-family:var(--font-geist-sans);
+  font-weight: 500;
+}
+
+.secondInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.secondName {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #111827;
+  white-space: normal;
+  line-height: 1.2;
+  max-width: 105px;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.secondStats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.08rem;
+  margin-top: 0.1rem;
+}
+
+.secondStats span {
+  font-size: 0.64rem;
+  color: #374151;
+  font-weight: 500;
+}
+
+.secondStats strong {
+  color: #111827;
+}
+
+.secondThumb {
+  width: 46px;
+  height: 46px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  border: 1px solid #e5e7eb;
+}
+
+.thumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumbPlaceholder {
+  width: 100%;
+  height: 100%;
+  background: #e5e7eb;
+}
+
+/* ── Empty state ── */
+.emptyPerformer {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family:var(--font-geist-sans);
+  padding: 1rem 1.25rem;
+  border-radius: 8px;
+  border: 1px dashed #d1d5db;
+  color: #111827;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.emptyPerformer svg {
+  flex-shrink: 0;
+  opacity: 0.45;
+}
+
+/* ── 980px ── */
+@media (max-width: 980px) {
+  .wrapper {
+    grid-template-columns: 1fr 175px;
+  }
+
+  .priceAmount {
+    font-size: 1.3rem;
+  }
+}
+
+/* ── 780px ── */
+@media (max-width: 780px) {
+  .wrapper {
+    grid-template-columns: 1fr;
+  }
+
+  .mainCard {
+    height: auto;
+    min-height: 160px;
+  }
+
+  .sideStack {
+    flex-direction: row;
+  }
+
+  .reviewCard,
+  .ratingCard,
+  .secondCard {
+    flex: 1;
+  }
+
+  .imageBlock {
+    width: 36%;
+  }
+}
+
+/* ── 480px ── */
+@media (max-width: 480px) {
+  .sideStack {
+    flex-direction: column;
+  }
+
+  .mainCard {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .imageBlock {
+    width: 100%;
+    height: 150px;
+  }
+
+  .priceAmount {
+    font-size: 1.15rem;
+  }
+
+  .reviewCardBig {
+    font-size: 1.7rem;
+  }
+}
+
+/* ── 320px ── */
+@media (max-width: 320px) {
+  .details {
+    padding: 0.6rem 0.7rem;
+  }
+
+  .propName {
+    font-size: 0.85rem;
+  }
+
+  .priceAmount {
+    font-size: 1rem;
+  }
+}

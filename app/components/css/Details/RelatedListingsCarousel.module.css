@@ -1,0 +1,43 @@
+.section {
+  width: 94%;
+  padding: 2rem 0;
+  margin:0 auto;
+}
+
+.heading {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  font-family: var(--font-inter);
+  color: var(--secondary);
+}
+
+.carouselWrapper {
+  width: 100%;
+}
+
+.viewport {
+  width: 100%;
+}
+
+.track {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.cardSlot {
+  flex: 0 0 calc(100% / 3);
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 780px) {
+  .track {
+    flex-direction: column;
+  }
+
+  .cardSlot {
+    flex: 0 0 auto;
+    width: 100%;
+  }
+}

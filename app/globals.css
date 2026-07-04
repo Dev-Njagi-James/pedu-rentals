@@ -1,0 +1,19 @@
+
+:root {
+  --background: #F8F9FA;
+  --darkBackground:#f2e9e4;
+  --primary:#002EFF;
+  --darkSecondary:#DEA806;
+  --secondary:#FFBF00;
+  --accent:#0A7CFF;
+  --page-top-offset: 64px; /* nav ~64px + banner ~40px — fallback */
+}
+
+html,
+body{
+  padding:0;
+  margin:0;
+  background: var(--background);
+  scroll-behavior:smooth;
+}
+
