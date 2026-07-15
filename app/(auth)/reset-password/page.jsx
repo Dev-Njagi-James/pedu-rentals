@@ -2,8 +2,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createBrowserSupabaseClient } from '../../lib/supabase/client';
-import "../AuthForm.css";
+import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import "@/app/(auth)/Auth/css/AuthForm.css";
 
 const supabase = createBrowserSupabaseClient();
 
