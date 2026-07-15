@@ -4,10 +4,8 @@ import { Analytics } from "@vercel/analytics/next"
 import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Toaster } from 'sonner'
 import Script from 'next/script'
-import Navbar from "./components/nav"
-import Footer from './components/footer'
 import Providers from './providers'
-import FeedbackBanner from './components/FeedbackBanner';
+import FeedbackBanner from './FeedbackBanner';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,13 +52,11 @@ export default function RootLayout({ children }) {
         <SpeedInsights />
         <Toaster position="top-right" duration={4000} richColors />
         {/* <FeedbackBanner /> */}
-        <Navbar />
         <main>
           <Providers>
             {children}
           </Providers>
         </main>
-        <Footer />
         <Script src="https://tally.so/widgets/embed.js" strategy="lazyOnload" />
       </body>
     </html>
