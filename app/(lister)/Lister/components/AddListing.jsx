@@ -252,7 +252,7 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
     video.preload = 'metadata';
     video.onloadedmetadata = () => {
       URL.revokeObjectURL(url);
-      if (video.duration > 120) {
+      if (video.duration > 90) {
         setErrors(prev => ({ ...prev, video: 'Video exceeds 1 min and 20 seconds' }));
         toast.error('Video exceeds 1 min and 20. Please trim it before uploading.');
         return;
