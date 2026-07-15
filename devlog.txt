@@ -1,0 +1,10 @@
+Your are trying to make the same logic where you divide the app based on the category of user and 
+the admin and lister where the user consuming data is being given its own layout 
+
+And depending on whether a person is signed in they get to view the 
+admin or lister page
+
+It is a full redesign of the system to ensure that it works with the new logics you learnt and tools
+
+Pick from there after tomorrow and also success in your exam
+

@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 const PAGE_SIZE = 20;
 const PREFETCH_SIZE = 40;
+const HIDDEN_LISTING_IDS = [ 40, 43,34 ];
 
 export const revalidate = 0;
 
@@ -29,7 +30,8 @@ export async function GET(request) {
 
   let countQuery = supabase
     .from('Property_Listing')
-    .select('listing_id', { count: 'exact', head: true });
+    .select('listing_id', { count: 'exact', head: true })
+    .not('listing_id', 'in', `(${HIDDEN_LISTING_IDS.join(',')})`);
 
   if (ward_id) countQuery = countQuery.eq('ward_id', ward_id);
   if (category_id) countQuery = countQuery.eq('category_id', category_id);
@@ -39,6 +41,7 @@ export async function GET(request) {
 
   const { count, error: countError } = await countQuery;
 
+
   if (countError) {
     return NextResponse.json(
       { error: 'Failed to fetch count', details: countError.message },
@@ -46,7 +49,7 @@ export async function GET(request) {
     );
   }
 
-  const { data, error } = await supabase.rpc('get_listings_paginated', {
+  const { data: rawData, error } = await supabase.rpc('get_listings_paginated', {
     p_limit: limit,
     p_offset: offset,
     p_ward_id: ward_id,
@@ -63,6 +66,10 @@ export async function GET(request) {
       { status: 500 }
     );
   }
+
+  const data = rawData.filter(l => !HIDDEN_LISTING_IDS.includes(l.listing_id));
+
+
 
   const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
 
