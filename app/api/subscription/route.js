@@ -33,11 +33,14 @@ async function isMpesaEnabled(supabase) {
 // ═══════════════════════════════════════════════════════════════
 export async function POST(request) {
    try {
-      const body = await request.json();
+      const raw = await request.clone().text();
+      console.log('[mpesa_callback] RAW BODY:', raw);
+      const body = JSON.parse(raw);
       const { action } = body;
 
+      // Safaricom's callback POST has no action field — detect by payload shape
+      if (body?.Body?.stkCallback) return handleMpesaCallback(body);
       if (action === 'add_slots') return handleAddSlots(request, body);
-      if (action === 'mpesa_callback') return handleMpesaCallback(body);
 
       return NextResponse.json({ error: 'Unknown action.' }, { status: 400 });
    } catch {
