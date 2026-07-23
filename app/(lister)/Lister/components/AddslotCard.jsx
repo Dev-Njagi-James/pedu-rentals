@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import styles from '../css/AddslotCard.module.css';
 
-const SLOT_PRICE_KES = 500;
+const SLOT_PRICE_KES = 1;
 
 export default function AddSlotCard({ onSlotAdded }) {
    const [ mpesaEnabled, setMpesaEnabled ] = useState(false);
@@ -45,8 +45,7 @@ export default function AddSlotCard({ onSlotAdded }) {
       setErrorMsg('');
 
       try {
-         // ── CHANGED: Updated target route from /api/subscription to /api/payments ──
-         const res = await fetch('/api/payments', {
+         const res = await fetch('/api/subscription', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -78,8 +77,7 @@ export default function AddSlotCard({ onSlotAdded }) {
       for (let i = 0; i < 12; i++) {
          await new Promise(r => setTimeout(r, 5000));
 
-         // ── CHANGED: Updated target polling route to use /api/payments ──
-         const res = await fetch(`/api/payments?checkout_request_id=${checkoutId}`);
+          const res = await fetch(`/api/subscription?checkout_request_id=${checkoutId}`);
          const json = await res.json();
 
          if (json.payment_status === 'complete') return;
