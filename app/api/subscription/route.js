@@ -3,7 +3,7 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase/server';
 
-const SLOT_PRICE_KES = 500;
+const SLOT_PRICE_KES = 1;
 const DARAJA_BASE_URL = process.env.DARAJA_BASE_URL ?? 'https://sandbox.safaricom.co.ke';
 const DARAJA_CONSUMER_KEY = process.env.DARAJA_CONSUMER_KEY ?? '';
 const DARAJA_CONSUMER_SECRET = process.env.DARAJA_CONSUMER_SECRET ?? '';
