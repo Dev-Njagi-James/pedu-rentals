@@ -1,7 +1,13 @@
 // app/api/subscription/route.js
 
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase/server';
+
+const paymentsSupabase = createClient(
+   process.env.PAYMENTS_SUPABASE_URL,
+   process.env.PAYMENTS_SUPABASE_SERVICE_ROLE_KEY
+);
 
 const SLOT_PRICE_KES = 1;
 const DARAJA_BASE_URL = process.env.DARAJA_BASE_URL ?? 'https://sandbox.safaricom.co.ke';
@@ -63,7 +69,7 @@ export async function GET(request) {
 
    const checkoutId = request.nextUrl.searchParams.get('checkout_request_id');
    if (checkoutId) {
-      const { data } = await supabase
+      const { data } = await paymentsSupabase
          .from('Pending_Payments')
          .select('status')
          .eq('checkout_request_id', checkoutId)
@@ -155,7 +161,7 @@ async function handleAddSlots(request, body) {
       }
 
       // Write in-flight record
-      await supabase.from('Pending_Payments').insert({
+      await paymentsSupabase.from('Pending_Payments').insert({
          lister_uuid: user.id,
          checkout_request_id: stkJson.CheckoutRequestID,
          phone,
@@ -192,19 +198,19 @@ async function handleMpesaCallback(body) {
 
    if (resultCode !== '0') {
       // Query first — update wipes the row state we need for the ledger
-      const { data: pending } = await supabase
+      const { data: pending } = await paymentsSupabase
          .from('Pending_Payments')
          .select('lister_uuid, quantity, amount, phone')
          .eq('checkout_request_id', checkoutId)
          .single();
 
-      await supabase
+      await paymentsSupabase
          .from('Pending_Payments')
          .update({ status: 'failed', updated_at: new Date().toISOString() })
          .eq('checkout_request_id', checkoutId);
 
       if (pending) {
-         await supabase.from('Payment_Ledger').insert({
+         await paymentsSupabase.from('Payment_Ledger').insert({
             lister_uuid: pending.lister_uuid,
             checkout_request_id: checkoutId,
             mpesa_receipt: null,
@@ -226,7 +232,7 @@ async function handleMpesaCallback(body) {
    const mpesaPhone = items.find(i => i.Name === 'PhoneNumber')?.Value?.toString() ?? null;
 
    // Resolve pending row — unique constraint prevents double-processing
-   const { data: pending, error: pendingErr } = await supabase
+   const { data: pending, error: pendingErr } = await paymentsSupabase
       .from('Pending_Payments')
       .select('lister_uuid, quantity, amount')
       .eq('checkout_request_id', checkoutId)
@@ -244,7 +250,7 @@ async function handleMpesaCallback(body) {
    });
 
    // Mark pending row resolved
-   await supabase
+   await paymentsSupabase
       .from('Pending_Payments')
       .update({
          status: result.error ? 'slot_error' : 'complete',
@@ -282,7 +288,7 @@ async function incrementSlots(supabase, listerUUID, quantity, meta = null) {
 
    // Only write ledger for real payments (meta is null when simulated)
    if (meta !== null) {
-      await supabase.from('Payment_Ledger').insert({
+      await paymentsSupabase.from('Payment_Ledger').insert({
          lister_uuid: listerUUID,
          checkout_request_id: meta.checkoutRequestId ?? null,
          mpesa_receipt: meta.mpesaReceipt ?? null,
