@@ -220,6 +220,7 @@ async function handleMpesaCallback(body) {
             slots_before: null,
             slots_after: null,
             status: 'rejected',
+            raw_callback: body,
          });
       }
 
