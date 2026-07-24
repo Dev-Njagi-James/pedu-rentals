@@ -320,7 +320,10 @@ async function getDarajaToken() {
 }
 
 function getDarajaTimestamp() {
-   return new Date().toISOString().replace(/[-T:.Z]/g, '').slice(0, 14);
+   const now = new Date();
+   const eatOffsetMs = 3 * 60 * 60 * 1000;
+   const eat = new Date(now.getTime() + eatOffsetMs);
+   return eat.toISOString().replace(/[-T:.Z]/g, '').slice(0, 14);
 }
 
 function getDarajaPassword(timestamp) {
