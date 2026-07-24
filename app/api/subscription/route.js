@@ -142,7 +142,7 @@ async function handleAddSlots(request, body) {
          method: 'POST',
          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
          body: JSON.stringify({
-            BusinessShortCode: DARAJA_TILL_NUMBER,
+            BusinessShortCode: DARAJA_SHORTCODE,
             Password: password,
             Timestamp: timestamp,
             TransactionType: 'CustomerBuyGoodsOnline',
@@ -328,7 +328,7 @@ function getDarajaTimestamp() {
 }
 
 function getDarajaPassword(timestamp) {
-   return Buffer.from(`${DARAJA_TILL_NUMBER}${DARAJA_PASSKEY}${timestamp}`).toString('base64');
+   return Buffer.from(`${DARAJA_SHORTCODE}${DARAJA_PASSKEY}${timestamp}`).toString('base64');
 }
 
 function sanitisePhone(raw) {
