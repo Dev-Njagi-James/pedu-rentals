@@ -15,6 +15,7 @@ const DARAJA_CONSUMER_KEY = process.env.DARAJA_CONSUMER_KEY ?? '';
 const DARAJA_CONSUMER_SECRET = process.env.DARAJA_CONSUMER_SECRET ?? '';
 const DARAJA_SHORTCODE = process.env.DARAJA_SHORTCODE ?? '';
 const DARAJA_PASSKEY = process.env.DARAJA_PASSKEY ?? '';
+const DARAJA_TILL_NUMBER = process.env.DARAJA_TILL_NUMBER ?? '';
 const DARAJA_CALLBACK_URL = process.env.DARAJA_CALLBACK_URL ?? '';
 
 
@@ -147,7 +148,7 @@ async function handleAddSlots(request, body) {
             TransactionType: 'CustomerBuyGoodsOnline',
             Amount: amount,
             PartyA: phone,
-            PartyB: DARAJA_SHORTCODE,
+            PartyB: DARAJA_TILL_NUMBER,
             PhoneNumber: phone,
             CallBackURL: DARAJA_CALLBACK_URL,
             AccountReference: 'ListingSlots',
