@@ -42,7 +42,9 @@ export default function SearchBar({ allData = [], onSearchResults, onClear }) {
 
       const lower = q.toLowerCase()
       const matches = allData.filter(l =>
-        l.property_name?.toLowerCase().includes(lower)
+        l.property_name?.toLowerCase().includes(lower) ||
+        l.ward_name?.toLowerCase().includes(lower) ||
+        l.ward_location?.toLowerCase().includes(lower)
       ).slice(0, 5)
 
       if (matches.length > 0) {
