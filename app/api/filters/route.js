@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { paymentsSupabase } from '@/lib/supabase/paymentsClient';
 import { NextResponse } from 'next/server';
 
 export const revalidate = 3600;
@@ -8,7 +9,7 @@ export async function GET() {
    console.log('[filters] route hit');
 
   const [wardsResult, categoriesResult, typesResult] = await Promise.all([
-    supabase
+    paymentsSupabase
       .from('wards_table')
       .select('ward_id, ward_name')
       .order('ward_name', { ascending: true }),

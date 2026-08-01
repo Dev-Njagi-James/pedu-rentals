@@ -1,7 +1,7 @@
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import styles from '../css/FilterSidebar.module.css';
+import WardCombobox from './WardCombobox';
 
 const PRICE_RANGES = [
    { label: '2,000 and below', value: 'below_2000' },
@@ -154,16 +154,11 @@ export default function FilterSidebar({ onFilterChange, initialFilters }) {
                   </button>
                   {expandedSections.ward && (
                      <div className={styles.sectionBody}>
-                        <select
-                           className={styles.selectInput}
-                           value={filters.ward_id ?? ''}
-                           onChange={e => handleSingleSelect('ward_id', e.target.value ? Number(e.target.value) : null)}
-                        >
-                           <option value="">All Wards</option>
-                           {filterData.wards.map(w => (
-                              <option key={w.ward_id} value={w.ward_id}>{w.ward_name}</option>
-                           ))}
-                        </select>
+                        <WardCombobox
+                           wards={filterData.wards}
+                           selectedWardId={filters.ward_id}
+                           onSelect={(wardId) => handleSingleSelect('ward_id', wardId)}
+                        />
                      </div>
                   )}
                </div>

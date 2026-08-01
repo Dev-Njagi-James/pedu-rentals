@@ -1,13 +1,8 @@
 // app/api/subscription/route.js
 
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { createServerSupabaseClient, createAdminClient } from '@/lib/supabase/server';
-
-const paymentsSupabase = createClient(
-   process.env.PAYMENTS_SUPABASE_URL,
-   process.env.PAYMENTS_SUPABASE_SERVICE_ROLE_KEY
-);
+import { paymentsSupabase } from '@/lib/supabase/paymentsClient';
 
 const SLOT_PRICE_KES = 1;
 const DARAJA_BASE_URL = process.env.DARAJA_BASE_URL ?? 'https://sandbox.safaricom.co.ke';
