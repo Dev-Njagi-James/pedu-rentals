@@ -147,7 +147,7 @@ export default function FilterSidebar({ onFilterChange, initialFilters }) {
                      className={styles.sectionToggle}
                      onClick={() => toggleSection('ward')}
                   >
-                     <span>Location</span>
+                     <span>Locations</span>
                      <span className={`${styles.chevron} ${expandedSections.ward ? styles.chevronUp : ''}`}>
                         &#8249;
                      </span>
