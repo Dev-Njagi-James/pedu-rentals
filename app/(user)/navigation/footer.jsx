@@ -81,9 +81,9 @@ export default function Footer() {
             >
               <WhatsAppIcon />
             </a>
-            <a href="#" aria-label="TikTok" className="footer-social-link"><TikTokIcon /></a>
-            <a href="#" aria-label="Instagram" className="footer-social-link"><InstagramIcon /></a>
-            <a href="#" aria-label="Facebook" className="footer-social-link"><FacebookIcon /></a>
+            <a href="https://www.tiktok.com/@pedu_rentals?_r=1&_t=ZS-98gHr92enFY" target="_blank" aria-label="TikTok" className="footer-social-link"><TikTokIcon /></a>
+            <a href="#" aria-label="Instagram" target="_blank" className="footer-social-link"><InstagramIcon /></a>
+            <a href="https://www.facebook.com/share/1HdH7p6Rfq/" target="_blank" aria-label="Facebook" className="footer-social-link"><FacebookIcon /></a>
           </div>
         </div>
 
