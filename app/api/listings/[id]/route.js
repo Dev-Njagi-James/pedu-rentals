@@ -1,6 +1,7 @@
 // app/api/listings/[id]/route.js
 
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { resolveWardName } from '@/lib/resolveWardName';
 import { NextResponse } from 'next/server';
 import { EDIT_WINDOW_DAYS } from '@/lib/constants';
 
@@ -32,6 +33,11 @@ export async function GET(request, { params }) {
   if (!data || data.length === 0) {
     return NextResponse.json({ error: 'Listing not found' }, { status: 404 });
   }
+
+  // Reroute ward-name resolution to the new-scheme table (payments project).
+  const resolved = await resolveWardName(data[0].ward_id);
+  data[0].ward_name = resolved?.ward_name ?? null;
+  data[0].ward_id = resolved?.ward_id ?? data[0].ward_id;
 
   return NextResponse.json({ data: data[0] });
 }
