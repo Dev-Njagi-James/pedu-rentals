@@ -1,0 +1,1955 @@
+[
+  {
+    "old_ward_id": 1,
+    "old_ward_name": "Kitisuru",
+    "new_ward_id": 127,
+    "new_ward_name": "Kitisuru",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 2,
+    "old_ward_name": "Parklands/Highridge",
+    "new_ward_id": 190,
+    "new_ward_name": "Parklands/Highridge",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 3,
+    "old_ward_name": "Karura",
+    "new_ward_id": 109,
+    "new_ward_name": "Karura",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 4,
+    "old_ward_name": "Kangemi",
+    "new_ward_id": 103,
+    "new_ward_name": "Kangemi",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 5,
+    "old_ward_name": "Mountain View",
+    "new_ward_id": 161,
+    "new_ward_name": "Mountain View",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 6,
+    "old_ward_name": "Kilimani",
+    "new_ward_id": 124,
+    "new_ward_name": "Kilimani",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 7,
+    "old_ward_name": "Kawangware",
+    "new_ward_id": 111,
+    "new_ward_name": "Kawangware",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 8,
+    "old_ward_name": "Gatina",
+    "new_ward_id": 79,
+    "new_ward_name": "Gatina",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 9,
+    "old_ward_name": "Kileleshwa",
+    "new_ward_id": 123,
+    "new_ward_name": "Kileleshwa",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 10,
+    "old_ward_name": "Kabiro",
+    "new_ward_id": 96,
+    "new_ward_name": "Kabiro",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 11,
+    "old_ward_name": "Mutuini",
+    "new_ward_id": 167,
+    "new_ward_name": "Mutuini",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 12,
+    "old_ward_name": "Ngando",
+    "new_ward_id": 177,
+    "new_ward_name": "Ngando",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 13,
+    "old_ward_name": "Riruta",
+    "new_ward_id": 194,
+    "new_ward_name": "Riruta",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 14,
+    "old_ward_name": "Uthiru/Ruthimitu",
+    "new_ward_id": 222,
+    "new_ward_name": "Uthiru/Ruthimitu",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 15,
+    "old_ward_name": "Waithaka",
+    "new_ward_id": 224,
+    "new_ward_name": "Waithaka",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 16,
+    "old_ward_name": "Karen",
+    "new_ward_id": 105,
+    "new_ward_name": "Karen",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 17,
+    "old_ward_name": "Nairobi West",
+    "new_ward_id": 175,
+    "new_ward_name": "Nairobi West",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 18,
+    "old_ward_name": "Mugumoini",
+    "new_ward_id": 163,
+    "new_ward_name": "Mugumoini",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 19,
+    "old_ward_name": "South C",
+    "new_ward_id": 206,
+    "new_ward_name": "South C",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 20,
+    "old_ward_name": "Nyayo Highrise",
+    "new_ward_id": 185,
+    "new_ward_name": "Nyayo Highrise",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 21,
+    "old_ward_name": "Laini Saba",
+    "new_ward_id": 133,
+    "new_ward_name": "Laini Saba",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 22,
+    "old_ward_name": "Lindi",
+    "new_ward_id": 139,
+    "new_ward_name": "Lindi",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 23,
+    "old_ward_name": "Makina",
+    "new_ward_id": 148,
+    "new_ward_name": "Makina",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 24,
+    "old_ward_name": "Woodley/Kenyatta Golf Course",
+    "new_ward_id": 228,
+    "new_ward_name": "Woodley/Kenyatta Golf Course",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 25,
+    "old_ward_name": "Sarang’ombe",
+    "new_ward_id": 203,
+    "new_ward_name": "Sarang’ombe",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 26,
+    "old_ward_name": "Githurai",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 27,
+    "old_ward_name": "Kahawa West",
+    "new_ward_id": 100,
+    "new_ward_name": "Kahawa West",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 28,
+    "old_ward_name": "Zimmerman",
+    "new_ward_id": 229,
+    "new_ward_name": "Zimmerman",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 29,
+    "old_ward_name": "Roysambu",
+    "new_ward_id": 196,
+    "new_ward_name": "Roysambu",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 30,
+    "old_ward_name": "Kahawa",
+    "new_ward_id": 97,
+    "new_ward_name": "Kahawa",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 31,
+    "old_ward_name": "Clay City",
+    "new_ward_id": 63,
+    "new_ward_name": "Clay City",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 32,
+    "old_ward_name": "Mwiki",
+    "new_ward_id": 170,
+    "new_ward_name": "Mwiki",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 33,
+    "old_ward_name": "Kasarani",
+    "new_ward_id": 110,
+    "new_ward_name": "Kasarani",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 34,
+    "old_ward_name": "Njiru",
+    "new_ward_id": 183,
+    "new_ward_name": "Njiru",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 35,
+    "old_ward_name": "Ruai",
+    "new_ward_id": 197,
+    "new_ward_name": "Ruai",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 36,
+    "old_ward_name": "Baba Dogo",
+    "new_ward_id": 58,
+    "new_ward_name": "Baba Dogo",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 37,
+    "old_ward_name": "Utalii",
+    "new_ward_id": 219,
+    "new_ward_name": "Utalii",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 38,
+    "old_ward_name": "Mathare North",
+    "new_ward_id": 154,
+    "new_ward_name": "Mathare North",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 39,
+    "old_ward_name": "Lucky Summer",
+    "new_ward_id": 143,
+    "new_ward_name": "Lucky Summer",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 40,
+    "old_ward_name": "Korogocho",
+    "new_ward_id": 129,
+    "new_ward_name": "Korogocho",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 41,
+    "old_ward_name": "Imara Daima",
+    "new_ward_id": 89,
+    "new_ward_name": "Imara Daima",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 42,
+    "old_ward_name": "Kwa Njenga",
+    "new_ward_id": 130,
+    "new_ward_name": "Kwa Njenga",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 43,
+    "old_ward_name": "Kwa Reuben",
+    "new_ward_id": 131,
+    "new_ward_name": "Kwa Reuben",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 44,
+    "old_ward_name": "Pipeline",
+    "new_ward_id": 191,
+    "new_ward_name": "Pipeline",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 45,
+    "old_ward_name": "Kware",
+    "new_ward_id": 132,
+    "new_ward_name": "Kware",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 46,
+    "old_ward_name": "Kariobangi North",
+    "new_ward_id": 107,
+    "new_ward_name": "Kariobangi North",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 47,
+    "old_ward_name": "Dandora Area I",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 48,
+    "old_ward_name": "Dandora Area II",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 49,
+    "old_ward_name": "Dandora Area III",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 50,
+    "old_ward_name": "Dandora Area IV",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 51,
+    "old_ward_name": "Kayole North",
+    "new_ward_id": 114,
+    "new_ward_name": "Kayole North",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 52,
+    "old_ward_name": "Kayole Central",
+    "new_ward_id": 113,
+    "new_ward_name": "Kayole Central",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 53,
+    "old_ward_name": "Kayole South",
+    "new_ward_id": 115,
+    "new_ward_name": "Kayole South",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 54,
+    "old_ward_name": "Komarock",
+    "new_ward_id": 128,
+    "new_ward_name": "Komarock",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 55,
+    "old_ward_name": "Matopeni/Spring Valley",
+    "new_ward_id": 155,
+    "new_ward_name": "Matopeni/Spring Valley",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 56,
+    "old_ward_name": "Upper Savanna",
+    "new_ward_id": 218,
+    "new_ward_name": "Upper Savanna",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 57,
+    "old_ward_name": "Lower Savanna",
+    "new_ward_id": 142,
+    "new_ward_name": "Lower Savanna",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 58,
+    "old_ward_name": "Embakasi",
+    "new_ward_id": 76,
+    "new_ward_name": "Embakasi",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 59,
+    "old_ward_name": "Utawala",
+    "new_ward_id": 220,
+    "new_ward_name": "Utawala",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 60,
+    "old_ward_name": "Mihango",
+    "new_ward_id": 156,
+    "new_ward_name": "Mihango",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 61,
+    "old_ward_name": "Umoja I",
+    "new_ward_id": 215,
+    "new_ward_name": "Umoja I",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 62,
+    "old_ward_name": "Umoja II",
+    "new_ward_id": 216,
+    "new_ward_name": "Umoja II",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 63,
+    "old_ward_name": "Mowlem",
+    "new_ward_id": 162,
+    "new_ward_name": "Mowlem",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 64,
+    "old_ward_name": "Kariobangi South",
+    "new_ward_id": 108,
+    "new_ward_name": "Kariobangi South",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 65,
+    "old_ward_name": "Maringo/Hamza",
+    "new_ward_id": 152,
+    "new_ward_name": "Maringo/Hamza",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 66,
+    "old_ward_name": "Viwandani",
+    "new_ward_id": 223,
+    "new_ward_name": "Viwandani",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 67,
+    "old_ward_name": "Harambee",
+    "new_ward_id": 84,
+    "new_ward_name": "Harambee",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 68,
+    "old_ward_name": "Makongeni",
+    "new_ward_id": 149,
+    "new_ward_name": "Makongeni",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 69,
+    "old_ward_name": "Pumwani",
+    "new_ward_id": 192,
+    "new_ward_name": "Pumwani",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 70,
+    "old_ward_name": "Eastleigh North",
+    "new_ward_id": 74,
+    "new_ward_name": "Eastleigh North",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 71,
+    "old_ward_name": "Eastleigh South",
+    "new_ward_id": 75,
+    "new_ward_name": "Eastleigh South",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 72,
+    "old_ward_name": "Airbase",
+    "new_ward_id": 54,
+    "new_ward_name": "Airbase",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 73,
+    "old_ward_name": "California",
+    "new_ward_id": 61,
+    "new_ward_name": "California",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 74,
+    "old_ward_name": "Ngara",
+    "new_ward_id": 178,
+    "new_ward_name": "Ngara",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 75,
+    "old_ward_name": "Nairobi Central",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 76,
+    "old_ward_name": "Starehe",
+    "new_ward_id": 208,
+    "new_ward_name": "Starehe",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 77,
+    "old_ward_name": "Pangani",
+    "new_ward_id": 188,
+    "new_ward_name": "Pangani",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 78,
+    "old_ward_name": "Ziwani/Kariokor",
+    "new_ward_id": 230,
+    "new_ward_name": "Ziwani/Kariokor",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 79,
+    "old_ward_name": "Landimawe",
+    "new_ward_id": 134,
+    "new_ward_name": "Landimawe",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 80,
+    "old_ward_name": "Nairobi South",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 81,
+    "old_ward_name": "Hospital",
+    "new_ward_id": 86,
+    "new_ward_name": "Hospital",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 82,
+    "old_ward_name": "Mathare",
+    "new_ward_id": 153,
+    "new_ward_name": "Mathare",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 83,
+    "old_ward_name": "Mabatini",
+    "new_ward_id": 144,
+    "new_ward_name": "Mabatini",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 84,
+    "old_ward_name": "Huruma",
+    "new_ward_id": 88,
+    "new_ward_name": "Huruma",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 85,
+    "old_ward_name": "Ngei",
+    "new_ward_id": 179,
+    "new_ward_name": "Ngei",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 86,
+    "old_ward_name": "Mlango Kubwa",
+    "new_ward_id": 158,
+    "new_ward_name": "Mlango Kubwa",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 87,
+    "old_ward_name": "Kiamaiko",
+    "new_ward_id": 118,
+    "new_ward_name": "Kiamaiko",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 88,
+    "old_ward_name": "Kahawa Wendani",
+    "new_ward_id": 99,
+    "new_ward_name": "Kahawa Wendani",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 89,
+    "old_ward_name": "Kahawa Sukari",
+    "new_ward_id": 98,
+    "new_ward_name": "Kahawa Sukari",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 90,
+    "old_ward_name": "Mwiki (Kiambu)",
+    "new_ward_id": 171,
+    "new_ward_name": "Mwiki (Kiambu)",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 91,
+    "old_ward_name": "Mwihoko",
+    "new_ward_id": 169,
+    "new_ward_name": "Mwihoko",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 92,
+    "old_ward_name": "Uthiru",
+    "new_ward_id": 221,
+    "new_ward_name": "Uthiru",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 93,
+    "old_ward_name": "Ndenderu",
+    "new_ward_id": 176,
+    "new_ward_name": "Ndenderu",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 94,
+    "old_ward_name": "Kinoo",
+    "new_ward_id": 125,
+    "new_ward_name": "Kinoo",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 95,
+    "old_ward_name": "Sigona",
+    "new_ward_id": 204,
+    "new_ward_name": "Sigona",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 96,
+    "old_ward_name": "Kiambu Township",
+    "new_ward_id": 120,
+    "new_ward_name": "Kiambu Township",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 98,
+    "old_ward_name": "Juja",
+    "new_ward_id": 94,
+    "new_ward_name": "Juja",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 100,
+    "old_ward_name": "Nairobi Town",
+    "new_ward_id": 174,
+    "new_ward_name": "Nairobi Town",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 101,
+    "old_ward_name": "Naivasha",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 102,
+    "old_ward_name": "Nanyuki",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 103,
+    "old_ward_name": "Ngong",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 104,
+    "old_ward_name": "Ol Kalou",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 105,
+    "old_ward_name": "Ongata Rongai",
+    "new_ward_id": 186,
+    "new_ward_name": "Ongata Rongai",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 106,
+    "old_ward_name": "Ruiru",
+    "new_ward_id": 200,
+    "new_ward_name": "Ruiru",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 107,
+    "old_ward_name": "Thika",
+    "new_ward_id": 210,
+    "new_ward_name": "Thika",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 108,
+    "old_ward_name": "Voi",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 109,
+    "old_ward_name": "Westlands",
+    "new_ward_id": 227,
+    "new_ward_name": "Westlands",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 110,
+    "old_ward_name": "Allsops",
+    "new_ward_id": 55,
+    "new_ward_name": "Allsops",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 111,
+    "old_ward_name": "Athi River",
+    "new_ward_id": 57,
+    "new_ward_name": "Athi River",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 112,
+    "old_ward_name": "Banana",
+    "new_ward_id": 59,
+    "new_ward_name": "Banana",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 113,
+    "old_ward_name": "Buru Buru",
+    "new_ward_id": 60,
+    "new_ward_name": "Buru Buru",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 114,
+    "old_ward_name": "Chokaa",
+    "new_ward_id": 62,
+    "new_ward_name": "Chokaa",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 115,
+    "old_ward_name": "Dagoretti",
+    "new_ward_id": 64,
+    "new_ward_name": "Dagoretti",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 116,
+    "old_ward_name": "Dandora",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 117,
+    "old_ward_name": "Donholm",
+    "new_ward_id": 70,
+    "new_ward_name": "Donholm",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 118,
+    "old_ward_name": "Eastlands",
+    "new_ward_id": 72,
+    "new_ward_name": "Eastlands",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 119,
+    "old_ward_name": "Eastleigh",
+    "new_ward_id": 73,
+    "new_ward_name": "Eastleigh",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 120,
+    "old_ward_name": "Garden City",
+    "new_ward_id": 77,
+    "new_ward_name": "Garden City",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 121,
+    "old_ward_name": "Githurai 44",
+    "new_ward_id": 82,
+    "new_ward_name": "Githurai 44",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 122,
+    "old_ward_name": "Githurai 45",
+    "new_ward_id": 83,
+    "new_ward_name": "Githurai 45",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 123,
+    "old_ward_name": "Homeland",
+    "new_ward_id": 85,
+    "new_ward_name": "Homeland",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 124,
+    "old_ward_name": "Hurlingham",
+    "new_ward_id": 87,
+    "new_ward_name": "Hurlingham",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 125,
+    "old_ward_name": "Jamhuri",
+    "new_ward_id": 91,
+    "new_ward_name": "Jamhuri",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 126,
+    "old_ward_name": "Joska",
+    "new_ward_id": 93,
+    "new_ward_name": "Joska",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 127,
+    "old_ward_name": "Kabete",
+    "new_ward_id": 95,
+    "new_ward_name": "Kabete",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 128,
+    "old_ward_name": "Kamulu",
+    "new_ward_id": 102,
+    "new_ward_name": "Kamulu",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 129,
+    "old_ward_name": "Kariobangi",
+    "new_ward_id": 106,
+    "new_ward_name": "Kariobangi",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 130,
+    "old_ward_name": "Kayole",
+    "new_ward_id": 112,
+    "new_ward_name": "Kayole",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 131,
+    "old_ward_name": "Kibera",
+    "new_ward_id": 121,
+    "new_ward_name": "Kibera",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 132,
+    "old_ward_name": "Kikuyu",
+    "new_ward_id": 122,
+    "new_ward_name": "Kikuyu",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 133,
+    "old_ward_name": "Kitengela",
+    "new_ward_id": 126,
+    "new_ward_name": "Kitengela",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 134,
+    "old_ward_name": "Langata",
+    "new_ward_id": 135,
+    "new_ward_name": "Langata",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 135,
+    "old_ward_name": "Lavington",
+    "new_ward_id": 137,
+    "new_ward_name": "Lavington",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 136,
+    "old_ward_name": "Loresho",
+    "new_ward_id": 141,
+    "new_ward_name": "Loresho",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 137,
+    "old_ward_name": "Madaraka",
+    "new_ward_id": 145,
+    "new_ward_name": "Madaraka",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 138,
+    "old_ward_name": "Makadara",
+    "new_ward_id": 147,
+    "new_ward_name": "Makadara",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 139,
+    "old_ward_name": "Malaa",
+    "new_ward_id": 150,
+    "new_ward_name": "Malaa",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 140,
+    "old_ward_name": "Milimani",
+    "new_ward_id": 157,
+    "new_ward_name": "Milimani",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 141,
+    "old_ward_name": "Mlolongo",
+    "new_ward_id": 159,
+    "new_ward_name": "Mlolongo",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 142,
+    "old_ward_name": "Muthaiga",
+    "new_ward_id": 164,
+    "new_ward_name": "Muthaiga",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 143,
+    "old_ward_name": "Muthangari",
+    "new_ward_id": 165,
+    "new_ward_name": "Muthangari",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 144,
+    "old_ward_name": "Muthurwa",
+    "new_ward_id": 166,
+    "new_ward_name": "Muthurwa",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 145,
+    "old_ward_name": "Ngumba",
+    "new_ward_id": 182,
+    "new_ward_name": "Ngumba",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 146,
+    "old_ward_name": "Parklands",
+    "new_ward_id": 189,
+    "new_ward_name": "Parklands",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 147,
+    "old_ward_name": "Roasters",
+    "new_ward_id": 195,
+    "new_ward_name": "Roasters",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 148,
+    "old_ward_name": "Ruaka",
+    "new_ward_id": 198,
+    "new_ward_name": "Ruaka",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 149,
+    "old_ward_name": "Ruaraka",
+    "new_ward_id": 199,
+    "new_ward_name": "Ruaraka",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 150,
+    "old_ward_name": "Runda",
+    "new_ward_id": 201,
+    "new_ward_name": "Runda",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 151,
+    "old_ward_name": "Saika",
+    "new_ward_id": 202,
+    "new_ward_name": "Saika",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 152,
+    "old_ward_name": "South B",
+    "new_ward_id": 205,
+    "new_ward_name": "South B",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 153,
+    "old_ward_name": "Syokimau",
+    "new_ward_id": 209,
+    "new_ward_name": "Syokimau",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 154,
+    "old_ward_name": "Thogoto",
+    "new_ward_id": 212,
+    "new_ward_name": "Thogoto",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 155,
+    "old_ward_name": "Thome",
+    "new_ward_id": 213,
+    "new_ward_name": "Thome",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 156,
+    "old_ward_name": "Umoja",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 157,
+    "old_ward_name": "Upper Hill",
+    "new_ward_id": 217,
+    "new_ward_name": "Upper Hill",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 158,
+    "old_ward_name": "Meru Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 159,
+    "old_ward_name": "Embu Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 160,
+    "old_ward_name": "Nyeri Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 161,
+    "old_ward_name": "Kisii Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 162,
+    "old_ward_name": "Machakos Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 163,
+    "old_ward_name": "Kakamega Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 164,
+    "old_ward_name": "Wangige",
+    "new_ward_id": 226,
+    "new_ward_name": "Wangige",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 165,
+    "old_ward_name": "Narok Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 166,
+    "old_ward_name": "Murang'a Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 167,
+    "old_ward_name": "Isiolo Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 168,
+    "old_ward_name": "Nyahururu",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 169,
+    "old_ward_name": "Kilifi Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 170,
+    "old_ward_name": "Kericho Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 171,
+    "old_ward_name": "Kajiado Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 172,
+    "old_ward_name": "Migori Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 173,
+    "old_ward_name": "Bungoma Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 174,
+    "old_ward_name": "Wajir Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 175,
+    "old_ward_name": "Kitui Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 176,
+    "old_ward_name": "Kerugoya",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 177,
+    "old_ward_name": "Kenol",
+    "new_ward_id": 116,
+    "new_ward_name": "Kenol",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 178,
+    "old_ward_name": "Likoni",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 179,
+    "old_ward_name": "Limuru",
+    "new_ward_id": 138,
+    "new_ward_name": "Limuru",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 180,
+    "old_ward_name": "Chuka",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 181,
+    "old_ward_name": "Kitale",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 182,
+    "old_ward_name": "Moyale Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 183,
+    "old_ward_name": "Changamwe",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 184,
+    "old_ward_name": "Malindi",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 185,
+    "old_ward_name": "Homa Bay Town",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 186,
+    "old_ward_name": "Bondo",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 187,
+    "old_ward_name": "Karatina",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 188,
+    "old_ward_name": "Riara Road",
+    "new_ward_id": 193,
+    "new_ward_name": "Riara Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 189,
+    "old_ward_name": "Magadi Road",
+    "new_ward_id": 146,
+    "new_ward_name": "Magadi Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 190,
+    "old_ward_name": "Argwings Kodhek Rd",
+    "new_ward_id": 56,
+    "new_ward_name": "Argwings Kodhek Rd",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 191,
+    "old_ward_name": "Old Malindi Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 192,
+    "old_ward_name": "Links Road",
+    "new_ward_id": 140,
+    "new_ward_name": "Links Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 193,
+    "old_ward_name": "Malindi Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 194,
+    "old_ward_name": "Nyali Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 195,
+    "old_ward_name": "Ndundori Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 196,
+    "old_ward_name": "Garissa Road",
+    "new_ward_id": 78,
+    "new_ward_name": "Garissa Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 197,
+    "old_ward_name": "James Gichuru Road",
+    "new_ward_id": 90,
+    "new_ward_name": "James Gichuru Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 198,
+    "old_ward_name": "Nairobi - Nyeri Highway",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 199,
+    "old_ward_name": "Nyeri - Nanyuki Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 200,
+    "old_ward_name": "Nyeri - Nyahuru Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 201,
+    "old_ward_name": "Embu - Meru Highway",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 202,
+    "old_ward_name": "Embu - Siakago Highway",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 203,
+    "old_ward_name": "Embu - Nairobi Highway",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 204,
+    "old_ward_name": "Southern Bypass",
+    "new_ward_id": 207,
+    "new_ward_name": "Southern Bypass",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 205,
+    "old_ward_name": "Mwembe Road",
+    "new_ward_id": 168,
+    "new_ward_name": "Mwembe Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 206,
+    "old_ward_name": "Kisii Jogoo Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 207,
+    "old_ward_name": "Kisii Bomet Highway",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 208,
+    "old_ward_name": "Gitanga Road",
+    "new_ward_id": 80,
+    "new_ward_name": "Gitanga Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 209,
+    "old_ward_name": "Naivasha Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 210,
+    "old_ward_name": "Northern Bypass",
+    "new_ward_id": 184,
+    "new_ward_name": "Northern Bypass",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 211,
+    "old_ward_name": "Eastern Bypass",
+    "new_ward_id": 71,
+    "new_ward_name": "Eastern Bypass",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 212,
+    "old_ward_name": "Solai Road",
+    "new_ward_id": null,
+    "new_ward_name": null,
+    "match_confidence": "unmatched_old"
+  },
+  {
+    "old_ward_id": 213,
+    "old_ward_name": "Manyanja Rd",
+    "new_ward_id": 151,
+    "new_ward_name": "Manyanja Rd",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 214,
+    "old_ward_name": "Waiyaki Way",
+    "new_ward_id": 225,
+    "new_ward_name": "Waiyaki Way",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 215,
+    "old_ward_name": "Kiambu Road",
+    "new_ward_id": 119,
+    "new_ward_name": "Kiambu Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 216,
+    "old_ward_name": "Langata Road",
+    "new_ward_id": 136,
+    "new_ward_name": "Langata Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 217,
+    "old_ward_name": "Outering Road",
+    "new_ward_id": 187,
+    "new_ward_name": "Outering Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 218,
+    "old_ward_name": "Kangundo Road",
+    "new_ward_id": 104,
+    "new_ward_name": "Kangundo Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 219,
+    "old_ward_name": "Ngong Road",
+    "new_ward_id": 181,
+    "new_ward_name": "Ngong Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 220,
+    "old_ward_name": "Kamiti Road",
+    "new_ward_id": 101,
+    "new_ward_name": "Kamiti Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 221,
+    "old_ward_name": "Jogoo Road",
+    "new_ward_id": 92,
+    "new_ward_name": "Jogoo Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 222,
+    "old_ward_name": "Mombasa Road",
+    "new_ward_id": 160,
+    "new_ward_name": "Mombasa Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 223,
+    "old_ward_name": "Thika Road",
+    "new_ward_id": 211,
+    "new_ward_name": "Thika Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": 224,
+    "old_ward_name": "Kenyatta Road",
+    "new_ward_id": 117,
+    "new_ward_name": "Kenyatta Road",
+    "match_confidence": "exact"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 1,
+    "new_ward_name": "Adams Arcade",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 2,
+    "new_ward_name": "Bahati",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 3,
+    "new_ward_name": "Bellevue",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 4,
+    "new_ward_name": "Bulbul",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 5,
+    "new_ward_name": "Edenville",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 6,
+    "new_ward_name": "Fedha",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 7,
+    "new_ward_name": "Fourways Junction",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 8,
+    "new_ward_name": "Garden Estate",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 9,
+    "new_ward_name": "Gataka",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 10,
+    "new_ward_name": "Gigiri",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 11,
+    "new_ward_name": "Gitaru",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 12,
+    "new_ward_name": "Hamza",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 13,
+    "new_ward_name": "Hardy",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 14,
+    "new_ward_name": "Jericho",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 15,
+    "new_ward_name": "Jerusalem",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 16,
+    "new_ward_name": "Junction Mall Area",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 17,
+    "new_ward_name": "Kabiria",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 18,
+    "new_ward_name": "Kaloleni",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 19,
+    "new_ward_name": "Kandisi",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 20,
+    "new_ward_name": "Katani",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 21,
+    "new_ward_name": "Kimbo/Matangi",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 22,
+    "new_ward_name": "Kwa Maji",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 23,
+    "new_ward_name": "Maasai Lodge",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 24,
+    "new_ward_name": "Mbotela",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 25,
+    "new_ward_name": "Membley",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 26,
+    "new_ward_name": "Mirema",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 27,
+    "new_ward_name": "Muthaiga North",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 29,
+    "new_ward_name": "Ngong Town",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 30,
+    "new_ward_name": "NextGen",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 31,
+    "new_ward_name": "Nkoroi",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 32,
+    "new_ward_name": "Ofafa",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 33,
+    "new_ward_name": "Ole Kasasi",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 34,
+    "new_ward_name": "Racecourse",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 35,
+    "new_ward_name": "Regen",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 36,
+    "new_ward_name": "Ridgeways",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 37,
+    "new_ward_name": "Rosslyn",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 38,
+    "new_ward_name": "Sabaki",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 39,
+    "new_ward_name": "Safari Park",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 40,
+    "new_ward_name": "Satellite",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 41,
+    "new_ward_name": "Savannah",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 42,
+    "new_ward_name": "Seasons",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 43,
+    "new_ward_name": "Shauri Moyo",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 44,
+    "new_ward_name": "Sunton",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 45,
+    "new_ward_name": "Tassia",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 46,
+    "new_ward_name": "Tena",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 47,
+    "new_ward_name": "Thindigua",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 48,
+    "new_ward_name": "Tumaini",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 49,
+    "new_ward_name": "Two Rivers",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 50,
+    "new_ward_name": "Uhuru Gardens",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 51,
+    "new_ward_name": "Village Market",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 52,
+    "new_ward_name": "Wilson area",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 53,
+    "new_ward_name": "Zambezi",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 66,
+    "new_ward_name": "Dandora Phase 1",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 67,
+    "new_ward_name": "Dandora Phase 2",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 68,
+    "new_ward_name": "Dandora Phase 3",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 69,
+    "new_ward_name": "Dandora Phase 4",
+    "match_confidence": "unmatched_new"
+  },
+  {
+    "old_ward_id": null,
+    "old_ward_name": null,
+    "new_ward_id": 214,
+    "new_ward_name": "Bee Center",
+    "match_confidence": "unmatched_new"
+  }
+]

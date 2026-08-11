@@ -1,5 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { paymentsSupabase } from '@/lib/supabase/paymentsClient';
+import { resolveWardNames } from '@/lib/resolveWardName';
 import { NextResponse } from 'next/server';
 
 
@@ -27,32 +27,7 @@ export async function GET(request) {
   const rent_duration = searchParams.get('rent_duration') || null;
   const property_interior = searchParams.get('property_interior') || null;
 
-  // Translate new ward_id → old ward_id via ward_id_mapping (payments project)
-  let oldWardId = ward_id;
-  if (ward_id !== null) {
-    const { data: mapping, error: mappingError } = await paymentsSupabase
-      .from('ward_id_mapping')
-      .select('old_ward_id')
-      .eq('new_ward_id', ward_id)
-      .maybeSingle();
-
-    if (mappingError || !mapping) {
-      // No mapping exists — no live listings can exist for this ward
-      return NextResponse.json({
-        data: [],
-        pagination: {
-          current_page: page,
-          total_pages: 1,
-          total_records: 0,
-          page_size: PAGE_SIZE,
-          has_next: false,
-          has_prev: false,
-        },
-      });
-    }
-    oldWardId = mapping.old_ward_id;
-  }
-
+  // All Property_Listing.ward_id values are new-scheme, so filter directly.
   const supabase = await createServerSupabaseClient();
 
   let countQuery = supabase
@@ -60,7 +35,7 @@ export async function GET(request) {
     .select('listing_id', { count: 'exact', head: true })
     .not('listing_id', 'in', `(${HIDDEN_LISTING_IDS.join(',')})`);
 
-  if (oldWardId) countQuery = countQuery.eq('ward_id', oldWardId);
+  if (ward_id) countQuery = countQuery.eq('ward_id', ward_id);
   if (category_id) countQuery = countQuery.eq('category_id', category_id);
   if (type_ids?.length) countQuery = countQuery.in('property_type_id', type_ids);
   if (rent_duration) countQuery = countQuery.eq('rent_duration', rent_duration);
@@ -79,7 +54,7 @@ export async function GET(request) {
   const { data: rawData, error } = await supabase.rpc('get_listings_paginated', {
     p_limit: limit,
     p_offset: offset,
-    p_ward_id: oldWardId,
+    p_ward_id: ward_id,
     p_category_id: category_id,
     p_type_ids: type_ids,
     p_price_range: price_range,
@@ -95,6 +70,15 @@ export async function GET(request) {
   }
 
   const data = rawData.filter(l => !HIDDEN_LISTING_IDS.includes(l.listing_id));
+
+  // Reroute ward-name resolution to the new-scheme table (payments project).
+  // Overwrite whatever ward_name the RPC join returned.
+  const wardMap = await resolveWardNames(data.map(l => l.ward_id));
+  for (const l of data) {
+    const resolved = wardMap.get(l.ward_id);
+    l.ward_name = resolved?.ward_name ?? null;
+    l.ward_id = resolved?.ward_id ?? l.ward_id;
+  }
 
 
 

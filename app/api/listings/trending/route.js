@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { resolveWardNames } from '@/lib/resolveWardName';
 import { NextResponse } from 'next/server';
 
 const TRENDING_LIMIT = 10;
@@ -29,6 +30,14 @@ export async function GET() {
   }
 
   const filtered = (data ?? []).filter(l => !HIDDEN_LISTING_IDS.includes(l.listing_id));
+
+  // Reroute ward-name resolution to the new-scheme table (payments project).
+  const wardMap = await resolveWardNames(filtered.map(l => l.ward_id));
+  for (const l of filtered) {
+    const resolved = wardMap.get(l.ward_id);
+    l.ward_name = resolved?.ward_name ?? null;
+    l.ward_id = resolved?.ward_id ?? l.ward_id;
+  }
 
   // hot + warm only — decile logic is in the RPC, so just take top results
   return NextResponse.json({ data: filtered.slice(0, TRENDING_LIMIT) });

@@ -1,4 +1,5 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { resolveWardNames } from '@/lib/resolveWardName';
 import { NextResponse } from 'next/server';
 
 export const revalidate = 0;
@@ -60,7 +61,17 @@ export async function GET(request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ data: data ?? [] });
+    const rows = data ?? [];
+
+    // Reroute ward-name resolution to the new-scheme table (payments project).
+    const wardMap = await resolveWardNames(rows.map(l => l.ward_id));
+    for (const l of rows) {
+      const resolved = wardMap.get(l.ward_id);
+      l.ward_name = resolved?.ward_name ?? null;
+      l.ward_id = resolved?.ward_id ?? l.ward_id;
+    }
+
+    return NextResponse.json({ data: rows });
   }
 
   return NextResponse.json({ data: [] });
