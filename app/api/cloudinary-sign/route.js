@@ -1,6 +1,6 @@
 import { v2 as cloudinary } from 'cloudinary';
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/auth/session';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -9,10 +9,9 @@ cloudinary.config({
 });
 
 export async function POST(request) {
-  const supabase = await createServerSupabaseClient();
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { user, error, status } = await requireAuth();
+  if (error) {
+    return NextResponse.json({ error }, { status });
   }
 
   const { folder } = await request.json();

@@ -1,7 +1,7 @@
 /* ── Root ───────────────────────────── */
 .heroRoot {
   width: 100%;
-  background: #F8F9FA;
+  background: var(--background);
   padding: 48px 40px 64px;
   box-sizing: border-box;
   margin-top: 68px;

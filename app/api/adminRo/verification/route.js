@@ -1,16 +1,14 @@
 // app/api/admin/verification/route.js
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { resolveWardNames } from '@/lib/resolveWardName';
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/session';
 
 export async function GET() {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, error, status } = await requireAuth();
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
 
     const admin = createAdminClient();

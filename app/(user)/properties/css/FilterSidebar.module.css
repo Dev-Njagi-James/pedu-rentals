@@ -1,9 +1,9 @@
 .sidebar {
   width: 240px;
   min-width: 240px;
-  background: #ffffff;
+  background: var(--sidebar);
   border-right: 1px solid #e8e8ed;
-  height: calc(100vh - 64px);
+  min-height: 150vh;
   position: sticky;
   top: 5px;
   overflow-y: auto;

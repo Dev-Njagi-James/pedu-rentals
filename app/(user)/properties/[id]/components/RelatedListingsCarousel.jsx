@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import PropertyCard from '@/app/(user)/properties/components/PropertyCard';
+import PropertyCardV1 from '@/app/(user)/properties/components/PropertyCardV1';
 import styles from '../css/RelatedListingsCarousel.module.css';
 
 const PER_SCROLL = 3
@@ -16,7 +16,7 @@ export default function RelatedListingsCarousel({ categoryName, currentId }) {
     if (!categoryName) return
     async function fetchRelated() {
       try {
-        const res = await fetch('/api/listings?page=1')
+        const res = await fetch('/api/v1/listings/public?page=1')
         if (!res.ok) return
         const json = await res.json()
         const filtered = (json.data ?? [])
@@ -50,7 +50,7 @@ export default function RelatedListingsCarousel({ categoryName, currentId }) {
           <div className={styles.track} ref={trackRef}>
             {listings.map(item => (
               <div key={item.listing_id} className={styles.cardSlot}>
-                <PropertyCard listing={item} onWardClick={() => { }} />
+                <PropertyCardV1 listing={item} onWardClick={() => { }} />
               </div>
             ))}
           </div>

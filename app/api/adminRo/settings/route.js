@@ -2,6 +2,7 @@
 
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/auth/session';
 
 // GET /api/adminRo/settings
 // Returns all system settings as { mpesa_enabled: bool, edit_window_days: number }
@@ -31,10 +32,10 @@ export async function GET() {
 // Body: { action: 'mpesa_enabled' | 'edit_window_days', value: string }
 export async function PATCH(req) {
   try {
-    const supabase = await createServerSupabaseClient();
+    const { user, error, status } = await requireAuth();
+    if (error) return NextResponse.json({ error }, { status });
 
-    const { data: { user }, error: authErr } = await supabase.auth.getUser();
-    if (authErr || !user) return NextResponse.json({ error: 'Unauthenticated.' }, { status: 401 });
+    const supabase = await createServerSupabaseClient();
 
     const { action, value } = await req.json();
 
@@ -43,12 +44,12 @@ export async function PATCH(req) {
       return NextResponse.json({ error: 'Invalid action.' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    const { error: dbError } = await supabase
       .from('system_settings')
       .update({ value: String(value) })
       .eq('action', action);
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (dbError) return NextResponse.json({ error: dbError.message }, { status: 500 });
 
     return NextResponse.json({ ok: true });
 

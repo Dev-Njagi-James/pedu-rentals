@@ -1,0 +1,239 @@
+.editorShell {
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #d9dde5;
+  border-radius: 8px;
+  background: #ffffff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.editorShell:focus-within {
+  border-color: #c98200;
+  box-shadow: 0 0 0 3px rgba(214, 129, 0, 0.12);
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-height: 42px;
+  padding: 5px 7px;
+  border-bottom: 1px solid #e1e5ea;
+  background: #f8fafc;
+}
+
+.toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 31px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #4b5563;
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.toolbar button:hover:not(:disabled) {
+  border-color: #d8dee6;
+  background: #ffffff;
+  color: #111827;
+}
+
+.toolbar button:focus-visible,
+.headingControl:focus-within {
+  outline: 2px solid #d68100;
+  outline-offset: 1px;
+}
+
+.toolbar button:disabled,
+.headingControl select:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.toolbar .activeButton {
+  border-color: #f0c36a;
+  background: #fff2d2;
+  color: #a96000;
+}
+
+.toolbarIcon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.headingControl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  min-width: 124px;
+  border-radius: 4px;
+  color: #374151;
+}
+
+.headingControl:hover {
+  background: #ffffff;
+}
+
+.headingControl select {
+  width: 100%;
+  height: 100%;
+  padding: 0 24px 0 9px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  appearance: none;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.headingControl select:hover {
+  border-color: #d8dee6;
+}
+
+.headingControl select option {
+  background: #ffffff;
+  color: #111827;
+}
+
+.chevron {
+  position: absolute;
+  right: 8px;
+  top: 5px;
+  color: #6b7280;
+  font-size: 1rem;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.divider {
+  width: 1px;
+  height: 23px;
+  margin: 0 5px;
+  background: #d9dee6;
+}
+
+.editorContent {
+  width: 100%;
+  min-width: 0;
+}
+
+.editorContent :global(.ProseMirror) {
+  min-height: 132px;
+  padding: 14px 16px;
+  color: #111827;
+  font-size: 0.9rem;
+  line-height: 1.65;
+  outline: none;
+}
+
+.editorContent :global(.ProseMirror p) {
+  margin: 0 0 0.75rem;
+}
+
+.editorContent :global(.ProseMirror p:last-child) {
+  margin-bottom: 0;
+}
+
+.editorContent :global(.ProseMirror h1),
+.editorContent :global(.ProseMirror h2),
+.editorContent :global(.ProseMirror h3) {
+  margin: 0.35rem 0 0.65rem;
+  color: #111827;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.editorContent :global(.ProseMirror h1) {
+  font-size: 1.35rem;
+}
+
+.editorContent :global(.ProseMirror h2) {
+  font-size: 1.1rem;
+}
+
+.editorContent :global(.ProseMirror h3) {
+  font-size: 0.98rem;
+}
+
+.editorContent :global(.ProseMirror ul),
+.editorContent :global(.ProseMirror ol) {
+  margin: 0.4rem 0 0.8rem;
+  padding-left: 1.35rem;
+}
+
+.editorContent :global(.ProseMirror li) {
+  margin: 0.2rem 0;
+}
+
+.editorContent :global(.ProseMirror a) {
+  color: #a96000;
+  text-decoration: underline;
+}
+
+.editorContent :global(.ProseMirror p.is-editor-empty:first-child::before) {
+  float: left;
+  height: 0;
+  color: #9ca3af;
+  content: 'Describe the property, features, amenities, and access...';
+  pointer-events: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 520px) {
+  .toolbar {
+    gap: 1px;
+    padding: 5px;
+  }
+
+  .headingControl {
+    min-width: 112px;
+  }
+
+  .toolbar button {
+    width: 29px;
+    height: 29px;
+  }
+
+  .divider {
+    margin: 0 3px;
+  }
+
+  .editorContent :global(.ProseMirror) {
+    min-height: 118px;
+    padding: 12px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .editorShell,
+  .toolbar button {
+    transition: none;
+  }
+}

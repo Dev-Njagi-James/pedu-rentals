@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import styles from '../css/detailsTab.module.css';
+import DescriptionRenderer from './DescriptionRenderer';
 
 const TABS = [ 'Description', 'Property Location', 'Reviews' ];
 
@@ -67,11 +68,7 @@ export default function PropertyTabs({ listing }) {
       <div className={styles.panel} role="tabpanel">
         {active === 'Description' && (
           <div className={styles.description}>
-            {description ? (
-              <p>{description}</p>
-            ) : (
-              <p className={styles.empty}>No description provided.</p>
-            )}
+            <DescriptionRenderer description={description} />
           </div>
         )}
 

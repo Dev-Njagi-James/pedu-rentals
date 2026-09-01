@@ -1,10 +1,10 @@
 /* AddListing.module.css — mirrors AccountSettings design tokens */
 
 .root {
-  max-width: 960px;
-  margin: 0 auto;
-  padding: 2.5rem 1rem;
+  width: 100%;
+  padding: 0 1.25rem;
   font-family: var(--font-geist-sans);
+  box-sizing: border-box;
 }
 
 /* ── Top bar ── */
@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 2rem;
+  margin-bottom: 1rem;
   min-height: 36px;
 }
 
@@ -434,68 +434,6 @@
 
 .popupDiscard:hover {
   background: #fef2f2;
-}
-
-/* ── Upload progress overlay ── */
-.uploadOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
-  backdrop-filter: blur(3px);
-}
-
-.uploadCard {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.25rem;
-  background: #1a1a1a;
-  border: 1px solid #2e2e2e;
-  border-radius: 1rem;
-  padding: 2.5rem 3rem;
-  min-width: 220px;
-}
-
-.uploadRingWrap {
-  position: relative;
-  width: 120px;
-  height: 120px;
-}
-
-.uploadRingSvg {
-  width: 100%;
-  height: 100%;
-}
-
-.uploadRingInner {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.uploadPercent {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #ffffff;
-  letter-spacing: -0.02em;
-}
-
-.uploadCheckIcon {
-  width: 36px;
-  height: 36px;
-}
-
-.uploadStageLabel {
-  font-size: 0.85rem;
-  color: #a0a0a0;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 /* ── Responsive ── */

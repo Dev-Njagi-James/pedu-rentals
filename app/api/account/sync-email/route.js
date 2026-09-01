@@ -1,13 +1,14 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/session';
 
 export async function POST() {
-  const supabase = await createServerSupabaseClient();
-
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { user, error, status } = await requireAuth();
+  if (error) {
+    return NextResponse.json({ error }, { status });
   }
+
+  const supabase = await createServerSupabaseClient();
 
   const { data: current, error: fetchError } = await supabase
     .from('Listers_Info')
