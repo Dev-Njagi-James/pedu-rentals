@@ -2,22 +2,23 @@
 
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireAuth } from '@/lib/auth/session';
 
 export async function GET() {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, error, status } = await requireAuth();
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
 
-    const { data, error } = await supabase.rpc('get_lister_analytics', {
+    const supabase = await createServerSupabaseClient();
+
+    const { data, error: rpcError } = await supabase.rpc('get_lister_analytics', {
       p_user_id: user.id,
     });
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (rpcError) {
+      return NextResponse.json({ error: rpcError.message }, { status: 500 });
     }
 
     return NextResponse.json(data, { status: 200 });

@@ -2,24 +2,25 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { deleteFromCloudinary } from '@/lib/cloudinary';
+import { requireAuth } from '@/lib/auth/session';
 
 const PAGE_SIZE = 20;
 
 /* ── GET /api/Listing?page=1 ── */
 export async function GET(request) {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, error, status } = await requireAuth();
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
+
+    const supabase = await createServerSupabaseClient();
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10));
     const offset = (page - 1) * PAGE_SIZE;
 
-    const { data, error, count } = await supabase
+    const { data, error: dbError, count } = await supabase
       .from('Property_Listing')
       .select(`
     listing_id,
@@ -44,8 +45,8 @@ export async function GET(request) {
       .order('listing_id', { ascending: false })
       .range(offset, offset + PAGE_SIZE - 1);
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
     const shaped = (data ?? []).map(row => ({
@@ -79,12 +80,12 @@ export async function GET(request) {
 
 export async function DELETE(request) {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, error, status } = await requireAuth();
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
+
+    const supabase = await createServerSupabaseClient();
 
     const { searchParams } = new URL(request.url);
     const listing_id = searchParams.get('listing_id');

@@ -7,6 +7,10 @@ const nextConfig = {
         hostname: "plus.unsplash.com",
       },
       {
+        protocol: "https",
+        hostname: "cdn.stravontechlabs.com",
+      },
+      {
         protocol: 'https',
         hostname: '**.supabase.co',
       },

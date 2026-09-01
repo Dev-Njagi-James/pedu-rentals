@@ -1,60 +1,92 @@
-'use client'
+"use client";
+
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useSignUp, useSignIn } from "@clerk/nextjs/legacy";
+import { useUser } from "@clerk/nextjs";
 import "./css/AuthForm.css";
-import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import "./css/AuthForm.v2.css";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 
 const supabase = createBrowserSupabaseClient();
 
-const VALIDATORS = {
-  username: v =>
-    v.trim().length < 3 ? "Username must be at least 3 characters." : null,
+// ─────────────────────────────────────────────────────────
+// PARKED — legacy username/password validation.
+// Not deleted. Reference for future Clerk wiring.
+// ─────────────────────────────────────────────────────────
+// function validateLegacyLogin(fields) {
+//   const errors = {};
+//
+//   if (!fields.username.trim()) {
+//     errors.username = 'Username is required.';
+//   }
+//
+//   if (!fields.password) {
+//     errors.password = 'Password is required.';
+//   }
+//
+//   return errors;
+// }
 
-  email: v =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim())
-      ? null
-      : "Enter a valid email address.",
+function validateEmail(email) {
+  const trimmed = email.trim();
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  password: v => {
-    if (v.length < 8) return "Password must be at least 8 characters.";
-    if (!/[A-Z]/.test(v)) return "Password must contain an uppercase letter.";
-    if (!/[a-z]/.test(v)) return "Password must contain a lowercase letter.";
-    if (!/[0-9]/.test(v)) return "Password must contain a number.";
-    if (!/[^A-Za-z0-9]/.test(v)) return "Password must contain a special character.";
-    return null;
-  },
-
-  organisationName: v =>
-    v.trim().length === 0 ? "Organisation name is required." : null,
-
-  contact: v => {
-    const stripped = v.replace(/[\s\-]/g, "");
-    return /^\+?[0-9]{7,15}$/.test(stripped)
-      ? null
-      : "Enter a valid phone number (7–15 digits).";
-  },
-
-  ward: () => null, // optional — always passes
-};
-
-function validateSignup(fields) {
-  const errors = {};
-  for (const key of [ "username", "email", "password", "organisationName", "contact", "ward" ]) {
-    const err = VALIDATORS[ key ]?.(fields[ key ] ?? "");
-    if (err) errors[ key ] = err;
+  if (!trimmed) {
+    return "Email is required.";
   }
-  return errors;
+
+  if (!EMAIL_RE.test(trimmed)) {
+    return "Enter a valid email address.";
+  }
+
+  return null;
 }
 
-function validateLogin(fields) {
-  const errors = {};
-  if (!fields.username.trim()) errors.username = "Username is required.";
-  if (!fields.password) errors.password = "Password is required.";
-  return errors;
+function validateCode(code) {
+  const trimmed = code.trim();
+
+  if (!trimmed) {
+    return "Verification code is required.";
+  }
+
+  return null;
 }
 
-/* ── SVG icon helper ── */
-const Icon = ({ d }) => (
+// ─────────────────────────────────────────────────────────
+// PARKED — legacy icon components (username/password panel UI).
+// Not deleted. Reference for future Clerk wiring.
+// ─────────────────────────────────────────────────────────
+// const LockIcon = () => (
+//   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="input-icon" aria-hidden="true">
+//     <path d="M17 11V7a5 5 0 0 0-10 0v4M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z" />
+//   </svg>
+// );
+//
+// const UserIcon = () => (
+//   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="input-icon" aria-hidden="true">
+//     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
+//   </svg>
+// );
+//
+// const EyeIcon = ({ open }) => (
+//   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
+//     {open ? (
+//       <>
+//         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+//         <circle cx="12" cy="12" r="3" />
+//       </>
+//     ) : (
+//       <>
+//         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+//         <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+//         <line x1="1" y1="1" x2="23" y2="23" />
+//       </>
+//     )}
+//   </svg>
+// );
+
+const MailIcon = () => (
   <svg
     viewBox="0 0 24 24"
     fill="none"
@@ -63,255 +95,474 @@ const Icon = ({ d }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
     className="input-icon"
-    aria-hidden="true"
-  >
-    <path d={d} />
+    aria-hidden="true">
+    <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 0l8 8 8-8" />
   </svg>
 );
 
-const icons = {
-  user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
-  lock: "M17 11V7a5 5 0 0 0-10 0v4M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z",
-  mail: "M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 0l8 8 8-8",
-  building: "M3 21h18M3 7l9-4 9 4M4 7v14M20 7v14M9 21v-4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v4",
-  phone: "M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z",
-  map: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z",
-};
+const GoogleIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <path
+      fill="#EA4335"
+      d="M12 5.04c1.62 0 3.06.56 4.2 1.66l3.12-3.12C17.46 1.8 14.96.75 12 .75 7.7.75 3.99 3.22 2.18 6.81l3.64 2.83C6.71 7.03 9.14 5.04 12 5.04z"
+    />
+    <path
+      fill="#4285F4"
+      d="M23.25 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58l3.68 2.86c2.15-1.99 3.5-4.92 3.5-8.68z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.82 14.36c-.25-.74-.39-1.53-.39-2.36s.14-1.62.39-2.36L2.18 6.81C1.43 8.33 1 10.04 1 11.88s.43 3.55 1.18 5.07l3.64-2.59z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.68-2.86c-1.02.69-2.36 1.09-3.6 1.09-2.86 0-5.29-1.93-6.18-4.55l-3.64 2.83C3.99 20.55 7.7 23 12 23z"
+    />
+  </svg>
+);
 
-/* ── Single field — controlled ── */
-const Field = ({ icon, placeholder, type = "text", hint, fullWidth = false, value, onChange, name, error }) => {
-  const [ showPassword, setShowPassword ] = useState(false);
-  const isPassword = type === "password";
-  const inputType = isPassword ? (showPassword ? "text" : "password") : type;
-
+function Field({
+  icon: IconComp,
+  name,
+  placeholder,
+  type = "text",
+  value,
+  onChange,
+  error,
+}) {
   return (
-    <div className={`field-wrap${fullWidth ? " field-full" : ""}${error ? " field-error" : ""}`}>
+    <div className={`field-wrap${error ? " field-error" : ""}`}>
       <div className="input-row">
-        <Icon d={icons[ icon ]} />
+        <IconComp />
         <input
-          type={inputType}
+          type={type}
           placeholder={placeholder}
-          autoComplete="off"
+          autoComplete={name === "code" ? "one-time-code" : "email"}
           name={name}
           value={value}
           onChange={onChange}
-          aria-invalid={!!error}
+          aria-invalid={Boolean(error)}
           aria-describedby={error ? `${name}-error` : undefined}
         />
-        {isPassword && (
-          <button
-            type="button"
-            onClick={() => setShowPassword(v => !v)}
-            className="eye-btn"
-            aria-label={showPassword ? "Hide password" : "Show password"}
-          >
-            <EyeIcon open={showPassword} />
-          </button>
-        )}
       </div>
-      {error && <span className="field-hint error-msg" id={`${name}-error`} role="alert">{error}</span>}
-      {!error && hint && <span className="field-hint">{hint}</span>}
+      {error && (
+        <span
+          className="field-hint error-msg"
+          id={`${name}-error`}
+          role="alert">
+          {error}
+        </span>
+      )}
     </div>
   );
+}
+
+const COPY = {
+  login: {
+    title: "Welcome back. Your listings are waiting.",
+    subtitle:
+      "Log in to manage your properties, track inquiries, and keep your listings active.",
+    submitLabel: "Log In",
+    toggleQuestion: "Don't have an account?",
+    toggleAction: "Create Account",
+  },
+  signup: {
+    title: "Post your property. Start receiving inquiries.",
+    subtitle:
+      "You're steps away from meeting your first tenant. Let's get your property listed.",
+    submitLabel: "Sign Up",
+    toggleQuestion: "Already have an account?",
+    toggleAction: "Log In",
+  },
 };
-/* ── Sign Up: 2-column grid ── */
-const SignUpFields = ({ values, onChange, errors }) => (
-  <div className="fields-grid">
-    <Field icon="user" name="username" placeholder="Username" value={values.username} onChange={onChange} error={errors.username} />
-    <Field icon="lock" name="password" placeholder="Password" value={values.password} onChange={onChange} type="password" error={errors.password} />
-    <Field icon="mail" name="email" placeholder="Email" value={values.email} onChange={onChange} error={errors.email} />
-    <Field icon="building" name="organisationName" placeholder="Organisation Name" value={values.organisationName} onChange={onChange} error={errors.organisationName} />
-    <Field icon="phone" name="contact" placeholder="Contact" value={values.contact} onChange={onChange} error={errors.contact} />
-    <Field
-      icon="map"
-      name="ward"
-      placeholder="Ward (optional)"
-      value={values.ward}
-      onChange={onChange}
-      hint="Providing your ward helps our algorithms match you faster to relevant search results."
-      fullWidth
-      error={errors.ward}
-    />
-  </div>
-);
 
-/* ── Log In: single column ── */
-const LogInFields = ({ values, onChange, errors }) => (
-  <div className="fields-single">
-    <Field icon="user" name="username" placeholder="Username" value={values.username} onChange={onChange} error={errors.username} />
-    <Field icon="lock" name="password" placeholder="Password" value={values.password} onChange={onChange} type="password" error={errors.password} />
-  </div>
-);
-const EyeIcon = ({ open }) => (
-  <svg
-    viewBox="0 0 24 24" fill="none" stroke="currentColor"
-    strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
-    width="18" height="18" aria-hidden="true"
-  >
-    {open ? (
-      <>
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
-      </>
-    ) : (
-      <>
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-        <line x1="1" y1="1" x2="23" y2="23" />
-      </>
-    )}
-  </svg>
-);
-
-/* ── Field state shapes ── */
-const SIGNUP_INIT = { username: "", password: "", email: "", organisationName: "", contact: "", ward: "" };
-const LOGIN_INIT = { username: "", password: "" };
-
-/* ── Root component ── */
 export default function AuthForm() {
-  const [ mode, setMode ] = useState("signup"); // "signup" | "login"
   const router = useRouter();
-  const isSignup = mode === "signup";
 
-  const [ signupFields, setSignupFields ] = useState(SIGNUP_INIT);
-  const [ loginFields, setLoginFields ] = useState(LOGIN_INIT);
+  const {
+    isLoaded: signUpLoaded,
+    signUp,
+    setActive: setActiveFromSignUp,
+  } = useSignUp();
+  const {
+    isLoaded: signInLoaded,
+    signIn,
+    setActive: setActiveFromSignIn,
+  } = useSignIn();
+  const { user } = useUser();
 
-  const [ fieldErrors, setFieldErrors ] = useState({});
-  const [ error, setError ] = useState(null);
-  const [ loading, setLoading ] = useState(false);
+  const [topTab, setTopTab] = useState("login");
 
-  const toggleMode = useCallback(() => {
-    setMode(m => m === "signup" ? "login" : "signup");
+  // ───────────────────────────────────────────────────────
+  // PARKED — legacy sub-mode / fields state. Not deleted.
+  // ───────────────────────────────────────────────────────
+  // const [loginSubMode, setLoginSubMode] = useState('legacy');
+  // const [loginFields, setLoginFields] = useState({ username: '', password: '' });
+
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(null);
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState(null);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  const toggleTopTab = useCallback(() => {
+    setTopTab((value) => (value === "login" ? "signup" : "login"));
     setError(null);
-    setFieldErrors({});
+    setEmailError(null);
+    setCodeError(null);
+    setPendingVerification(false);
+    setCode("");
   }, []);
 
-  const handleSignupChange = useCallback(e => {
-    const { name, value } = e.target;
-    setSignupFields(prev => ({ ...prev, [ name ]: value }));
-    // Clear the per-field error as soon as user edits it
-    setFieldErrors(prev => ({ ...prev, [ name ]: null }));
+  const handleEmailChange = useCallback((event) => {
+    setEmail(event.target.value);
+    setEmailError(null);
   }, []);
 
-  const handleLoginChange = useCallback(e => {
-    const { name, value } = e.target;
-    setLoginFields(prev => ({ ...prev, [ name ]: value }));
-    setFieldErrors(prev => ({ ...prev, [ name ]: null }));
+  const handleCodeChange = useCallback((event) => {
+    setCode(event.target.value);
+    setCodeError(null);
   }, []);
 
-  const handleSubmit = async () => {
+  // ───────────────────────────────────────────────────────
+  // PARKED — legacy handleSubmit (username/password → /api/auth
+  // → supabase.auth.signInWithPassword → role-based route).
+  // Not deleted. Reference for future Clerk wiring.
+  // ───────────────────────────────────────────────────────
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
+  //
+  //   if (!(topTab === 'login' && loginSubMode === 'legacy')) return;
+  //
+  //   setError(null);
+  //   const errors = validateLegacyLogin(loginFields);
+  //
+  //   if (Object.keys(errors).length > 0) {
+  //     setFieldErrors(errors);
+  //     return;
+  //   }
+  //
+  //   setFieldErrors({});
+  //   setLoading(true);
+  //
+  //   try {
+  //     const response = await fetch('/api/auth', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({ mode: 'login', ...loginFields }),
+  //     });
+  //     const data = await response.json();
+  //
+  //     if (!response.ok) {
+  //       setError(data.error ?? 'Something went wrong.');
+  //       return;
+  //     }
+  //
+  //     const { error: signInError } = await supabase.auth.signInWithPassword({
+  //       email: data.email,
+  //       password: loginFields.password,
+  //     });
+  //
+  //     if (signInError) {
+  //       setError('Invalid username or password.');
+  //       return;
+  //     }
+  //
+  //     router.push(data.role === 'admin' ? '/Admin' : '/Lister');
+  //   } catch {
+  //     setError('Network error. Please try again.');
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    console.log("SUBMIT FIRED");
+    console.log("topTab:", topTab);
+    console.log("email:", email);
+    console.log("signUpLoaded:", signUpLoaded);
+    console.log("signInLoaded:", signInLoaded);
+
     setError(null);
 
-    // Run validation
-    const errors = isSignup
-      ? validateSignup(signupFields)
-      : validateLogin(loginFields);
+    const validationError = validateEmail(email);
 
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors);
-      return; // Block submission
+    if (validationError) {
+      console.log("VALIDATION ERROR:", validationError);
+      setEmailError(validationError);
+      return;
     }
 
-    setFieldErrors({});
+    setEmailError(null);
     setLoading(true);
 
-    const endpoint = "/api/auth";
-    const body = isSignup
-      ? { mode: "signup", ...signupFields }
-      : { mode: "login", ...loginFields };
-
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
+      if (topTab === "signup") {
+        console.log("STARTING CLERK SIGNUP");
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error ?? "Something went wrong.");
-        return;
-      }
-
-      if (isSignup) {
-        setSignupFields(SIGNUP_INIT);
-        setMode("login");
-        setError(null);
-        setFieldErrors({});
-      } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: loginFields.password,
-        });
-
-        if (signInError) {
-          setError("Invalid username or password.");
-          return;
+        if (!signUpLoaded) {
+          throw new Error("Clerk SignUp is not loaded yet.");
         }
 
-        router.push(data.role === "admin" ? "/Admin" : "/Lister");
-      }
+        const result = await signUp.create({
+          emailAddress: email.trim(),
+        });
 
+        console.log("SIGNUP CREATED:", result);
+
+        await signUp.prepareEmailAddressVerification({
+          strategy: "email_code",
+        });
+
+        console.log("VERIFICATION EMAIL PREPARED");
+
+        setPendingVerification(true);
+      } else {
+        console.log("STARTING CLERK SIGNIN");
+
+        if (!signInLoaded) {
+          throw new Error("Clerk SignIn is not loaded yet.");
+        }
+
+        const attempt = await signIn.create({
+          identifier: email.trim(),
+        });
+
+        console.log("SIGNIN CREATED:", attempt);
+
+        const emailFactor = attempt.supportedFirstFactors?.find(
+          (factor) => factor.strategy === "email_code",
+        );
+
+        if (!emailFactor) {
+          throw new Error(
+            "Email code sign-in is not available for this account.",
+          );
+        }
+
+        await signIn.prepareFirstFactor({
+          strategy: "email_code",
+          emailAddressId: emailFactor.emailAddressId,
+        });
+
+        console.log("SIGNIN VERIFICATION PREPARED");
+
+        setPendingVerification(true);
+      }
     } catch (err) {
-      setError("Network error. Please try again.");
+      console.error("CLERK AUTH ERROR:", err);
+
+      setError(
+        err?.errors?.[0]?.longMessage ??
+          err?.errors?.[0]?.message ??
+          err?.message ??
+          "Something went wrong.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const handleVerifyCode = async (event) => {
+    event.preventDefault();
+    setError(null);
+
+    const validationError = validateCode(code);
+    if (validationError) {
+      setCodeError(validationError);
+      return;
+    }
+
+    setCodeError(null);
+    setLoading(true);
+
+    try {
+      if (topTab === "signup") {
+        if (!signUpLoaded) return;
+
+        const result = await signUp.attemptEmailAddressVerification({
+          code: code.trim(),
+        });
+
+        if (result.status !== "complete") {
+          setError("Verification incomplete. Please try again.");
+          return;
+        }
+
+        await setActiveFromSignUp({ session: result.createdSessionId });
+
+        const syncResponse = await fetch("/api/v1/auth/sync", {
+          method: "POST",
+        });
+
+        if (!syncResponse.ok) {
+          setError("Account sync failed. Contact support.");
+          return;
+        }
+
+        await user?.reload();
+        router.push("/Lister");
+      } else {
+        if (!signInLoaded) return;
+
+        const result = await signIn.attemptFirstFactor({
+          strategy: "email_code",
+          code: code.trim(),
+        });
+
+        if (result.status !== "complete") {
+          setError("Verification incomplete. Please try again.");
+          return;
+        }
+
+        await setActiveFromSignIn({ session: result.createdSessionId });
+
+        const syncResponse = await fetch("/api/v1/auth/sync", {
+          method: "POST",
+        });
+
+        if (!syncResponse.ok) {
+          setError("Account sync failed. Contact support.");
+          return;
+        }
+
+        await user?.reload();
+        router.push("/Lister");
+      }
+    } catch (err) {
+      setError(err?.errors?.[0]?.message ?? "Invalid or expired code.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const copy = COPY[topTab];
+
   return (
-    <div className="auth-scene">
-      <div className="auth-card">
-
-        {/* LEFT BRAND PANEL */}
-        <div className="panel-brand">
-          <span className="pdiamond pd1" />
-          <span className="pdiamond pd2" />
-          <span className="pdiamond pd3" />
-
-          <div className="panel-content">
-            <h2 className="panel-title">
-              {isSignup ? "Welcome Back!" : "New Here?"}
-            </h2>
-            <p className="panel-sub">
-              {isSignup
-                ? "Already have an account? Sign in with your credentials."
-                : "Create an account to get started and access all features."}
-            </p>
-            <button className="panel-btn" onClick={toggleMode}>
-              {isSignup ? "Log In" : "Sign Up"}
-            </button>
-          </div>
+    <main className="auth-scene-v2">
+      <div className="auth-card-v2">
+        <div className="photo-panel">
+          <img
+            src="/auth/login-building.png"
+            alt=""
+            className="photo-panel-img"
+          />
         </div>
 
-        {/* RIGHT FORM PANEL — key forces remount → replays CSS animation */}
-        <div className="panel-form" key={mode}>
-          <h1 className="form-title">
-            {isSignup ? "Create Account" : "Log In"}
-          </h1>
-
-          {isSignup
-            ? <SignUpFields values={signupFields} onChange={handleSignupChange} errors={fieldErrors} />
-            : <LogInFields values={loginFields} onChange={handleLoginChange} errors={fieldErrors} />
-          }
-
-          {!isSignup && (
-            <div className="forgot-wrap">
-              <a href="/forgot-password" className="forgot-link">Forgot password?</a>
+        <section className="form-panel-v2">
+          <div className="form-content-v2">
+            <div className="form-header-v2">
+              <img
+                src="/logo2.png"
+                alt="Pedu Rentals"
+                className="form-logo-v2"
+              />
+              <a href="/" className="back-link-v2">
+                Back →
+              </a>
             </div>
-          )}
+            <div className="auth-login-panel">
+              {pendingVerification ? (
+                <>
+                  <h1 className="form-title-v2">Check your email</h1>
+                  <p className="form-sub-v2">
+                    We sent a verification code to {email.trim()}. Enter it
+                    below to continue.
+                  </p>
 
-          {error && <p className="form-error">{error}</p>}
+                  <form
+                    className="login-form-v2"
+                    onSubmit={handleVerifyCode}
+                    noValidate>
+                    <Field
+                      icon={MailIcon}
+                      name="code"
+                      placeholder="Verification code"
+                      type="text"
+                      value={code}
+                      onChange={handleCodeChange}
+                      error={codeError}
+                    />
 
-          <div className="submit-wrap">
-            <button className="submit-btn" onClick={handleSubmit} disabled={loading}>
-              {loading ? "Please wait…" : isSignup ? "Sign Up" : "Log In"}
-            </button>
+                    {error && (
+                      <p className="form-error-v2" role="alert">
+                        {error}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="submit-btn-v2"
+                      disabled={loading}>
+                      {loading ? "Please wait…" : "Verify"}
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <h1 className="form-title-v2">{copy.title}</h1>
+                  <p className="form-sub-v2">{copy.subtitle}</p>
+
+                  <form
+                    className="login-form-v2"
+                    onSubmit={handleSubmit}
+                    noValidate>
+                    <button
+                      type="button"
+                      className="google-btn-v2"
+                      onClick={() => {}}>
+                      <GoogleIcon /> Continue with Google
+                    </button>
+                    <div className="or-divider-v2">Or</div>
+                    <Field
+                      icon={MailIcon}
+                      name="email"
+                      placeholder="Email"
+                      type="email"
+                      value={email}
+                      onChange={handleEmailChange}
+                      error={emailError}
+                    />
+
+                    {error && (
+                      <p className="form-error-v2" role="alert">
+                        {error}
+                      </p>
+                    )}
+
+                    <div id="clerk-captcha" />
+
+                    <button
+                      type="submit"
+                      className="submit-btn-v2"
+                      disabled={loading}>
+                      {loading ? "Please wait…" : copy.submitLabel}
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+
+            {!pendingVerification && (
+              <p className="toggle-line">
+                {copy.toggleQuestion}{" "}
+                <button
+                  type="button"
+                  className="toggle-link"
+                  onClick={toggleTopTab}>
+                  {copy.toggleAction}
+                </button>
+              </p>
+            )}
           </div>
-        </div>
-
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

@@ -4,6 +4,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { resolveWardName } from '@/lib/resolveWardName';
 import { NextResponse } from 'next/server';
 import { EDIT_WINDOW_DAYS } from '@/lib/constants';
+import { requireAuth } from '@/lib/auth/session';
 
 export const revalidate = 0;
 
@@ -50,13 +51,12 @@ export async function PATCH(request, { params }) {
     return NextResponse.json({ error: 'Invalid listing ID' }, { status: 400 });
   }
 
-  const supabase = await createServerSupabaseClient();
-
-  // Auth
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { user, error, status } = await requireAuth();
+  if (error) {
+    return NextResponse.json({ error }, { status });
   }
+
+  const supabase = await createServerSupabaseClient();
 
   // Ownership + 2-day window
   const { data: existing, error: fetchError } = await supabase

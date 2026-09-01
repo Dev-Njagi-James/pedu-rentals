@@ -1,3 +1,5 @@
+/* ── Shared tokens (breakpoint must match NAV_BREAKPOINT in AppNav.jsx) ── */
+
 .navbar {
   position: fixed;
   top: 0;
@@ -5,14 +7,12 @@
   right: 0;
   z-index: 1000;
   display: flex;
-  flex-wrap: wrap;
-  overflow: visible;
   align-items: center;
-  justify-content: space-evenly;
-  gap: 12px;
+  min-width: 0;
+  gap: 16px;
   padding: 4px clamp(12px, 3vw, 24px);
   min-height: 60px;
-  background: rgb(33, 32, 32);
+  background: var(--sidebar);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
@@ -46,19 +46,25 @@
   font-family: var(--font-geist-sans);
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--background);
+  color: black;
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
 
+/* ── Desktop primary nav — centered on the bar. .navbar is the fixed  */
+/* positioning context, so this centers regardless of brand/actions  ── */
+/* width; it just sits visually on top, not participating in the     ── */
+/* flex flow between brand and actions.                              ── */
+
 .navLinks {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
-  justify-content: center;
   list-style: none;
-  width: fit-content;
-  margin: 0 auto;
   flex-shrink: 1;
   min-width: 0;
+  margin: 0;
   padding: clamp(4px, 1vw, 6px) clamp(4px, 1vw, 8px);
   gap: 2px;
   background: #f5f5f7;
@@ -101,21 +107,24 @@
   box-shadow: none;
 }
 
+/* ── Right-hand actions ── */
+
 .actions {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
+  margin-left: auto;
 }
 
-.ctaButton {
+.ctaButtonSecondary,
+.ctaButtonOutline,
+.signOutButton {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
   padding: clamp(6px, 1vw, 10px) clamp(10px, 1.5vw, 20px);
-  background: var(--primary);
-  color: #ffffff;
   font-family: var(--font-geist-mono);
   font-size: clamp(0.7rem, 1vw, 0.8rem);
   font-weight: 700;
@@ -123,79 +132,237 @@
   text-decoration: none;
   border-radius: 2px;
   white-space: nowrap;
-  position: relative;
-  overflow: hidden;
-  z-index: 1;
+  cursor: pointer;
+  transition: 0.2s ease all;
+}
+
+.ctaButtonSecondary {
+  background: var(--primary);
+  color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.15) inset,
     0 4px 10px rgba(0, 0, 0, 0.25),
     0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: 0.3s ease all;
 }
 
-.ctaButton::before {
-  content: '';
+.ctaButtonSecondary:hover {
+  background: var(--secondary);
+}
+
+.ctaButtonOutline {
+  background: transparent;
+  color: #1a1a2e;
+  border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.ctaButtonOutline:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* ── Avatar + red dot (replaces the numbered top-bar badge) ── */
+
+.avatarWrap {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1a1a2e;
+  color: #ffffff;
+  font-family: var(--font-inter);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.avatarDot {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 50%;
-  right: 50%;
-  background-color: var(--secondary);
-  opacity: 0;
-  z-index: -1;
-  transition: 0.5s all ease;
+  top: -1px;
+  right: -1px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #e0353c;
+  border: 2px solid var(--sidebar);
 }
 
-.ctaButton:hover,
-.ctaButton:focus {
-  color: black;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.15) inset,
-    0 6px 16px rgba(37, 99, 235, 0.45),
-    0 2px 4px rgba(0, 0, 0, 0.2);
+/* ── Account menu (desktop) — no text label, avatar + chevron only ── */
+
+.accountMenuWrap {
+  position: relative;
+  flex-shrink: 0;
 }
 
-.ctaButton:hover::before,
-.ctaButton:focus::before {
-  left: 0;
+.accountTrigger {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+  color: #1a1a2e;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.accountTrigger:hover {
+  background: #f0f0f4;
+  border-color: #e8e8ed;
+}
+
+.accountMenu {
+  position: absolute;
+  top: calc(100% + 8px);
   right: 0;
-  opacity: 1;
+  width: 280px;
+  background: #ffffff;
+  border: 1px solid #e8e8ed;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+  padding: 8px;
+  z-index: 1050;
 }
 
-.ctaButton:active {
-  transform: scale(0.95);
+.accountMenuHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px 12px;
 }
 
-.arrow {
-  display: inline-block;
-  transition: transform 0.2s ease;
+.accountMenuName {
+  font-family: var(--font-inter);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a1a2e;
 }
 
-.ctaButton:hover .arrow {
-  transform: translateX(3px);
+.accountMenuEmail {
+  font-family: var(--font-inter);
+  font-size: 0.78rem;
+  color: #6b6b7a;
 }
 
-.arrow {
-  display: inline-block;
-  transition: transform 0.2s ease;
+.accountSwitcherRow,
+.drawerAccountSwitcher {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #1a1a2e;
+  transition: background 0.15s ease;
 }
 
-.ctaButton:hover .arrow {
-  transform: translateX(3px);
+.accountSwitcherRow:hover {
+  background: #f5f5f7;
+}
+
+.accountSwitcherText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.accountSwitcherOrg {
+  font-family: var(--font-inter);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.accountSwitcherSub {
+  font-family: var(--font-inter);
+  font-size: 0.75rem;
+  color: #6b6b7a;
+}
+
+.accountMenuItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 8px;
+  border-radius: 8px;
+  font-family: var(--font-inter);
+  font-size: 0.85rem;
+  color: #3a3a4a;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.accountMenuItem:hover {
+  background: #f5f5f7;
+}
+
+.accountMenuBadge {
+  margin-left: auto;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0353c;
+  color: #ffffff;
+  font-family: var(--font-inter);
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 999px;
+}
+
+.accountMenuDivider {
+  height: 1px;
+  margin: 6px 4px;
+  background: #eee;
+}
+
+.signOutRow {
+  width: 100%;
+  padding: 9px 8px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  text-align: left;
+  font-family: var(--font-geist-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #c0272d;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.signOutRow:hover {
+  background: #fdf0f0;
+}
+
+/* ── Mobile-only icon row (hamburger) ── */
+
+.mobileHeaderRight {
+  display: none;
 }
 
 .hamburger {
   display: none;
-  flex-direction: column;
-  justify-content: center;
   align-items: center;
-  gap: 5px;
+  justify-content: center;
   width: 36px;
   height: 36px;
   padding: 0;
   background: transparent;
-  border: 1.5px solid #e0e0e8;
+  border: 1.5px solid #050505;
   border-radius: 6px;
+  color: #050505;
   cursor: pointer;
   flex-shrink: 0;
   transition: border-color 0.2s ease, background 0.2s ease;
@@ -206,77 +373,217 @@
   background: var(--darkSecondary);
 }
 
-.hamburger span {
-  display: block;
-  width: 18px;
-  height: 2px;
-  background: var(--background);
-  border-radius: 2px;
-  transform-origin: center;
-  transition: transform 0.3s ease, opacity 0.3s ease, width 0.2s ease;
+/* ── Backdrop + drawer — hidden by default (desktop) ── */
+
+.backdrop {
+  display: none;
 }
 
-.hamburgerOpen span:nth-child(1) {
-  transform: translateY(7px) rotate(45deg);
+.drawer {
+  display: none;
 }
 
-.hamburgerOpen span:nth-child(2) {
-  opacity: 0;
-  width: 0;
-}
-
-.hamburgerOpen span:nth-child(3) {
-  transform: translateY(-7px) rotate(-45deg);
-}
-
-@media (max-width: 680px) {
+@media (max-width: 1023px) {
   .navbar {
     padding: 8px 16px;
     gap: 8px;
+    justify-content: space-between;
   }
 
-  .navLinks {
+  .navLinks,
+  .actions {
     display: none;
-    order: 10;
-    /* always last in flow */
-    width: 100%;
-    /* full width when open */
-    flex-direction: column;
-    align-items: stretch;
-    margin: 0;
-    border-radius: 12px;
-    padding: 10px 12px;
-    gap: 4px;
-    animation: slideDown 0.25s ease forwards;
   }
 
-  .navLinks.navOpen {
+  .mobileHeaderRight {
     display: flex;
-  }
-
-  .navLink {
-    text-align: center;
-    padding: 10px 16px;
-    border-radius: 8px;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
   }
 
   .hamburger {
-    display: flex;
+    display: inline-flex;
   }
 
-  .actions {
-    gap: 6px;
-  }
-}
-
-@keyframes slideDown {
-  from {
+  /* ── backdrop ── */
+  .backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1090;
     opacity: 0;
-    transform: translateY(-10px);
+    pointer-events: none;
+    transition: opacity 0.28s ease;
   }
 
-  to {
+  .backdropVisible {
     opacity: 1;
-    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  /* ── drawer panel — one drawer for both auth states ── */
+  .drawer {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(85vw, 340px);
+    max-width: 100vw;
+    background: #ffffff;
+    z-index: 1100;
+    transform: translateX(100%);
+    transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: -4px 0 40px rgba(0, 0, 0, 0.15);
+    pointer-events: none;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .drawerOpen {
+    transform: translateX(0);
+    pointer-events: auto;
+  }
+
+  .drawerHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid #eee;
+    box-sizing: border-box;
+    flex-shrink: 0;
+  }
+
+  .drawerClose {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: none;
+    border: none;
+    color: #333;
+    cursor: pointer;
+    padding: 4px;
+    flex-shrink: 0;
+  }
+
+  .drawerBody {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 8px;
+    box-sizing: border-box;
+  }
+
+  .drawerAccountSwitcher {
+    margin: 0 4px 12px;
+    background: #f5f5f7;
+    border-radius: 10px;
+  }
+
+  .drawerLinks {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .drawerLink {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    font-family: var(--font-inter);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #3a3a4a;
+    text-decoration: none;
+    border-radius: 10px;
+    transition: background 0.15s ease, color 0.15s ease;
+    box-sizing: border-box;
+  }
+
+  .drawerLink:hover {
+    background: #f5f5f7;
+  }
+
+  .drawerLinkActive {
+    background: rgba(0, 46, 255, 0.08);
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .drawerLinkIcon {
+    display: inline-flex;
+    color: #6b6b7a;
+  }
+
+  .drawerBadge {
+    margin-left: auto;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e0353c;
+    color: #ffffff;
+    font-family: var(--font-inter);
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 999px;
+  }
+
+  .drawerDivider {
+    height: 1px;
+    margin: 10px 8px;
+    background: #eee;
+    flex-shrink: 0;
+  }
+
+  .drawerAccountHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px 6px;
+    font-family: var(--font-inter);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+
+  .drawerFooter {
+    flex-shrink: 0;
+    padding: 16px 20px calc(16px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .drawerFooter .ctaButtonSecondary,
+  .drawerFooter .ctaButtonOutline,
+  .signOutButton {
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: center;
+  }
+
+  .signOutButton {
+    background: transparent;
+    color: #c0272d;
+    border: 1px solid rgba(192, 39, 45, 0.3);
+  }
+
+  .signOutButton:hover {
+    background: #fdf0f0;
   }
 }

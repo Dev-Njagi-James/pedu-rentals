@@ -1,47 +1,23 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
-import { createBrowserSupabaseClient } from '@/lib/supabase/client';
+import { useState, useEffect } from 'react';
 import ListerNav from "./ListerNav";
 import AccountSettings from "./components/Accountsetting";
 import AddListing from "./components/AddListing";
-import MyListings from "./components/listings";
+import DashboardPanel from './components/DashboardPanel';
+import ListingsPanel from './components/ListingsPanel';
 import Analytics from "./components/Analytics";
-import ListerTopBar from "./components/ListerTopBar";
-
-
-const supabase = createBrowserSupabaseClient();
+import PricingTable from "./components/PricingTable";
+import HelpCenter from "./components/HelpCenter";
 
 export default function ListerLand() {
-  const [ slotData, setSlotData ] = useState(null);
   const [ editingListing, setEditingListing ] = useState(null);
   const [ activeTab, setActiveTab ] = useState('listings');
-  const [ listerInfo, setListerInfo ] = useState({ username: '', isNew: false });
-  const [ listerProfile, setListerProfile ] = useState(null);
+  const [ isUploading, setIsUploading ] = useState(false);
+  const [ v1Profile, setV1Profile ] = useState(null);
 
-
-  const fetchSlots = useCallback(async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const [ { data: lister }, { count: listingCount } ] = await Promise.all([
-        supabase.from('Listers_Info').select('Slots').eq('lister_UUID', user.id).single(),
-        supabase.from('Property_Listing').select('listing_id', { count: 'exact', head: true }).eq('user_id', user.id),
-      ]);
-
-      const slots = lister?.Slots ?? 0;
-      const listings = listingCount ?? 0;
-      setSlotData({ slots, listings, can_add: slots > listings });
-    } catch {
-      // non-blocking
-    }
-  }, []);
-
-  useEffect(() => { fetchSlots(); }, [ fetchSlots ]);
 
   const handleTabChange = (id) => {
-    if (id === 'add') fetchSlots(); // re-check every time they open the tab
     setActiveTab(id);
     if (id !== 'add') setEditingListing(null);
   };
@@ -52,47 +28,54 @@ export default function ListerLand() {
   useEffect(() => {
     const init = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        const res = await fetch('/api/v1/users/me');
 
-        const res = await fetch('/api/account');
-        const json = await res.json();
-
-        const isNew = user?.created_at
-          ? (Date.now() - new Date(user.created_at).getTime()) < 60 * 1000
-          : false;
-
-        setListerInfo({ username: json.username ?? '', isNew });
-
-        // AFTER
-        const { data: profile } = await supabase
-          .from('Listers_Info')
-          .select('lister_org, profile_image_url')                 // ← correct column
-          .eq('lister_UUID', user.id)
-          .single();
-
-        setListerProfile(profile ?? null);
-      } catch { }
+        if (res.status === 200) {
+          const json = await res.json();
+          setV1Profile(json.data ?? null);
+        } else if (res.status === 404) {
+          setV1Profile(null);
+        } else {
+          // Non-fatal — log only, don't block rendering.
+          console.error('GET /api/v1/users/me failed:', res.status);
+        }
+      } catch (err) {
+        console.error('GET /api/v1/users/me failed:', err);
+      }
     };
     init();
   }, []);
+
+  // Fields among username / lister_organization / phone_number that are
+  // null/empty on the v1 profile. When v1Profile is null, all three are missing.
+  const v1ProfileMissing = (() => {
+    const fields = ['username', 'lister_organization', 'phone_number'];
+    if (!v1Profile) return fields;
+    return fields.filter(
+      (field) => !v1Profile[field] || String(v1Profile[field]).trim() === ''
+    );
+  })();
 
 
 
   return (
     <>
-      {/*<ListerTopBar username={listerInfo.username} isNew={listerInfo.isNew} /> */}
+      {/* GAP: users_table has no profile_image column — orgImage stays null (no fallback invented). */}
       <ListerNav
-        orgImage={listerProfile?.profile_image_url ?? null}
-        orgName={listerProfile?.lister_org ?? ''}
+        orgImage={null}
+        orgName={v1Profile?.lister_organization ?? ''}
         defaultTab="listings"
         activeTab={activeTab}
         onTabChange={handleTabChange}
+        disabled={isUploading}
         panels={{
-          account: <AccountSettings />,
-          add: <AddListing canAdd={slotData?.can_add ?? false} prefill={editingListing} />,
-          listings: <MyListings slotData={slotData} onSlotAdded={fetchSlots} onEdit={handleEdit} />,
-          analytics: <Analytics />
+          account: <AccountSettings v1AccountData={v1Profile} v1ProfileMissing={v1ProfileMissing} />,
+          add: <AddListing prefill={editingListing} onUploadStateChange={setIsUploading} />,
+          dashboard: <DashboardPanel />,
+          listings: <ListingsPanel onUploadStateChange={setIsUploading} />,
+          analytics: <Analytics />,
+          pricing: <PricingTable />,
+          help: <HelpCenter />
         }}
       />
     </>

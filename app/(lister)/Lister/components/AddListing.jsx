@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import Image from 'next/image'
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { uploadListingMedia } from '@/lib/uploadMedia';
+import CheckoutPopup from './CheckoutPopup';
+import UploadOverlay from './UploadOverlay';
+import RichTextEditor from './RichTextEditor';
 import styles from '../css/AddListing.module.css';
 
 /* ─── Icon primitive ─── */
@@ -36,7 +39,30 @@ const icons = {
 
 const DURATIONS = [ 'Short Term', 'Long Term' ];
 const FURNITURE = [ 'Furnished', 'Unfurnished' ];
-const REQUIRED = [ 'name', 'ward', 'ward_location', 'property_location', 'category', 'type', 'duration', 'furniture', 'phone', 'price', 'description' ];
+const REQUIRED = [ 'name', 'ward', 'ward_location', 'property_location', 'category', 'type', 'duration', 'furniture', 'phone', 'price' ];
+
+const EMPTY_DESCRIPTION = {
+  type: 'doc',
+  content: [{ type: 'paragraph' }],
+};
+
+const normalizeDescription = (value) => {
+  if (value && typeof value === 'object' && value.type === 'doc') {
+    return value;
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    return {
+      type: 'doc',
+      content: [{
+        type: 'paragraph',
+        content: [{ type: 'text', text: value }],
+      }],
+    };
+  }
+
+  return EMPTY_DESCRIPTION;
+};
 
 const EMPTY = {
   name: '',
@@ -49,7 +75,7 @@ const EMPTY = {
   furniture: '',
   phone: '',
   price: '',
-  description: '',
+  description: EMPTY_DESCRIPTION,
   images: [ null, null, null, null ],
   video: null,
 };
@@ -158,7 +184,7 @@ const extractGoogleMapsUrl = (input) => {
   return trimmed.replace(/^["']|["']$/g, '');
 };
 
-export default function AddListing({ canAdd = true, prefill = null, onDone = null }) {
+export default function AddListing({ prefill = null, onDone = null, onUploadStateChange = null, onFileProgress = null }) {
   const router = useRouter();
   const isEdit = !!prefill;
 
@@ -167,7 +193,7 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
   const [ filtersError, setFiltersError ] = useState(null);
 
   useEffect(() => {
-    fetch('/api/filters')
+    fetch('/api/v1/listings/filters')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load filter options.');
         return res.json();
@@ -183,7 +209,14 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
   const [ showPopup, setShowPopup ] = useState(false);
   const [ submitting, setSubmitting ] = useState(false);
   const [ serverError, setServerError ] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(null);
+  const [ uploadProgress, setUploadProgress ] = useState(null);
+  const [ checkoutData, setCheckoutData ] = useState(null);
+  const [ fileProgress, setFileProgress ] = useState({});
+  const [ uploadTotals, setUploadTotals ] = useState({ imagesTotalCount: 0, videoTotalCount: 0 });
+
+  // Last progress-event timestamp per fileId — kept in a ref (not state) so
+  // the high-frequency onprogress stream never triggers extra renders itself.
+  const lastProgressAtRef = useRef(new Map());
 
   useEffect(() => {
     if (!prefill || filtersLoading) return;
@@ -198,18 +231,18 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
       furniture: prefill.property_interior ?? '',
       phone: String(prefill.phone_number ?? ''),
       price: prefill.property_price ?? '',
-      description: prefill.description ?? '',
-      images: [ null, null, null ],
+      description: normalizeDescription(prefill.description),
+      images: [ null, null, null,null ],
       video: null,
     });
     setIsDirty(false);
   }, [ prefill, filtersLoading ]);
 
   const wardOptions = filters.wards.map(w => ({ value: w.ward_name, label: w.ward_name }));
-  const categoryOptions = filters.categories.map(c => ({ value: c.category_id, label: c.category_name }));
-  const selectedCategory = filters.categories.find(c => String(c.category_id) === String(form.category));
-  const typeOptions = (selectedCategory?.types ?? []).map(t => ({ value: t.type_id, label: t.type_name }));
-    const CIRCUMFERENCE = 2 * Math.PI * 45; // radius 45
+  const categoryOptions = filters.categories.map(c => ({ value: c.category_name, label: c.category_name }));
+  const selectedCategory = filters.categories.find(c => c.category_name === form.category);
+  const typeOptions = (selectedCategory?.types ?? []).map(t => ({ value: t.category_type_name, label: t.category_type_name }));
+  const CIRCUMFERENCE = 2 * Math.PI * 45; // radius 45
 
   const handleChange = useCallback(e => {
     const { name, value } = e.target;
@@ -289,6 +322,82 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
     }
   };
 
+  // Per-file byte-progress bookkeeping for the SCALE PUT loop. Instantaneous
+  // speed comes from the loaded-delta between consecutive events divided by
+  // elapsed seconds; smoothed as an EMA (0.7 previous / 0.3 instant).
+  const handleFileProgress = (event) => {
+    const prevEntry = fileProgress[ event.fileId ];
+    const now = Date.now();
+    const lastAt = lastProgressAtRef.current.get(event.fileId);
+    const deltaSeconds = lastAt === undefined ? 0 : (now - lastAt) / 1000;
+    lastProgressAtRef.current.set(event.fileId, now);
+
+    const instantSpeed = prevEntry && deltaSeconds > 0
+      ? Math.max(0, event.loaded - prevEntry.loaded) / deltaSeconds
+      : 0;
+    const speed = (prevEntry?.speed ?? 0) * 0.7 + instantSpeed * 0.3;
+
+    setFileProgress(prev => ({
+      ...prev,
+      [ event.fileId ]: {
+        ...prev[ event.fileId ],
+        type: event.type,
+        loaded: event.loaded,
+        total: event.total,
+        status: 'uploading',
+        speed,
+      },
+    }));
+  };
+
+  // Aggregated per-type upload stats, derived from fileProgress on every
+  // render. All zeros until progress events arrive — no guards needed to
+  // avoid throwing, the loop simply runs zero times over an empty map.
+  const uploadStats = useMemo(() => {
+    const stats = {
+      imagesLoaded: 0,
+      imagesTotal: 0,
+      imagesSpeed: 0,
+      imagesDoneCount: 0,
+      imagesTotalCount: 0,
+      videoLoaded: 0,
+      videoTotal: 0,
+      videoSpeed: 0,
+      videoDoneCount: 0,
+      videoTotalCount: 0,
+    };
+
+    for (const entry of Object.values(fileProgress)) {
+      const prefix = entry.type === 'video' ? 'video' : 'images';
+      stats[ `${prefix}Loaded` ] += entry.loaded ?? 0;
+      stats[ `${prefix}Total` ] += entry.total ?? 0;
+      if (entry.status === 'uploading') stats[ `${prefix}Speed` ] += entry.speed ?? 0;
+      if (entry.status === 'done') stats[ `${prefix}DoneCount` ] += 1;
+    }
+
+    return {
+      ...stats,
+      imagesTotalCount: uploadTotals.imagesTotalCount,
+      videoTotalCount: uploadTotals.videoTotalCount,
+    };
+  }, [ fileProgress, uploadTotals ]);
+
+  const hasSelectedImages = form.images.some(
+    file => file instanceof File && file.size > 0
+  );
+
+  const hasDescriptionContent = (document) => {
+    const getText = (node) => {
+      if (!node) return '';
+      if (node.type === 'text') return node.text ?? '';
+      return (node.content ?? []).map(getText).join(' ');
+    };
+
+    return Boolean(
+      document?.type === 'doc' && getText(document).trim().length > 0
+    );
+  };
+
   const validate = () => {
     const errs = {};
     const MAX_BYTES = 10 * 1024 * 1024; //10 MB
@@ -299,6 +408,10 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
         errs[ field ] = 'Required';
       }
     });
+
+    if (!hasDescriptionContent(form.description)) {
+      errs.description = 'Required';
+    }
 
     if (form.phone && !/^\d{6,15}$/.test(form.phone.replace(/\s/g, ''))) {
       errs.phone = 'Enter a valid phone number';
@@ -333,63 +446,13 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
   };
 
 
-  const UploadOverlay = ({ stage, percent }) => {
-    const offset = CIRCUMFERENCE - (percent / 100) * CIRCUMFERENCE;
-    const isDone = percent === 100;
-
-    return (
-      <div className={styles.uploadOverlay}>
-        <div className={styles.uploadCard}>
-
-          <div className={styles.uploadRingWrap}>
-            <svg viewBox="0 0 100 100" className={styles.uploadRingSvg}>
-              {/* Track */}
-              <circle
-                cx="50" cy="50" r="45"
-                fill="none"
-                stroke="var(--ring-track, #2a2a2a)"
-                strokeWidth="6"
-              />
-              {/* Progress arc */}
-              <circle
-                cx="50" cy="50" r="45"
-                fill="none"
-                stroke="var(--ring-fill, #C8A84B)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray={CIRCUMFERENCE}
-                strokeDashoffset={offset}
-                style={{ transition: 'stroke-dashoffset 0.5s ease', transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
-              />
-            </svg>
-
-            <div className={styles.uploadRingInner}>
-              {isDone
-                ? (
-                  <svg viewBox="0 0 24 24" fill="none" stroke="var(--ring-fill, #C8A84B)"
-                    strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                    className={styles.uploadCheckIcon}>
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                )
-                : <span className={styles.uploadPercent}>{percent}%</span>
-              }
-            </div>
-          </div>
-
-          <span className={styles.uploadStageLabel}>{stage}</span>
-
-        </div>
-      </div>
-    );
-  };
-
   const handleSubmit = async () => {
-    if (!canAdd && !isEdit) return;
+    const validationErrors = validate();
 
-    const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
+    // Validation is the single gate before any listing or upload request.
+    setErrors(validationErrors);
+
+    if (Object.keys(validationErrors).length > 0) {
       return;
     }
 
@@ -432,11 +495,35 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
       } else {
         const selectedWard = filters.wards.find(w => w.ward_name === form.ward);
 
-        // Show overlay
-        setUploadProgress({ stage: 'Uploading Images', percent: 0 });
+        // Build files metadata array (non-null images + optional video), in the
+        // same order as the actual File objects we'll PUT directly to R2 later.
+        // Each entry is tagged by type so finalize can split images vs video.
+        const fileObjects = form.images.filter(Boolean).map(f => ({ file: f, type: 'image' }));
+        if (form.video) fileObjects.push({ file: form.video, type: 'video' });
+        const files = fileObjects.map(({ file, type }) => ({
+          filename: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+          type,
+        }));
 
-        // Step 1: insert text fields, get listing_id
-        const listingRes = await fetch('/api/AddListing', {
+        // Show overlay
+        setUploadProgress({ stage: 'Preparing upload', percent: 0 });
+        onUploadStateChange?.(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Step 1: POST JSON to /api/v1/listings — listing fields + files metadata.
+        console.log('[AddListing] create request body:', {
+          property_name: form.name,
+          ward_id: selectedWard?.ward_id ?? '',
+          ward_name: form.ward,
+          category_id: form.category,
+          property_type_id: form.type,
+          property_price: form.price,
+          phone_number: form.phone.replace(/\s/g, ''),
+          files: fileObjects.length,
+        });
+        const listingRes = await fetch('/api/v1/listings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
@@ -446,55 +533,174 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
             ward_id: selectedWard?.ward_id ?? '',
             ward_location: form.ward_location,
             property_location: form.property_location,
-            category_id: form.category,
-            type_id: form.type,
+            category_name: form.category,
+            category_type_name: form.type,
             rent_duration: form.duration,
             property_interior: form.furniture,
             phone_number: form.phone.replace(/\s/g, ''),
             property_price: form.price,
             description: form.description,
+            files,
           }),
         });
         const listingJson = await listingRes.json();
         if (!listingRes.ok) throw new Error(listingJson.error ?? 'Failed to create listing.');
 
         const listingId = listingJson.listing_id;
+        const uploadTargets = listingJson.uploadTargets;
 
-        // Step 2: upload to Cloudinary — callback drives overlay
-        const media = await uploadListingMedia(
-          listingId,
-          form.images.filter(Boolean),
-          form.video ?? null,
-          ({ stage, percent }) => setUploadProgress({ stage, percent })
-        );
+        // Pre-flight totals from Step 1's response — known before any XHR
+        // fires, so "x of N" readouts are correct before the first byte moves.
+        setUploadTotals({
+          imagesTotalCount: uploadTargets.filter(t => t.type === 'image').length,
+          videoTotalCount: uploadTargets.filter(t => t.type === 'video').length,
+        });
 
-        // Step 3: send URLs to Supabase
-        setUploadProgress({ stage: 'Uploading Data', percent: 75 });
-        const mediaRes = await fetch('/api/AddListing/media', {
+        // Step 2: browser PUTs each file directly to its uploadUrl, in parallel.
+        // One PUT attempt per file, no retries. Vercel never touches file bytes.
+        setUploadProgress({ stage: 'Uploading', percent: 0 });
+
+        const putFile = (target, index) => new Promise((resolve, reject) => {
+          const file = fileObjects[ target.position ].file;
+
+          const start = () => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('PUT', target.uploadUrl, true);
+            xhr.setRequestHeader('Content-Type', file.type);
+
+            xhr.upload.onprogress = (event) => {
+              handleFileProgress({
+                fileId: target.key,
+                type: target.type,
+                loaded: event.loaded,
+                total: event.total,
+              });
+              onFileProgress?.({
+                fileId: target.key,
+                type: target.type,
+                loaded: event.loaded,
+                total: event.total,
+              });
+            };
+
+            xhr.onload = () => {
+              if (xhr.status >= 200 && xhr.status <= 299) {
+                setFileProgress(prev => ({
+                  ...prev,
+                  [ target.key ]: {
+                    ...prev[ target.key ],
+                    status: 'done',
+                  },
+                }));
+                resolve();
+              } else {
+                setFileProgress(prev => ({
+                  ...prev,
+                  [ target.key ]: {
+                    ...prev[ target.key ],
+                    status: 'failed',
+                  },
+                }));
+                reject(new Error(`Upload failed for ${file.name} (status ${xhr.status})`));
+              }
+            };
+
+            xhr.onerror = () => {
+              setFileProgress(prev => ({
+                ...prev,
+                [ target.key ]: {
+                  ...prev[ target.key ],
+                  status: 'failed',
+                },
+              }));
+              reject(new Error(`Network error while uploading ${file.name}`));
+            };
+
+            xhr.send(file);
+          };
+
+          if (index === 0) {
+            start();
+          } else {
+            setTimeout(start, index * 120);
+          }
+        });
+
+        try {
+          await Promise.all(uploadTargets.map((target, index) => putFile(target, index)));
+        } catch (uploadErr) {
+          // At least one file failed — the listing row exists with no media.
+          // Clean it up via the guarded cancel route so it doesn't sit orphaned.
+          try {
+            await fetch(`/api/v1/listings/${listingId}/cancel`, {
+              method: 'POST',
+              credentials: 'include',
+            });
+          } catch (cancelErr) {
+            console.error('[AddListing] cleanup after failed upload also failed:', cancelErr);
+          }
+          throw uploadErr;
+        }
+
+        // Step 3: POST JSON to /api/v1/listings/finalize with the uploads taken
+        // directly from step 1's response — do not reconstruct or guess values.
+        setUploadProgress({ stage: 'Saving', percent: 100 }); // was 'Confirming'
+        const finalizeRes = await fetch('/api/v1/listings/finalize', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           credentials: 'include',
-          body: JSON.stringify({ listing_id: listingId, media }),
+          body: JSON.stringify({
+            listing_id: listingId,
+            uploads: uploadTargets.map(t => ({
+              key: t.key,
+              publicUrl: t.publicUrl,
+              position: t.position,
+              type: t.type,
+            })),
+          }),
         });
-        const mediaJson = await mediaRes.json();
-        if (!mediaRes.ok) throw new Error(mediaJson.error ?? 'Failed to save media.');
+        const finalizeJson = await finalizeRes.json();
+        if (!finalizeRes.ok) throw new Error(finalizeJson.error ?? 'Failed to finalize listing.');
 
-        // Step 4: Confirming
         setUploadProgress({ stage: 'Confirming', percent: 100 });
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 400));
+
+        setUploadProgress({ stage: 'Completing', percent: 100 });
+        await new Promise(r => setTimeout(r, 400));
+
+        setUploadProgress({ stage: 'Done', percent: 100 });
+        await new Promise(r => setTimeout(r, 400));
 
         setUploadProgress(null);
-        toast.success('Property posted successfully!');
-        setForm(EMPTY);
-        setIsDirty(false);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        onUploadStateChange?.(false);
+        setCheckoutData({
+          listingId: listingId,
+          categoryName: listingJson.listing_category,
+          propertyLabel: listingJson.listing_category,
+        });
+        onUploadStateChange?.(true);
       }
 
     } catch (err) {
       setServerError(err.message);
+      setUploadProgress(null);
+      onUploadStateChange?.(false);
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleCheckoutClose = () => {
+    setCheckoutData(null);
+    onUploadStateChange?.(false);
+    setForm(EMPTY);
+    setIsDirty(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCheckoutPaid = () => {
+    toast.success('Property posted successfully!');
+    handleCheckoutClose();
   };
 
   return (
@@ -513,20 +719,24 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
       {serverError && <p className={styles.errorBanner}>{serverError}</p>}
       {filtersError && <p className={styles.errorBanner}>Could not load options: {filtersError}</p>}
 
-      {!canAdd && !isEdit && (
-        <div className={styles.noSlotsBanner}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10" />
-            <line x1="12" y1="8" x2="12" y2="12" />
-            <line x1="12" y1="16" x2="12.01" y2="16" />
-          </svg>
-          You have no listing slots available. Go to <strong>Listings</strong> to purchase more slots.
-        </div>
-      )}
-
-      <div className={(!canAdd && !isEdit) ? styles.formDisabled : undefined}>
-
+      <div>
+        {uploadProgress && hasSelectedImages ? (
+          <UploadOverlay
+            onCancel={() => {}}
+            uploadProgress={uploadProgress}
+            fileProgress={fileProgress}
+            uploadStats={uploadStats}
+          />
+        ) : checkoutData ? (
+          <CheckoutPopup
+            listingId={checkoutData.listingId}
+            categoryName={checkoutData.categoryName}
+            propertyLabel={checkoutData.propertyLabel}
+            onClose={handleCheckoutClose}
+            onPaid={handleCheckoutPaid}
+          />
+        ) : (
+          <>
         <div className={styles.sectionsGrid}>
 
           <Section title="Details">
@@ -534,52 +744,47 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
               icon="tag" label="Property Name" name="name"
               value={form.name} onChange={handleChange} errors={errors}
               placeholder="e.g. Westlands 2BR Apartment"
-              disabled={!canAdd && !isEdit}
             />
             <FieldSelect
               icon="map" label="Ward Name" name="ward"
               options={wardOptions} value={form.ward}
               onChange={handleChange} errors={errors}
-              disabled={filtersLoading || (!canAdd && !isEdit)}
+              disabled={filtersLoading}
             />
             <FieldInput
               icon="map" label="Ward Location" name="ward_location"
               value={form.ward_location} onChange={handleChange} errors={errors}
               placeholder="e.g. Opposite Total Petrol Station"
               hint="Specific street or landmark within the ward"
-              disabled={!canAdd && !isEdit}
             />
             <FieldInput
               icon="link" label="Google Maps Location(URL)" name="property_location"
               value={form.property_location} onChange={handleChange} errors={errors}
               placeholder="https://www.google.com/maps/embed?pb=..."
               hint="Paste the embed URL from Google Maps → Share → Embed a map"
-              disabled={!canAdd && !isEdit}
             />
             <FieldSelect
               icon="grid" label="Property Category" name="category"
               options={categoryOptions} value={form.category}
               onChange={handleCategoryChange} errors={errors}
-              disabled={filtersLoading || (!canAdd && !isEdit)}
+              disabled={filtersLoading}
             />
             <FieldSelect
               icon="layers" label="Property Type" name="type"
               options={typeOptions} value={form.type}
               onChange={handleChange} errors={errors
               }
-              disabled={!form.category || filtersLoading || (!canAdd && !isEdit)}
+              disabled={!form.category || filtersLoading}
             />
             <FieldSelect
               icon="clock" label="Rent Duration" name="duration"
               options={DURATIONS} value={form.duration}
               onChange={handleChange} errors={errors}
-              disabled={!canAdd && !isEdit}
             />
             <FieldSelect
               icon="sofa" label="Property Furnishing" name="furniture"
               options={FURNITURE} value={form.furniture}
               onChange={handleChange} errors={errors}
-              disabled={!canAdd && !isEdit}
             />
           </Section>
 
@@ -595,12 +800,10 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
                       value="+254" readOnly
                       className={`${styles.fieldInput} ${styles.phonePrefix}`}
                       aria-label="Country code"
-                      disabled={!canAdd && !isEdit}
                     />
                     <input
                       id="phone" name="phone" type="tel" value={form.phone}
                       onChange={handleChange} placeholder="7XX XXX XXX"
-                      disabled={!canAdd && !isEdit}
                       className={`${styles.fieldInput} ${errors.phone ? styles.error : ''}`}
                     />
                   </div>
@@ -612,7 +815,6 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
                 value={form.price} onChange={handleChange} errors={errors}
                 placeholder="e.g. 45000"
                 hint="Monthly rent or sale price"
-                disabled={!canAdd && !isEdit}
               />
             </Section>
 
@@ -630,7 +832,6 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
                           file={file}
                           label={`Img ${i + 1}`}
                           onChange={e => handleImage(i, e)}
-                          disabled={!canAdd && !isEdit}
                         />
                         {errors[ `image_${i}` ] && (
                           <span className={styles.fieldError}>{errors[ `image_${i}` ]}</span>
@@ -646,10 +847,10 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
                 <div className={styles.fieldBody}>
                   <span className={styles.fieldLabel}>Property Video</span>
                   <div className={styles.imageGroup}>
-                    <label className={`${styles.uploadSlot} ${(!canAdd && !isEdit) ? styles.uploadSlotDisabled : ''}`}>
+                    <label className={styles.uploadSlot}>
                       <Icon d={icons.video} className={styles.uploadIcon} />
                       <span>{form.video ? form.video.name.slice(0, 10) + '…' : 'Upload'}</span>
-                      <input type="file" accept="video/*" onChange={handleVideo} disabled={!canAdd && !isEdit} />
+                      <input type="file" accept="video/*" onChange={handleVideo} />
                     </label>
                   </div>
                   {errors.video && <span className={styles.fieldError}>{errors.video}</span>}
@@ -661,12 +862,35 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
         </div>
 
         <Section title="Description">
-          <FieldTextarea
-            icon="align" label="Property Description" name="description"
-            value={form.description} onChange={handleChange} errors={errors}
-            hint="Highlight key features, nearby amenities, access etc."
-            disabled={!canAdd && !isEdit}
-          />
+          <div className={styles.fieldRow}>
+            <Icon d={icons.align} />
+            <div className={styles.fieldBody}>
+              <label className={styles.fieldLabel} htmlFor="description-editor">
+                Property Description
+              </label>
+
+              <RichTextEditor
+                value={form.description}
+                disabled={submitting}
+                onChange={(description) => {
+                  setForm((previous) => ({ ...previous, description }));
+                  setIsDirty(true);
+                  setErrors((previous) => ({
+                    ...previous,
+                    description: undefined,
+                  }));
+                }}
+              />
+
+              <span className={styles.fieldHint}>
+                Highlight key features, nearby amenities, access, and other details.
+              </span>
+
+              {errors.description && (
+                <span className={styles.fieldError}>{errors.description}</span>
+              )}
+            </div>
+          </div>
         </Section>
 
         <div className={styles.section} style={{ marginTop: 8 }}>
@@ -674,7 +898,7 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
             <button
               className={styles.submitBtn}
               onClick={handleSubmit}
-              disabled={submitting || (!canAdd && !isEdit)}
+              disabled={submitting}
             >
               {submitting
                 ? (isEdit ? 'Saving…' : 'Posting…')
@@ -682,20 +906,14 @@ export default function AddListing({ canAdd = true, prefill = null, onDone = nul
             </button>
           </div>
         </div>
-
+          </>
+        )}
       </div>
 
       {showPopup && (
         <DiscardPopup
           onContinue={dismissPopup}
           onDiscard={confirmDiscard}
-        />
-      )}
-
-      {uploadProgress && (
-        <UploadOverlay
-          stage={uploadProgress.stage}
-          percent={uploadProgress.percent}
         />
       )}
 

@@ -1,20 +1,14 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import PropertyCard from '@/app/(user)/properties/components/PropertyCard';
+import PropertyCard from '@/app/(user)/properties/components/PropertyCardV1';
 import styles from '../css/MyListing.module.css';
-import AddSlotCard from './AddslotCard';
-import WelcomeBanner from './WelcomeMessage';
 import AddListing from './AddListing';
-import ListingSummary from './ListingsSummary'
 import { EDIT_WINDOW_DAYS } from '@/lib/constants';
-import TopPerformer from './TopPerfomer'
-import { createBrowserSupabaseClient } from '@/lib/supabase/client';
-const supabase = createBrowserSupabaseClient();
 
 const PAGE_SIZE = 20;
 
-export default function MyListings({ slotData, onSlotAdded }) {
+export default function ListingsPanel({ onUploadStateChange }) {
    const [ listings, setListings ] = useState([]);
    const [ pagination, setPagination ] = useState(null);
    const [ currentPage, setCurrentPage ] = useState(1);
@@ -24,17 +18,20 @@ export default function MyListings({ slotData, onSlotAdded }) {
    const [ deleteError, setDeleteError ] = useState(null);
    const [ confirmId, setConfirmId ] = useState(null);
    const [ editingListing, setEditingListing ] = useState(null);
-   const [ userInfo, setUserInfo ] = useState({ username: '', isNew: false, orgImage: null });
+   const [ wardPopup, setWardPopup ] = useState(null);
 
    const fetchListings = useCallback(async (page) => {
       setLoading(true);
       setError(null);
       try {
-         const res = await fetch(`/api/Listing?page=${page}`);
+         const res = await fetch(`/api/v1/listings/me?page=${page}`);
          if (!res.ok) throw new Error('Failed to fetch listings.');
          const json = await res.json();
-         setListings(json.data ?? []);
-         setPagination(json.pagination ?? null);
+         setListings(json.listings ?? []);
+         setPagination({
+            total_pages: Math.ceil((json.total ?? 0) / (json.limit ?? PAGE_SIZE)),
+            total_records: json.total ?? 0,
+         });
       } catch (err) {
          setError(err.message);
       } finally {
@@ -87,7 +84,6 @@ export default function MyListings({ slotData, onSlotAdded }) {
          }
 
          fetchListings(currentPage);
-         if (onSlotAdded) onSlotAdded();
       } catch (err) {
          setListings(prev);
          setDeleteError(err.message);
@@ -123,47 +119,19 @@ export default function MyListings({ slotData, onSlotAdded }) {
       return diffMs / (1000 * 60 * 60 * 24) <= EDIT_WINDOW_DAYS;
    }
 
-   useEffect(() => {
-      const init = async () => {
-         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const res = await fetch('/api/account');
-            const json = await res.json();
-
-            const isNew = user?.created_at
-               ? (Date.now() - new Date(user.created_at).getTime()) < 60 * 1000
-               : false;
-
-            setUserInfo({ username: json.username ?? '', isNew, orgImage: null });
-         } catch { }
-      };
-      init();
-   }, []);
-
    // Render edit form instead of listings grid
    if (editingListing) {
       return (
          <AddListing
-            canAdd={slotData?.can_add ?? false}
             prefill={editingListing}
             onDone={handleEditDone}
+            onUploadStateChange={onUploadStateChange}
          />
       );
    }
 
    return (
       <div className={styles.root}>
-         <WelcomeBanner
-            username={userInfo.username}
-            isNew={userInfo.isNew}
-            orgImage={userInfo.orgImage}
-         />
-
-         <ListingSummary />
-         <TopPerformer />
-         <AddSlotCard onSlotAdded={() => { fetchListings(currentPage); if (onSlotAdded) onSlotAdded(); }} />
          {/* ── Header ── */}
          <div className={styles.header}>
             <h2 className={styles.title}>My Listings</h2>
@@ -173,14 +141,6 @@ export default function MyListings({ slotData, onSlotAdded }) {
                      {pagination.total_records} listing{pagination.total_records !== 1 ? 's' : ''}
                   </span>
                )}
-               {/*{slotData && (
-                  <>
-                     <span className={styles.metaDivider}>·</span>
-                     <span className={`${styles.count} ${!slotData.can_add ? styles.countWarning : ''}`}>
-                        {slotData.slots} listing slot{slotData.slots !== 1 ? 's' : ''}
-                     </span>
-                  </>
-               )} */}
             </div>
          </div>
 
@@ -222,7 +182,12 @@ export default function MyListings({ slotData, onSlotAdded }) {
             <div className={styles.grid}>
                {listings.map(listing => (
                   <div key={listing.listing_id} className={styles.cardWrapper}>
-                     <PropertyCard listing={listing} />
+                     <PropertyCard
+                        listing={listing}
+                        onWardClick={(ward_id, ward_name, property_location) =>
+                           setWardPopup({ ward_id, ward_name, property_location })
+                        }
+                     />
 
                      <div className={styles.cardActions}>
                         {confirmId === listing.listing_id ? (
@@ -308,6 +273,33 @@ export default function MyListings({ slotData, onSlotAdded }) {
                >
                   &#8594;
                </button>
+            </div>
+         )}
+
+         {wardPopup && (
+            <div className={styles.wardOverlay} onClick={() => setWardPopup(null)}>
+               <div className={styles.wardModal} onClick={e => e.stopPropagation()}>
+                  <div className={styles.wardModalHeader}>
+                     <span>{wardPopup.ward_name}</span>
+                     <button onClick={() => setWardPopup(null)}>&#x2715;</button>
+                  </div>
+                  <div className={styles.wardModalBody}>
+                     {wardPopup.property_location ? (
+                        <iframe
+                           src={wardPopup.property_location}
+                           width="100%"
+                           height="100%"
+                           style={{ border: 'none', display: 'block' }}
+                           allowFullScreen
+                           loading="lazy"
+                           referrerPolicy="no-referrer-when-downgrade"
+                           title={`Map of ${wardPopup.ward_name}`}
+                        />
+                     ) : (
+                        <p style={{ padding: '1rem' }}>No map available for this ward.</p>
+                     )}
+                  </div>
+               </div>
             </div>
          )}
       </div>

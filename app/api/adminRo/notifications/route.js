@@ -1,24 +1,25 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { requireRole } from '@/lib/auth/session';
 
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user || user.user_metadata?.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, error, status } = await requireRole('admin');
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
 
-    const { data, error } = await supabase
+    const supabase = await createServerSupabaseClient();
+
+    const { data, error: dbError } = await supabase
       .from('notifications')
       .select('*')
       .order('created_at', { ascending: false })
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
     const parsed = (data ?? []).map(n => ({
@@ -36,34 +37,33 @@ export async function GET() {
 
 export async function PATCH(request) {
   try {
-    const supabase = await createServerSupabaseClient();
-
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
-    if (authError || !user || user.user_metadata?.role !== 'admin') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { user, error, status } = await requireRole('admin');
+    if (error) {
+      return NextResponse.json({ error }, { status });
     }
-    
+
+    const supabase = await createServerSupabaseClient();
 
     const { ids, all } = await request.json();
 
-    let error;
+    let dbError;
 
     if (all) {
       // mark all as read
-      ({ error } = await supabase
+      ({ error: dbError } = await supabase
         .from('notifications')
         .update({ read: true })
         .eq('read', false));
     } else if (ids?.length) {
       // mark specific ids as read
-      ({ error } = await supabase
+      ({ error: dbError } = await supabase
         .from('notifications')
         .update({ read: true })
         .in('id', ids));
     }
 
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (dbError) {
+      return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });

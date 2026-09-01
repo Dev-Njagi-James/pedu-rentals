@@ -1,293 +1,86 @@
 .root {
   display: flex;
-  min-height: calc(100vh - var(--page-top-offset, 64px));
   width: 100%;
-  background: #f7f7f5;
-  padding:14px 0;
+  background: var(--background);
+  padding: 0;
   overflow: visible;
+  margin-top:var(--page-top-offset);
 }
 
 .sidebar {
-  width: 220px;
-  min-width: 220px;
-  background: #EEEEEE;
+  width: 68px;
+  min-width: 68px;
+  background: var(--sidebar);
   display: flex;
   flex-direction: column;
-  padding: 20px 0;
-   min-height: calc(100vh - var(--page-top-offset, 64px));
+  align-items: center;
   overflow: hidden;
   z-index: 10;
   flex-shrink: 0;
-  padding: var(--page-top-offset, 64px) 0 22px;
-  transition: width 0.22s ease, min-width 0.22s ease;
 }
 
 /* ─────────────────────────────────────────
-   SIDEBAR — manually collapsed state
+   UPLOAD LOCK — dims + blocks interaction
+   while a listing upload is in progress
 ───────────────────────────────────────── */
-.sidebarCollapsed {
-  width: 60px;
-  min-width: 60px;
-}
-
-.sidebarCollapsed .identity {
-  padding: 4px 0 16px;
-  justify-content: center;
-}
-
-.sidebarCollapsed .identityImageWrap {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-}
-
-.sidebarCollapsed .identityName {
-  display: none;
-}
-
-.sidebarCollapsed .navItem {
-  padding: 13px 0;
-  justify-content: center;
-  border-left: none;
-  border-bottom: 3px solid transparent;
-}
-
-.sidebarCollapsed .navItem:hover {
-  border-left-color: transparent;
-  border-bottom-color: transparent;
-  color: #000;
-}
-
-.sidebarCollapsed .navItemActive {
-  border-left-color: transparent !important;
-  border-bottom-color: #DEA806 !important;
-}
-
-.sidebarCollapsed .navLabel {
-  display: none;
-}
-
-.sidebarCollapsed .navIcon {
-  width: auto;
-}
-
-.sidebarCollapsed .sidebarToggle {
-  align-self: center;
-  margin-right: 0;
-}
-
-/* ─────────────────────────────────────────
-   SIDEBAR TOGGLE BUTTON
-───────────────────────────────────────── */
-.sidebarToggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: auto;
-  margin-bottom: 20px;
-  margin-right: 8px;
-  align-self: flex-end;
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  color: #666;
-  transition: color 0.15s ease, background 0.15s ease;
-}
-
-.sidebarToggle:hover {
-  color: #000;
-  background: #dedede;
-}
-
-.avatarRoot {
-  position: relative;
-  flex-shrink: 0;
-}
-
-/* fills the circle, makes it clickable */
-.avatarBtn {
-  display: block;
-  width: 100%;
-  height: 100%;
-  padding: 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  border-radius: 50%;
-  overflow: hidden;
-  position: relative;
-}
-
-/* dark overlay — appears on hover */
-.avatarOverlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.52);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-  opacity: 0;
-  transition: opacity 0.18s ease;
-  border-radius: 50%;
-}
-
-.avatarBtn:hover .avatarOverlay,
-.avatarBtn:focus-visible .avatarOverlay {
-  opacity: 1;
-}
-
-/* always-visible gold badge — bottom-right of circle */
-.avatarBadge {
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 18px;
-  height: 18px;
-  background: #DEA806;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid #EEEEEE;
-  color: #fff;
+.sidebarDisabled {
+  opacity: 0.45;
   pointer-events: none;
 }
 
-/* sheet variant — larger circle needs a larger badge */
-.avatarBadgeSheet {
-  width: 24px;
-  height: 24px;
-  bottom: 2px;
-  right: 2px;
-  border-color: #ffffff;
-}
-
-.sheetAvatarRoot {
-  position: relative;
-  flex-shrink: 0;
+.drawerDisabled {
+  opacity: 0.45;
+  pointer-events: none;
 }
 
 /* ─────────────────────────────────────────
-   IDENTITY — sidebar (horizontal)
-───────────────────────────────────────── */
-.identity {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 16px 16px;
-}
-
-.identityImageWrap {
-  position: relative;
-  width: 56px;
-  height: 56px;
-  min-width: 56px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #1e1e1e;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid #2a2a2a;
-}
-
-.identityImage {
-  object-fit: cover;
-  object-position: center;
-}
-
-.identityImagePlaceholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #555;
-}
-
-.identityImagePlaceholder svg {
-  width: 22px;
-  height: 22px;
-}
-
-.identityName {
-  font-family: var(--font-geist-sans);
-  font-size: 14px;
-  font-weight: 700;
-  color: #0a0909;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.identityDivider {
-  height: 1px;
-  background: #1e1e1e;
-  margin: 0 0 8px;
-  flex-shrink: 0;
-}
-
-/* ─────────────────────────────────────────
-   NAV — sidebar
+   NAV — sidebar icon rail
 ───────────────────────────────────────── */
 .nav {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.navUtility {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: auto;
 }
 
 .navItem {
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
   background: transparent;
   border: none;
-  border-left: 3px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
   color: #4a4a4a;
-  padding: 13px 16px 13px 13px;
-  font-family: var(--font-geist-sans);
-  font-size: 13.5px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  transition: color 0.15s ease, border-color 0.15s ease;
-  white-space: nowrap;
-  text-align: left;
-  width: 100%;
+  transition: color 0.15s ease, background 0.15s ease;
 }
 
 .navItem:hover {
   color: #000000;
-  border-left-color: #3a3a3a;
+  background: #dedede;
 }
 
 .navItemActive {
-  color: #000000;
-  border-left-color: #DEA806;
-  font-weight: 600;
+  color: #DEA806;
+  background: #ffffff;
 }
 
 .navIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  width: 20px;
-}
-
-.navLabel {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ─────────────────────────────────────────
@@ -301,12 +94,14 @@
   flex-direction: column;
   padding: 24px 20px 32px;
   overflow-y: auto;
-  min-height: calc(100vh - var(--page-top-offset));
-  margin-top: calc(var(--page-top-offset) - 20px)
+  max-height: 180vh;
 }
 
 .panelWrap {
   flex: 1;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* ─────────────────────────────────────────
@@ -323,18 +118,19 @@
 .mobileBar {
   display: none;
 }
-
 /* ─────────────────────────────────────────
    480px — sidebar hidden, mobile drawer on
    Root reverts to normal scroll so the fixed
    bottom sheet / backdrop aren't clipped.
 ───────────────────────────────────────── */
 @media (max-width: 480px) {
-  .root {
-    height: auto;
-    min-height: calc(100vh - var(--page-top-offset, 64px));
-    overflow: visible;
-  }
+    .root {
+      height: auto;
+      min-height: calc(100vh - var(--page-top-offset, 64px));
+      overflow-x: hidden;
+      overflow-y: visible;
+      margin-top: 10px;
+    }
 
   .sidebar {
     display: none;
@@ -343,12 +139,12 @@
   .content {
     overflow-y: visible;
     height: auto;
-    padding: 0 0 88px;
+    padding: 6px 0 8px;
   }
 
-  .panelWrap {
-    padding: 16px 14px 0;
-  }
+ .panelWrap {
+   padding: 6px 0;
+ }
 
   /* ── floating trigger pill ── */
   .mobileBar {
@@ -452,64 +248,6 @@
     margin: 12px auto 0;
   }
 
-  /* ── identity block inside sheet — centred, stacked ── */
-  .sheetIdentity {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px 24px 18px;
-    gap: 10px;
-  }
-
-  .sheetImageWrap {
-    position: relative;
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: #f0f0f0;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 2px solid #e8e8e8;
-  }
-
-  .sheetImage {
-    object-fit: cover;
-    object-position: center;
-  }
-
-  .sheetImagePlaceholder {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: #aaa;
-  }
-
-  .sheetImagePlaceholder svg {
-    width: 30px;
-    height: 30px;
-  }
-
-  .sheetName {
-    font-family: var(--font-geist-sans);
-    font-size: 18px;
-    font-weight: 700;
-    color: #111111;
-    text-align: center;
-    line-height: 1.25;
-    letter-spacing: -0.02em;
-  }
-
-  .sheetDivider {
-    height: 1px;
-    background: #f0f0f0;
-    margin: 0;
-  }
-
   /* ── sheet nav items ── */
   .drawerItem {
     display: flex;
@@ -565,14 +303,5 @@
   .drawerItem {
     padding: 14px 16px;
     font-size: 14px;
-  }
-
-  .sheetImageWrap {
-    width: 72px;
-    height: 72px;
-  }
-
-  .sheetName {
-    font-size: 16px;
   }
 }

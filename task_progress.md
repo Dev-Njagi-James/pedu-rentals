@@ -1,0 +1,10 @@
+- [ ] Search for supabase.auth.getUser references
+- [ ] Search for supabase.auth.getSession references
+- [ ] Search for signInWithPassword references
+- [ ] Search for signOut references
+- [ ] Search for onAuthStateChange references
+- [ ] Search for middleware.js/ts at project root
+- [ ] Search for cookie/session handling tied to Supabase
+- [ ] Search for user.id / lister_uuid usage in auth context
+- [ ] Compile full inventory
+- [ ] Output middleware.js contents

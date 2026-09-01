@@ -42,8 +42,8 @@ export default function SearchBar({ allData = [], onSearchResults, onClear }) {
 
       const lower = q.toLowerCase()
       const matches = allData.filter(l =>
-        l.property_name?.toLowerCase().includes(lower) ||
-        l.ward_name?.toLowerCase().includes(lower) ||
+        l.listing_name?.toLowerCase().includes(lower) ||
+        l.ward_display_name?.toLowerCase().includes(lower) ||
         l.ward_location?.toLowerCase().includes(lower)
       ).slice(0, 5)
 
@@ -91,24 +91,12 @@ export default function SearchBar({ allData = [], onSearchResults, onClear }) {
     setShowDropdown(false)
 
     try {
-      // exact first
-      const exactRes = await fetch(`/api/search?q=${encodeURIComponent(q)}&mode=exact`)
-      const exactData = await exactRes.json()
+      const res = await fetch(`/api/v1/listings/public?q=${encodeURIComponent(q)}`)
+      const resData = await res.json()
 
-      if (exactData.data?.length > 0) {
-        onSearchResults(exactData.data, `Results for "${q}"`)
+      if (resData.data?.length > 0) {
+        onSearchResults(resData.data, `Results for "${q}"`)
         setSearchLabel(`Results for "${q}"`)
-        setLoading(false)
-        return
-      }
-
-      // fuzzy fallback
-      const fuzzyRes = await fetch(`/api/search?q=${encodeURIComponent(q)}&mode=fuzzy`)
-      const fuzzyData = await fuzzyRes.json()
-
-      if (fuzzyData.data?.length > 0) {
-        onSearchResults(fuzzyData.data, `Closest matches for "${q}"`)
-        setSearchLabel(`Closest matches for "${q}"`)
       } else {
         onSearchResults([], `No results found for "${q}"`)
         setSearchLabel(`No results found for "${q}"`)
@@ -122,7 +110,7 @@ export default function SearchBar({ allData = [], onSearchResults, onClear }) {
   }
 
   const handleDropdownSelect = (listing) => {
-    setQuery(listing.property_name)
+    setQuery(listing.listing_name)
     setShowDropdown(false)
     onSearchResults([listing], null)
   }
@@ -199,7 +187,7 @@ export default function SearchBar({ allData = [], onSearchResults, onClear }) {
                 {item.media?.[0]?.image_url || item.image_url ? (
                   <img
                     src={item.media?.[0]?.image_url ?? item.image_url}
-                    alt={item.property_name}
+                    alt={item.listing_name}
                   />
                 ) : (
                   <div className={styles.searchDropdownThumbFallback}>
@@ -210,9 +198,9 @@ export default function SearchBar({ allData = [], onSearchResults, onClear }) {
                 )}
               </div>
               <div className={styles.searchDropdownInfo}>
-                <span className={styles.searchDropdownName}>{item.property_name}</span>
+                <span className={styles.searchDropdownName}>{item.listing_name}</span>
                 <span className={styles.searchDropdownMeta}>
-                  {item.ward_name}{item.property_price ? ` · KSH ${Number(item.property_price).toLocaleString()}` : ''}
+                  {item.ward_display_name}{item.price_kes ? ` · KSH ${Number(item.price_kes).toLocaleString()}` : ''}
                 </span>
               </div>
             </button>

@@ -1,25 +1,26 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/auth/session';
 
 export async function PATCH(request) {
-  const supabase = await createServerSupabaseClient();
-
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  if (userError || !user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const { user, error, status } = await requireAuth();
+  if (error) {
+    return NextResponse.json({ error }, { status });
   }
+
+  const supabase = await createServerSupabaseClient();
 
   const { email, password } = await request.json();
   const errors = [];
 
   if (email && email.trim() !== user.email) {
-    const { error } = await supabase.auth.updateUser({ email: email.trim() });
-    if (error) errors.push(`Email: ${error.message}`);
+    const { error: emailError } = await supabase.auth.updateUser({ email: email.trim() });
+    if (emailError) errors.push(`Email: ${emailError.message}`);
   }
 
   if (password) {
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) errors.push(`Password: ${error.message}`);
+    const { error: passwordError } = await supabase.auth.updateUser({ password });
+    if (passwordError) errors.push(`Password: ${passwordError.message}`);
   }
 
   if (errors.length > 0) {

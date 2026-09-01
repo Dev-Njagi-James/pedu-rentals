@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
 import FilterSidebar from './components/FilterSidebar'
-import PropertyCard from './components/PropertyCard'
+import PropertyCardV1 from './components/PropertyCardV1'
 import styles from './css/properties.module.css'
 import ReviewPrompt from './components/ReviewPrompt'
 import { useTrackVisit } from '@/app/hooks/useTrackVisit'
@@ -39,7 +39,7 @@ function filtersToParams(filters, page) {
 async function fetchListings(filters, bufferPage) {
   const params = filtersToParams(filters, bufferPage)
   params.set('prefetch', 'true')
-  const res = await fetch(`/api/listings?${params.toString()}`)
+    const res = await fetch(`/api/v1/listings/public?${params.toString()}`)
   if (!res.ok) throw new Error('Failed to fetch listings')
   return res.json()
 }
@@ -186,7 +186,7 @@ export default function PropertiesClient() {
           {!isLoading && displayListings.length > 0 && (
             <div className={styles.grid}>
               {displayListings.map(listing => (
-                <PropertyCard
+                                <PropertyCardV1
                   key={listing.listing_id}
                   listing={listing}
                   onWardClick={(ward_id, ward_name, property_location) =>
