@@ -262,6 +262,7 @@ export default function PropertyDetails({ listing }) {
                 sizes="(max-width: 768px) 100vw, 45vw"
                 className={styles.mainImage}
                 priority
+                unoptimized
               />
             )
           ) : (
@@ -304,6 +305,7 @@ export default function PropertyDetails({ listing }) {
               fill
               sizes="(max-width: 768px) 100vw, 45vw"
               className={styles.mainImage}
+              unoptimized
             />
           ) : (
             <div className={styles.mainPlaceholder}>
@@ -327,6 +329,7 @@ export default function PropertyDetails({ listing }) {
                     fill
                     sizes="200px"
                     className={styles.thumbImage}
+                    unoptimized
                   />
                 ) : (
                   <div className={styles.thumbVideoPlaceholder} />
