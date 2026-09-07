@@ -65,15 +65,15 @@
 }
 
 .planRegular {
-  background: #fbbd08;
+  background: var(--primary);
 }
 
 .planPremium {
-  background: #f59e0b;
+  background: var(--darkSecondary);
 }
 
 .planEnterprise {
-  background: #f97316;
+  background: #2ecc5f;
 }
 
 

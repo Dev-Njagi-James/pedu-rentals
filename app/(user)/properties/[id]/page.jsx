@@ -23,8 +23,13 @@ function normalizeV1Listing(v1Row) {
     ward_name: v1Row.ward_display_name,
     description: v1Row.listing_description,
     property_location: v1Row.location_url,
-    media: (v1Row.images_table?.images_url ?? [])
-      .map(img => ({ cloudinary_url: img.publicUrl, position: img.position })),
+    media: [
+      ...(v1Row.images_table?.video_url
+        ? [{ video_url: v1Row.images_table.video_url, image_url: null, position: -1 }]
+        : []),
+      ...(v1Row.images_table?.images_url ?? [])
+        .map(img => ({ cloudinary_url: img.publicUrl, position: img.position })),
+    ],
   };
 }
 
