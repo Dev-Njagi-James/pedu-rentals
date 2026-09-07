@@ -102,10 +102,9 @@ export default function PropertyDetails({ listing }) {
     .filter((m) => m.cloudinary_url || m.image_url || m.video_url)
     .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
     .map((m) => {
-      const isVideo = m.position === 0;
-      if (isVideo) {
+      if (m.video_url) {
         return {
-          video_url: m.cloudinary_url ?? m.video_url,
+          video_url: m.video_url,
           image_url: null,
           position: m.position,
         };
@@ -119,7 +118,7 @@ export default function PropertyDetails({ listing }) {
 
   const active = mediaItems[activeIndex] ?? null;
   const secondary = mediaItems[activeIndex + 1] ?? mediaItems[1] ?? null;
-  const thumbnails = mediaItems.slice(0, 4);
+  const thumbnails = mediaItems.slice(0, 5);//Check why the thumbnails are not showing 5 slots
 
   // Reviews fetch preserved as-is, now runs on mount (no tab gating).
   useEffect(() => {

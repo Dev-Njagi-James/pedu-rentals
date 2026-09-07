@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSignUp, useSignIn } from "@clerk/nextjs/legacy";
 import { useUser } from "@clerk/nextjs";
@@ -176,6 +176,8 @@ const COPY = {
   },
 };
 
+const RESEND_COOLDOWN_SECONDS = 30;
+
 export default function AuthForm() {
   const router = useRouter();
 
@@ -207,6 +209,18 @@ export default function AuthForm() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
 
+  // Needed to re-issue signin.prepareFirstFactor on resend.
+  const [emailFactorId, setEmailFactorId] = useState(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
   const toggleTopTab = useCallback(() => {
     setTopTab((value) => (value === "login" ? "signup" : "login"));
     setError(null);
@@ -214,6 +228,8 @@ export default function AuthForm() {
     setCodeError(null);
     setPendingVerification(false);
     setCode("");
+    setEmailFactorId(null);
+    setResendCooldown(0);
   }, []);
 
   const handleEmailChange = useCallback((event) => {
@@ -321,6 +337,7 @@ export default function AuthForm() {
         console.log("VERIFICATION EMAIL PREPARED");
 
         setPendingVerification(true);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
       } else {
         console.log("STARTING CLERK SIGNIN");
 
@@ -344,6 +361,8 @@ export default function AuthForm() {
           );
         }
 
+        setEmailFactorId(emailFactor.emailAddressId);
+
         await signIn.prepareFirstFactor({
           strategy: "email_code",
           emailAddressId: emailFactor.emailAddressId,
@@ -352,6 +371,7 @@ export default function AuthForm() {
         console.log("SIGNIN VERIFICATION PREPARED");
 
         setPendingVerification(true);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
       }
     } catch (err) {
       console.error("CLERK AUTH ERROR:", err);
@@ -440,6 +460,92 @@ export default function AuthForm() {
     }
   };
 
+  const handleResend = async () => {
+    if (resendCooldown > 0 || loading) return;
+
+    setError(null);
+    setCodeError(null);
+    setLoading(true);
+
+    try {
+      if (topTab === "signup") {
+        if (!signUpLoaded) return;
+
+        await signUp.prepareEmailAddressVerification({
+          strategy: "email_code",
+        });
+      } else {
+        if (!signInLoaded || !emailFactorId) {
+          throw new Error("Session expired. Restart sign in.");
+        }
+
+        await signIn.prepareFirstFactor({
+          strategy: "email_code",
+          emailAddressId: emailFactorId,
+        });
+      }
+
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (err) {
+      setError(
+        err?.errors?.[0]?.longMessage ??
+          err?.errors?.[0]?.message ??
+          err?.message ??
+          "Could not resend code.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = () => {
+    setError(null);
+
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+
+    const popup = window.open(
+      "",
+      "clerk-oauth",
+      `width=${width},height=${height},left=${left},top=${top}`,
+    );
+
+    const run = async () => {
+      try {
+        if (topTab === "signup") {
+          if (!signUpLoaded) throw new Error("Clerk SignUp is not loaded yet.");
+
+          await signUp.authenticateWithPopup({
+            strategy: "oauth_google",
+            redirectUrl: `${window.location.origin}/sso-callback`,
+            redirectUrlComplete: `${window.location.origin}/sso-callback`,
+            popup,
+          });
+        } else {
+          if (!signInLoaded) throw new Error("Clerk SignIn is not loaded yet.");
+
+          await signIn.authenticateWithPopup({
+            strategy: "oauth_google",
+            redirectUrl: `${window.location.origin}/sso-callback`,
+            redirectUrlComplete: `${window.location.origin}/sso-callback`,
+            popup,
+          });
+        }
+      } catch (err) {
+        setError(
+          err?.errors?.[0]?.longMessage ??
+            err?.errors?.[0]?.message ??
+            err?.message ??
+            "Google sign-in failed.",
+        );
+      }
+    };
+
+    run();
+  };
+
   const copy = COPY[topTab];
 
   return (
@@ -501,6 +607,16 @@ export default function AuthForm() {
                       {loading ? "Please wait…" : "Verify"}
                       <span aria-hidden="true">→</span>
                     </button>
+
+                    <button
+                      type="button"
+                      className="toggle-link"
+                      onClick={handleResend}
+                      disabled={resendCooldown > 0 || loading}>
+                      {resendCooldown > 0
+                        ? `Resend code (${resendCooldown}s)`
+                        : "Resend code"}
+                    </button>
                   </form>
                 </>
               ) : (
@@ -514,8 +630,9 @@ export default function AuthForm() {
                     noValidate>
                     <button
                       type="button"
+                      disabled
                       className="google-btn-v2"
-                      onClick={() => {}}>
+                      onClick={handleGoogleAuth}>
                       <GoogleIcon /> Continue with Google
                     </button>
                     <div className="or-divider-v2">Or</div>

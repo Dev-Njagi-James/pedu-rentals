@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import styles from '../css/properties.module.css'
+import styles from '../css/searchbar.module.css'
 
 function debounce(fn, delay) {
   let timer
