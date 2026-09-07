@@ -53,7 +53,6 @@ export default function PropertyCardV1({ listing, onWardClick }) {
             fill
             sizes="(max-width: 600px) 100vw, 360px"
             className={styles.image}
-            unoptimized
           />
         ) : (
           <div className={styles.imagePlaceholder}>
