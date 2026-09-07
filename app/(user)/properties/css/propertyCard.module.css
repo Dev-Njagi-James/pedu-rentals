@@ -66,6 +66,7 @@
 
 .planRegular {
   background: var(--primary);
+  color:white;
 }
 
 .planPremium {
