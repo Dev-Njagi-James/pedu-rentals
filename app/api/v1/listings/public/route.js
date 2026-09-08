@@ -172,6 +172,8 @@ export async function GET(request) {
     ward_location: row.ward_location,
     phone_number: row.phone_number,
     rent_duration: row.rent_duration,
+    avg_rating: row.avg_rating ?? null,
+    review_count: row.review_count ?? null,
     created_at: row.created_at,
     plan_name: 'Regular',
     images_table: {
