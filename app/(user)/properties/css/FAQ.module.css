@@ -2,7 +2,6 @@
    position: relative;
    padding: 20px;
    width: 100%;
-   min-height:165vh;
    margin: 0 auto;
    box-sizing: border-box;
    padding: 0 12px;
@@ -12,23 +11,6 @@
    background: #ffffff;
    overflow: hidden;
 }
-
-.section::before,
-.section::after {
-   content: '';
-   position: absolute;
-   left: 0;
-   right: 0;
-   height: 80px;
-   pointer-events: none;
-   z-index: 1;
-}
-
-.section::after {
-   bottom: 0;
-   background: linear-gradient(to top, var(--darkBackground), transparent);
-}
-
 /* ── Block ── */
 .block {
    display: flex;
