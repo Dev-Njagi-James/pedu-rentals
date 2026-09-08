@@ -1,20 +1,29 @@
-
 :root {
-  --background: #E9EAF1;
-  --darkBackground:#F8F9FA;
-  --sidebar:#EEEEEE;
-  --primary:#002EFF;
-  --darkSecondary:#DEA806;
-  --secondary:#FFBF00;
-  --accent:#0A7CFF;
-  --page-top-offset: 64px; /* nav ~64px + banner ~40px — fallback */
+  --background: #e9eaf1;
+  --darkBackground: #f8f9fa;
+  --sidebar: #eeeeee;
+  --primary: #002eff;
+  --darkSecondary: #dea806;
+  --secondary: #ffbf00;
+  --accent: #0a7cff;
+  --foreground: #111827;
+  --page-top-offset: 64px;
 }
 
 html,
-body{
-  padding:0;
-  margin:0;
+body {
+  padding: 0;
+  margin: 0;
   background: var(--background);
-  scroll-behavior:smooth;
+  color: var(--foreground);
+  scroll-behavior: smooth;
 }
 
+/* Automatically activate when the user's device/browser uses dark mode 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0d1117;
+    --foreground: #f5f7fa;
+  }
+}
+*/
