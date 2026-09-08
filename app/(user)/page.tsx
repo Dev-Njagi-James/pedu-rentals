@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import PropertiesClient from './properties/PropertiesClient'
 import styles from './properties/css/properties.module.css'
+import Faq from "./properties/components/FAQ.jsx";
 
 function LoadingSkeleton() {
   return (
@@ -19,8 +20,11 @@ function LoadingSkeleton() {
 
 export default function Home() {
   return (
-    <Suspense fallback={<LoadingSkeleton />}>
+    <>
+     <Suspense fallback={<LoadingSkeleton />}>
       <PropertiesClient />
     </Suspense>
+    <Faq/>
+    </>
   )
 }
