@@ -47,20 +47,23 @@
 }
 
 @media (max-width: 780px) {
+   .page{
+      padding-inline: 28px;
+   }
    .container {
-      padding: 60px 14px 0;
+      padding-inline:38px;
       margin-top: 80px;
    }
 }
 
 @media(max-width:480px) {
    .page {
-      margin-top: 100px;
+      margin-top: 80px;
+      padding-inline: 18px;
    }
 
    .container {
       margin: 0 auto;
-      width: 90%;
-      padding:40px;
+      padding:10px;
    }
 }
