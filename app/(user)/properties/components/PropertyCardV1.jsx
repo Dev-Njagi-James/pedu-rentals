@@ -10,6 +10,12 @@ const planClassMap = {
   Enterprise: styles.planEnterprise,
 };
 
+const planDisplayLabelMap = {
+  Regular: 'Regular',
+  Premium: 'VIP',
+  Enterprise: 'VVIP',
+};
+
 export default function PropertyCardV1({ listing, onWardClick }) {
   const {
     _source,
@@ -90,7 +96,7 @@ export default function PropertyCardV1({ listing, onWardClick }) {
 
         {plan_name && (
           <span className={`${styles.planBadge} ${planClassName}`}>
-            {plan_name}
+            {planDisplayLabelMap[plan_name] ?? plan_name}
           </span>
         )}
       </div>
