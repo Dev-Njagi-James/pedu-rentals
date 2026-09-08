@@ -269,7 +269,8 @@ export default function AppNav() {
 
   const orgName = user?.publicMetadata?.orgName || "Account";
   const orgSubtitle = user?.publicMetadata?.orgSubtitle || "";
-  const displayName = user?.firstName || user?.username || "Account";
+  const displayName =
+    user?.username || user?.primaryEmailAddress?.emailAddress || "Account";
   const initial = (displayName || "?").charAt(0).toUpperCase();
 
   // ── scroll shadow ──
@@ -450,29 +451,8 @@ export default function AppNav() {
                       <div className={styles.accountMenuName}>
                         {displayName}
                       </div>
-                      <div className={styles.accountMenuEmail}>
-                        {user?.primaryEmailAddress?.emailAddress}
-                      </div>
                     </div>
                   </div>
-
-                  <Link
-                    href="/account"
-                    className={styles.accountSwitcherRow}
-                    onClick={closeAccountMenu}>
-                    <Avatar />
-                    <span className={styles.accountSwitcherText}>
-                      <span className={styles.accountSwitcherOrg}>
-                        {orgName}
-                      </span>
-                      {orgSubtitle && (
-                        <span className={styles.accountSwitcherSub}>
-                          {orgSubtitle}
-                        </span>
-                      )}
-                    </span>
-                    <Icon.chevronRight />
-                  </Link>
 
                   <div className={styles.accountMenuDivider} />
                   <AccountMenuList onItemClick={closeAccountMenu} />
@@ -527,24 +507,6 @@ export default function AppNav() {
         </div>
 
         <div className={styles.drawerBody}>
-          {isSignedIn && (
-            <Link
-              href="/account"
-              className={styles.drawerAccountSwitcher}
-              onClick={closeMenu}>
-              <Avatar />
-              <span className={styles.accountSwitcherText}>
-                <span className={styles.accountSwitcherOrg}>{orgName}</span>
-                {orgSubtitle && (
-                  <span className={styles.accountSwitcherSub}>
-                    {orgSubtitle}
-                  </span>
-                )}
-              </span>
-              <Icon.chevronRight />
-            </Link>
-          )}
-
           <ul className={styles.drawerLinks}>
             {visiblePrimaryItems.map((item) => (
               <li key={item.key}>
