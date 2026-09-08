@@ -126,7 +126,7 @@ export default function PropertyDetails({ listing }) {
     setReviewsLoading(true);
     setReviewsError(null);
 
-    fetch(`/api/listings/${listing_id}/reviews`)
+    fetch(`/api/v1/listings/reviews?listing_id=${listing_id}`)
       .then((r) => {
         if (!r.ok) throw new Error("Failed to fetch reviews");
         return r.json();
@@ -151,10 +151,11 @@ export default function PropertyDetails({ listing }) {
       })();
 
     try {
-      const res = await fetch(`/api/listings/${listing_id}/feedback`, {
+      const res = await fetch(`/api/v1/listings/reviews`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          listing_id,
           fingerprint,
           rating,
           review_text: newReview.trim(),
@@ -169,7 +170,13 @@ export default function PropertyDetails({ listing }) {
       localStorage.setItem(`reviewed:${listing_id}`, "1");
       setNewReview("");
       setRating(0);
-      // trigger reviews refetch or optimistic update here
+
+      // Refetch so the new review appears without a page reload.
+      const refreshed = await fetch(`/api/v1/listings/reviews?listing_id=${listing_id}`);
+      if (refreshed.ok) {
+        const json = await refreshed.json();
+        setReviews(json.data ?? []);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -531,6 +538,7 @@ export default function PropertyDetails({ listing }) {
           </div>
         )}
 
+        {/*Review Card Add */}
         <div className={styles.addReviewRow}>
           <StarRatingInput rating={rating} onChange={setRating} />
           <div className={styles.addReviewInputRow}>

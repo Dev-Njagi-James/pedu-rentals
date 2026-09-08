@@ -2,6 +2,7 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { paymentsSupabase } from '@/lib/supabase/paymentsClient';
 import { resolveWardNames } from '@/lib/resolveWardName';
 import { CATEGORY_ID_TO_V1_NAME, TYPE_ID_TO_V1_NAME, RENT_DURATION_TO_V1, FURNISHING_TO_V1, PRICE_BUCKET_RANGES } from '@/lib/categoryMapping';
+import { rankListings } from '@/lib/ranking/rankListings';
 import { NextResponse } from 'next/server';
 
 /*
@@ -55,7 +56,7 @@ export async function GET(request) {
   const page = parseInt(searchParams.get('page') ?? '1', 10);
   const prefetch = searchParams.get('prefetch') === 'true';
   const limit = prefetch ? PREFETCH_SIZE : PAGE_SIZE;
-  const offset = (page - 1) * PAGE_SIZE;
+  const offset = prefetch ? (page - 1) * PREFETCH_SIZE : (page - 1) * PAGE_SIZE;
 
   const ward_id = searchParams.get('ward_id') ? parseInt(searchParams.get('ward_id'), 10) : null;
   const category_id = searchParams.get('category_id') ? parseInt(searchParams.get('category_id'), 10) : null;
@@ -230,10 +231,7 @@ export async function GET(request) {
   // F. MERGE. Offset is applied once here, after the merge, so neither source
   //    offsets independently. Legacy rows are remapped to v1 shape; v1 rows pass
   //    through natively.
-  const merged = [...remappedLegacyData, ...v1Data];
-  merged.sort(
-    (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
-  );
+  const merged = rankListings([...remappedLegacyData, ...v1Data]);
   // F2. TEXT SEARCH (?q=) — case-insensitive substring match on the normalized
   //     `listing_name` field. Legacy rows are remapped to that field name in D
   //     above and v1 rows carry it natively, so this one filter covers both

@@ -621,7 +621,7 @@
 /* ---------- Mobile ---------- */
 @media(max-width:480px) {
   .page {
-    padding-inline: 16px;
+    padding-inline: 6px;
   }
 
   /* ---------- Title ---------- */
@@ -643,7 +643,8 @@
     display: flex;
     flex-direction: column;
     border-radius: 7px;
-    padding: 8px;
+    padding: 6px;
+    align-items:center;
   }
 
   .agentInfo {
@@ -660,7 +661,7 @@
 
   .contactBtn {
     width: 100%;
-    padding: 10px 30px;
+    padding: 6px 30px;
   }
 
   /* ---------- Info row ---------- */
