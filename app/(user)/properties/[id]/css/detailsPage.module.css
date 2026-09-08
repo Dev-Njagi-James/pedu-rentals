@@ -51,8 +51,9 @@
       padding-inline: 28px;
    }
    .container {
-      padding-inline:38px;
+      padding-inline:34px;
       margin-top: 80px;
+      padding:12px;
    }
 }
 
