@@ -12,7 +12,6 @@ const TABS = [
 ];
 
 const UTILITY_TABS = [
-  { id: 'settings', label: 'Settings', iconName: 'settings-01' },
   { id: 'help', label: 'Help', iconName: 'help-circle' },
 ];
 

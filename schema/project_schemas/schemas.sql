@@ -103,7 +103,9 @@ create table public.users_table (
   lister_email text null,
   phone_number text null,
   ward_name text null,
+  clerk_user_id text null,
   constraint users_table_pkey primary key (lister_uuid),
+  constraint users_table_clerk_user_id_key unique (clerk_user_id),
   constraint users_table_ward_name_fkey foreign KEY (ward_name) references wards_table (ward_name)
 ) TABLESPACE pg_default;
 

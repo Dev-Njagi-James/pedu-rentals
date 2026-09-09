@@ -26,13 +26,13 @@ const NAV_BREAKPOINT = 1024; // matches CSS module — keep both in sync
 function getPrimaryNavItems(role) {
   const dashboardHref = role === "admin" ? "/Admin" : "/Lister";
   return [
+    { key: "properties", label: "Properties", href: "/", requiresAuth: false },
     {
       key: "dashboard",
       label: "Dashboard",
       href: dashboardHref,
       requiresAuth: true,
     },
-    { key: "properties", label: "Properties", href: "/", requiresAuth: false },
     { key: "home", label: "Home", href: "/properties", requiresAuth: false },
     { key: "about", label: "About", href: "/about", requiresAuth: false },
   ];
