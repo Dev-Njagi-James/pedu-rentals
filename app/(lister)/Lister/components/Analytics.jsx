@@ -74,7 +74,7 @@ function ReviewsModal({ listing, onClose }) {
    const [ reviewsError, setReviewsError ] = useState(null);
 
    useEffect(() => {
-      fetch(`/api/listings/${listing.listing_id}/reviews`)
+      fetch(`/api/v1/listings/reviews?listing_id=${listing.listing_id}`)
          .then((r) => { if (!r.ok) throw new Error('Failed to fetch reviews.'); return r.json(); })
          .then((json) => setReviews(json.data ?? []))
          .catch((e) => setReviewsError(e.message))
@@ -100,7 +100,7 @@ function ReviewsModal({ listing, onClose }) {
                      <div className={styles.modalThumb}>
                         <Image
                            src={listing.image_url}
-                           alt={listing.property_name}
+                           alt={listing.listing_name}
                            fill
                            style={{ objectFit: 'cover' }}
                            sizes="48px"
@@ -109,7 +109,7 @@ function ReviewsModal({ listing, onClose }) {
                   )}
                   <div>
                      <p className={styles.modalLabel}>Reviews</p>
-                     <h3 className={styles.modalTitle}>{listing.property_name}</h3>
+                     <h3 className={styles.modalTitle}>{listing.listing_name}</h3>
                      {(listing.ward_name || listing.ward_location) && (
                         <p className={styles.modalLocation}>
                            <PinIcon />
@@ -192,7 +192,7 @@ function ListingRow({ listing, onReviewsClick }) {
             {listing.image_url ? (
                <Image
                   src={listing.image_url}
-                  alt={listing.property_name}
+                  alt={listing.listing_name}
                   fill
                   style={{ objectFit: 'cover' }}
                   sizes="64px"
@@ -204,7 +204,7 @@ function ListingRow({ listing, onReviewsClick }) {
 
          {/* Name + location */}
          <div className={styles.detailMeta}>
-            <p className={styles.detailName}>{listing.property_name}</p>
+            <p className={styles.detailName}>{listing.listing_name}</p>
             {(listing.ward_name || listing.ward_location) && (
                <p className={styles.detailLocation}>
                   <span className={styles.detailLocationIcon}><PinIcon /></span>
@@ -270,7 +270,7 @@ export default function Analytics() {
    }, []);
 
    useEffect(() => {
-      fetch('/api/analytics/listings')
+      fetch('/api/v1/analytics/listings')
          .then((r) => { if (!r.ok) throw new Error('Failed to fetch listings.'); return r.json(); })
          .then((json) => setListings(json.data ?? []))
          .catch((e) => setListingsError(e.message))
