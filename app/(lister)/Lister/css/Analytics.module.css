@@ -17,6 +17,17 @@
   margin: 0 0 1rem;
 }
 
+.loadingBanner {
+  padding: 0.6rem 1rem;
+  background: #f0f7ff;
+  border: 1px solid #d6e9ff;
+  border-radius: 8px;
+  color: #2563eb;
+  font-size: 0.8rem;
+  font-family: var(--font-geist-sans);
+  margin-bottom: 1rem;
+}
+
 /* ── Summary cards grid ── */
 .grid {
   display: grid;
@@ -67,9 +78,20 @@
   line-height: 1;
 }
 
-.colorBlue .cardIcon  { background: #eff6ff; color: #2563eb; }
-.colorAmber .cardIcon { background: #fffbeb; color: #b45309; }
-.colorTeal .cardIcon  { background: #f0fdf4; color: #0d9488; }
+.colorBlue .cardIcon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.colorAmber .cardIcon {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.colorTeal .cardIcon {
+  background: #f0fdf4;
+  color: #0d9488;
+}
 
 /* ── Skeletons ── */
 .skeleton {
@@ -95,8 +117,13 @@
 }
 
 @keyframes shimmer {
-  0%   { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ── Detail table ── */
@@ -268,8 +295,13 @@
   gap: 1px;
 }
 
-.starFilled { color: #f59e0b; }
-.starEmpty  { color: #d1d5db; }
+.starFilled {
+  color: #f59e0b;
+}
+
+.starEmpty {
+  color: #d1d5db;
+}
 
 /* ── Error / empty ── */
 .errorBanner {
@@ -295,7 +327,9 @@
   border-radius: 12px;
 }
 
-.emptyState p { margin: 0; }
+.emptyState p {
+  margin: 0;
+}
 
 /* ── Modal backdrop ── */
 .backdrop {

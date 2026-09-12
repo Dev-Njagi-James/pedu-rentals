@@ -5,12 +5,12 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { uploadListingMedia } from "@/lib/uploadMedia";
 import CheckoutPopup from "./CheckoutPopup";
 import UploadOverlay from "./UploadOverlay";
 import RichTextEditor from "./RichTextEditor";
 import styles from "../css/AddListing.module.css";
-
+import { uploadListingMedia } from "@/lib/uploadMedia";
+import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
 /* ─── Icon primitive ─── */
 const Icon = ({ d, className }) => (
   <svg
@@ -918,6 +918,11 @@ export default function AddListing({
         const finalizeJson = await finalizeRes.json();
         if (!finalizeRes.ok)
           throw new Error(finalizeJson.error ?? "Failed to finalize listing.");
+
+        // New listing now exists and will appear in My Listings — invalidate
+        // so the next mount of ListingsPanel does a full fetch with skeleton
+        // instead of serving stale cached data.
+        invalidateMyListingsCache();
 
         setUploadProgress({ stage: "Confirming", percent: 100 });
         await new Promise((r) => setTimeout(r, 400));

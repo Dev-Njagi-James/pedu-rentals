@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import styles from '../css/propertyCard.module.css';
+import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
 
 const planClassMap = {
   Regular: styles.planRegular,
@@ -53,13 +54,21 @@ export default function PropertyCardV1({ listing, onWardClick }) {
     <article className={styles.card}>
       <div className={styles.imageWrap}>
         {firstImage ? (
-          <Image
-            src={firstImage}
-            alt={listing_name}
-            fill
-            sizes="(max-width: 600px) 100vw, 360px"
-            className={styles.image}
-          />
+          (() => {
+            const { src, isTransformed } = buildCdnImageUrl(firstImage, {
+              width: 500,
+            });
+            return (
+              <Image
+                src={src}
+                alt={listing_name}
+                fill
+                unoptimized={isTransformed}
+                sizes="(max-width: 600px) 100vw, 360px"
+                className={styles.image}
+              />
+            );
+          })()
         ) : (
           <div className={styles.imagePlaceholder}>
             <svg

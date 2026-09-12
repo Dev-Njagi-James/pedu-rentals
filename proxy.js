@@ -53,5 +53,6 @@ export const config = {
     "/Lister",
     "/Lister/(.*)",
     "/api/v1/((?!listings/public|listings/filters).*)",
+    "/api/analytics/(.*)",
   ],
 };

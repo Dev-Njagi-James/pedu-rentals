@@ -3,12 +3,11 @@ import { useState, useEffect, useRef } from 'react';
 import styles from "./css/ListerNav.module.css";
 
 const TABS = [
-  { id: 'dashboard', label: 'Dashboard', iconName: 'dashboard-square-01' },
-  { id: 'add', label: 'Add Listing', iconName: 'add-circle' },
-  { id: 'listings', label: 'Listings', iconName: 'building-06' },
-  { id: 'analytics', label: 'Analytics', iconName: 'analytics-up' },
-  { id: 'account', label: 'Account', iconName: 'user-circle' },
-  { id: 'pricing', label: 'Pricing', iconName: 'dollar-circle' },
+  { id: "listings", label: "Listings", iconName: "building-06" },
+  { id: "add", label: "Add Listing", iconName: "add-circle" },
+  { id: "analytics", label: "Analytics", iconName: "analytics-up" },
+  { id: "account", label: "Account", iconName: "user-circle" },
+  { id: "pricing", label: "Pricing", iconName: "dollar-circle" },
 ];
 
 const UTILITY_TABS = [
