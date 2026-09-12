@@ -7,6 +7,8 @@ import { useUser } from "@clerk/nextjs";
 import "./css/AuthForm.css";
 import "./css/AuthForm.v2.css";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
+import { invalidateAnalyticsCache } from "@/lib/cache/analyticsCache";
 
 const supabase = createBrowserSupabaseClient();
 
@@ -424,6 +426,8 @@ export default function AuthForm() {
           return;
         }
 
+        invalidateAnalyticsCache();
+        invalidateMyListingsCache();
         await user?.reload();
         router.push("/Lister");
       } else {
@@ -449,7 +453,9 @@ export default function AuthForm() {
           setError("Account sync failed. Contact support.");
           return;
         }
-
+        
+        invalidateAnalyticsCache();
+        invalidateMyListingsCache();
         await user?.reload();
         router.push("/Lister");
       }
