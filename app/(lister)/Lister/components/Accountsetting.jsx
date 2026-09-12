@@ -1,7 +1,14 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import styles from "../css/AccountSettings.module.css";
+import {
+  getListerProfile,
+  getCachedListerProfileSync,
+  setListerProfile,
+  computeMissingFields,
+} from "@/lib/cache/listerProfileCache"; // adjust to actual relative path
 
 const Icon = ({ d, size = 18 }) => (
   <svg
@@ -35,12 +42,20 @@ const icons = {
   key: "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4",
 };
 
-const FieldDisplay = ({ icon, label, value, masked = false, badge = null }) => (
+const FieldDisplay = ({
+  icon,
+  label,
+  value,
+  masked = false,
+  badge = null,
+  missing = false,
+}) => (
   <div className={styles.fieldRow}>
     <Icon d={icons[icon]} size={16} />
     <div className={styles.fieldBody}>
       <span className={styles.fieldLabel}>{label}</span>
-      <span className={`${styles.fieldValue} ${masked ? styles.masked : ""}`}>
+      <span
+        className={`${styles.fieldValue} ${masked ? styles.masked : ""} ${missing ? styles.missing : ""}`}>
         {masked ? "••••••••••" : value || "—"}
       </span>
     </div>
@@ -48,6 +63,9 @@ const FieldDisplay = ({ icon, label, value, masked = false, badge = null }) => (
       <span className={`${styles.badge} ${styles[badge.tone]}`}>
         {badge.text}
       </span>
+    )}
+    {missing && !badge && (
+      <span className={`${styles.badge} ${styles.warn}`}>Missing</span>
     )}
   </div>
 );
@@ -150,29 +168,32 @@ const EMPTY = {
   accountType: "",
 };
 
-export default function AccountSettings({
-  v1AccountData = null,
-  v1ProfileMissing = [],
-}) {
-  // v1ProfileMissing is accepted but intentionally unused for now — this is the
-  // hook point for the upcoming profile-completeness modal (no modal is built
-  // yet; it will render here when v1ProfileMissing.length > 0).
+function fireIncompleteToast(profile) {
+  const missing = computeMissingFields(profile);
+  if (missing.length === 0) return;
+  toast.warning("Finish setting up your account", {
+    description: "Complete your profile to start publishing listings.",
+    duration: 8000,
+  });
+}
 
-  const [data, setData] = useState(v1AccountData ?? EMPTY);
+export default function AccountSettings() {
+  const [data, setData] = useState(() => getCachedListerProfileSync() ?? EMPTY);
+
   const [emailNotice, setEmailNotice] = useState(false);
   const [saveError, setSaveError] = useState(null);
 
   const [authDraft, setAuthDraft] = useState({
-    lister_email: v1AccountData?.lister_email ?? "",
+    lister_email: "",
     password: "",
   });
   const [profileDraft, setProfileDraft] = useState({
-    username: v1AccountData?.username ?? "",
-    phone_number: v1AccountData?.phone_number ?? "",
+    username: "",
+    phone_number: "",
   });
   const [orgDraft, setOrgDraft] = useState({
-    lister_organization: v1AccountData?.lister_organization ?? "",
-    ward_name: v1AccountData?.ward_name ?? "",
+    lister_organization: "",
+    ward_name: "",
   });
 
   const [editing, setEditing] = useState({
@@ -195,6 +216,32 @@ export default function AccountSettings({
     profile: false,
     org: false,
   });
+
+  // Reads the module cache. First mount anywhere in the app triggers the
+  // network call; every later mount (including tab-away/tab-back on this
+  // component) reads the resolved value synchronously — no fetch, no
+  // loading flicker. Toast fires on every mount where required fields are
+  // still missing, no sessionStorage gate, per spec.
+  useEffect(() => {
+    let cancelled = false;
+
+    const cached = getCachedListerProfileSync();
+    if (cached !== undefined) {
+      if (!cancelled) setData(cached ?? EMPTY);
+      fireIncompleteToast(cached);
+      return;
+    }
+
+    getListerProfile().then((profile) => {
+      if (cancelled) return;
+      setData(profile ?? EMPTY);
+      fireIncompleteToast(profile);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleAuthChange = useCallback((e) => {
     const { name, value } = e.target;
@@ -241,16 +288,10 @@ export default function AccountSettings({
   };
 
   const saveAuth = async () => {
-    // ── CONFLICT — flagged; do NOT silently drop. ─────────────────────────
-    // /api/v1/users/me PATCH accepts ONLY username, lister_organization,
-    // phone_number, ward_name. It has NO email/password fields — those are
-    // Clerk-managed (users_table's lister_email is read-only here and there is
-    // no writable password column). So saveAuth has nothing it can save via
-    // this route. Wiring to Clerk (Account Portal / a future Clerk-aware route)
-    // is intentionally left as a separate step — do not guess or fabricate a
-    // PATCH that the route would silently ignore.
+    // /api/v1/users/me PATCH has no email/password fields — Clerk-managed.
+    // Do not fabricate a PATCH the route would silently ignore.
     console.warn(
-      "AccountSettings.saveAuth: email/password are not savable via /api/v1/users/me (route has no email/password fields). Wire via Clerk instead."
+      "AccountSettings.saveAuth: email/password not savable via /api/v1/users/me. Wire via Clerk instead.",
     );
     setEmailNotice(true);
     setEditing((prev) => ({ ...prev, auth: false }));
@@ -273,7 +314,7 @@ export default function AccountSettings({
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to save.");
 
-      // Update local state directly from the PATCH response — no re-fetch.
+      setListerProfile(json.data); // updates cache + notifies subscribers (e.g. nav orgName), no re-fetch
       setData(json.data);
       setEditing((prev) => ({ ...prev, profile: false }));
       setDirty((prev) => ({ ...prev, profile: false }));
@@ -301,7 +342,7 @@ export default function AccountSettings({
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Failed to save.");
 
-      // Update local state directly from the PATCH response — no re-fetch.
+      setListerProfile(json.data);
       setData(json.data);
       setEditing((prev) => ({ ...prev, org: false }));
       setDirty((prev) => ({ ...prev, org: false }));
@@ -313,6 +354,8 @@ export default function AccountSettings({
       setLoading((prev) => ({ ...prev, org: false }));
     }
   };
+
+  const missingFields = computeMissingFields(data);
 
   return (
     <div className={styles.root}>
@@ -333,9 +376,9 @@ export default function AccountSettings({
 
       {emailNotice && (
         <p className={styles.noticeBanner}>
-          Email and password are managed by Clerk. Saving them via /api/v1/users/me
-          is not supported (that route has no email/password fields) — this section
-          will be rewired to Clerk in a separate step.
+          Email and password are managed by Clerk. Saving them via
+          /api/v1/users/me is not supported (that route has no email/password
+          fields) — this section will be rewired to Clerk in a separate step.
         </p>
       )}
 
@@ -425,8 +468,14 @@ export default function AccountSettings({
                 icon="user"
                 label="Username"
                 value={data.username}
+                missing={missingFields.includes("username")}
               />
-              <FieldDisplay icon="phone" label="Contact" value={data.phone_number} />
+              <FieldDisplay
+                icon="phone"
+                label="Contact"
+                value={data.phone_number}
+                missing={missingFields.includes("phone_number")}
+              />
             </>
           )}
         </Section>
@@ -467,6 +516,7 @@ export default function AccountSettings({
                 icon="building"
                 label="Organisation name"
                 value={data.lister_organization}
+                missing={missingFields.includes("lister_organization")}
               />
               <FieldDisplay icon="map" label="Ward" value={data.ward_name} />
             </>

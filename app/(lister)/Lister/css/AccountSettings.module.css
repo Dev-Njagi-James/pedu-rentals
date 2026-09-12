@@ -14,6 +14,10 @@
   margin-bottom: clamp(1.25rem, 3vw, 2rem);
 }
 
+.missing {
+  color: #b91c1c;
+}
+
 .pageTitle {
   font-size: clamp(1.25rem, 1rem + 1vw, 1.45rem);
   font-weight: 700;
