@@ -22,6 +22,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "cloudinary": "^2.10.0",
+    "heic2any": "^0.0.4",
     "next": "16.1.6",
     "next-sitemap": "^4.2.3",
     "react": "19.2.3",

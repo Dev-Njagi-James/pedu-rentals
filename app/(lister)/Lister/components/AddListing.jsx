@@ -281,6 +281,25 @@ const extractGoogleMapsUrl = (input) => {
   return trimmed.replace(/^["']|["']$/g, "");
 };
 
+const isHeic = (file) =>
+  file.type === "image/heic" ||
+  file.type === "image/heif" ||
+  /\.(heic|heif)$/i.test(file.name);
+
+async function convertHeicToJpeg(file) {
+  const heic2any = (await import("heic2any")).default;
+  const converted = await heic2any({
+    blob: file,
+    toType: "image/jpeg",
+    quality: 0.85,
+  });
+  // heic2any can return an array for multi-image HEIC containers — take the first frame.
+  const blob = Array.isArray(converted) ? converted[0] : converted;
+  return new File([blob], file.name.replace(/\.(heic|heif)$/i, ".jpg"), {
+    type: "image/jpeg",
+  });
+}
+
 export default function AddListing({
   prefill = null,
   onDone = null,
@@ -388,8 +407,30 @@ export default function AddListing({
     setErrors((prev) => ({ ...prev, category: undefined, type: undefined }));
   }, []);
 
-  const handleImage = useCallback((index, e) => {
-    const file = e.target.files?.[0] ?? null;
+  const handleImage = useCallback(async (index, e) => {
+    const rawFile = e.target.files?.[0] ?? null;
+    if (!rawFile) return;
+
+    let file = rawFile;
+
+    if (isHeic(rawFile)) {
+      setErrors((prev) => ({ ...prev, [`image_${index}`]: undefined }));
+      try {
+        file = await convertHeicToJpeg(rawFile);
+      } catch (err) {
+        console.error("[AddListing] HEIC conversion failed:", err);
+        setErrors((prev) => ({
+          ...prev,
+          [`image_${index}`]:
+            "Could not process this HEIC photo. Try exporting as JPEG.",
+        }));
+        toast.error(
+          "Could not process this HEIC photo. Try exporting as JPEG.",
+        );
+        return;
+      }
+    }
+
     setForm((prev) => {
       const images = [...prev.images];
       images[index] = file;
