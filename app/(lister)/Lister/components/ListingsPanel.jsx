@@ -97,18 +97,17 @@ export default function ListingsPanel({ onUploadStateChange }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDeleteClick = (listing_id) => {
+  const handleDeleteClick = (listing_id, source) => {
     if (confirmId !== listing_id) {
       setConfirmId(listing_id);
       setDeleteError(null);
       return;
     }
-    executeDelete(listing_id);
+    executeDelete(listing_id, source);
   };
-
   const cancelConfirm = () => setConfirmId(null);
 
-  const executeDelete = async (listing_id) => {
+  const executeDelete = async (listing_id, source) => {
     setDeletingId(listing_id);
     setDeleteError(null);
 
@@ -116,17 +115,19 @@ export default function ListingsPanel({ onUploadStateChange }) {
     setListings((ls) => ls.filter((l) => l.listing_id !== listing_id));
     setConfirmId(null);
 
+    const endpoint =
+      source === "v1"
+        ? `/api/v1/listings/${listing_id}`
+        : `/api/Listing?listing_id=${listing_id}`;
+
     try {
-      const res = await fetch(`/api/Listing?listing_id=${listing_id}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(endpoint, { method: "DELETE" });
 
       if (!res.ok) {
         const json = await res.json().catch(() => ({}));
         throw new Error(json.error ?? "Delete failed.");
       }
 
-      // Sync with server silently — UI is already optimistically updated.
       fetchListings(currentPage, { showLoading: false, bypassCache: true });
     } catch (err) {
       setListings(prev);
@@ -248,7 +249,9 @@ export default function ListingsPanel({ onUploadStateChange }) {
                     </span>
                     <button
                       className={styles.confirmYes}
-                      onClick={() => handleDeleteClick(listing.listing_id)}
+                      onClick={() =>
+                        handleDeleteClick(listing.listing_id, listing._source)
+                      }
                       disabled={deletingId === listing.listing_id}>
                       {deletingId === listing.listing_id
                         ? "Deleting…"
@@ -264,7 +267,9 @@ export default function ListingsPanel({ onUploadStateChange }) {
                 ) : (
                   <button
                     className={styles.deleteBtn}
-                    onClick={() => handleDeleteClick(listing.listing_id)}
+                    onClick={() =>
+                      handleDeleteClick(listing.listing_id, listing._source)
+                    }
                     disabled={deletingId === listing.listing_id}
                     aria-label={`Delete ${listing.property_name}`}>
                     <svg

@@ -36,12 +36,12 @@ export async function GET(request) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({
-      listings: data,
-      page,
-      limit,
-      total: count,
-    });
+        return NextResponse.json({
+          listings: data.map((row) => ({ ...row, _source: "v1" })),
+          page,
+          limit,
+          total: count,
+        });
   } catch (err) {
     return NextResponse.json(
       { error: err?.message || 'Failed to fetch listings.' },

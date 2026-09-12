@@ -5,6 +5,7 @@ import Image from "next/image";
 import StarRatingInput from "./starRatingInput";
 import styles from "../css/detailsHero.module.css";
 import DescriptionRenderer from "./DescriptionRenderer";
+import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -260,15 +261,24 @@ export default function PropertyDetails({ listing }) {
                 playsInline
               />
             ) : (
-              <Image
-                key={active.image_url}
-                src={active.image_url}
-                alt={property_name}
-                fill
-                sizes="(max-width: 768px) 100vw, 45vw"
-                className={styles.mainImage}
-                priority
-              />
+              (() => {
+                const { src, isTransformed } = buildCdnImageUrl(
+                  active.image_url,
+                  { width: 1200, fit: "contain" },
+                );
+                return (
+                  <Image
+                    key={active.image_url}
+                    src={src}
+                    alt={property_name}
+                    fill
+                    unoptimized={isTransformed}
+                    sizes="(max-width: 768px) 100vw, 45vw"
+                    className={styles.mainImage}
+                    priority
+                  />
+                );
+              })()
             )
           ) : (
             <div className={styles.mainPlaceholder}>
@@ -304,13 +314,22 @@ export default function PropertyDetails({ listing }) {
 
         <div className={styles.secondaryViewer}>
           {secondary?.image_url ? (
-            <Image
-              src={secondary.image_url}
-              alt={`${property_name} secondary view`}
-              fill
-              sizes="(max-width: 768px) 100vw, 45vw"
-              className={styles.mainImage}
-            />
+            (() => {
+              const { src, isTransformed } = buildCdnImageUrl(
+                secondary.image_url,
+                { width: 800, fit: "contain" },
+              );
+              return (
+                <Image
+                  src={src}
+                  alt={`${property_name} secondary view`}
+                  fill
+                  unoptimized={isTransformed}
+                  sizes="(max-width: 768px) 100vw, 45vw"
+                  className={styles.mainImage}
+                />
+              );
+            })()
           ) : (
             <div className={styles.mainPlaceholder}>
               <span>No media available</span>
