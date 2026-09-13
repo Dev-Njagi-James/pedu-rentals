@@ -106,6 +106,38 @@ function CloseIcon() {
   );
 }
 
+function ThumbUpIcon({ size = 13 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round">
+      <path d="M6.6 15.4V22H3.6a1 1 0 01-1-1v-6.6a1 1 0 011-1h3zM6.6 15.4l3.7-8.2a2 2 0 011.9-1.2h.3a2 2 0 012 2.3l-.7 3.9h5.6a2 2 0 011.9 2.7l-2.6 6.6a2 2 0 01-1.9 1.3H9.3a2 2 0 01-2-1.7" />
+    </svg>
+  );
+}
+
+function ThumbDownIcon({ size = 13 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round">
+      <path d="M17.4 8.6V2h3a1 1 0 011 1v6.6a1 1 0 01-1 1h-3zM17.4 8.6l-3.7 8.2a2 2 0 01-1.9 1.2h-.3a2 2 0 01-2-2.3l.7-3.9H4.6a2 2 0 01-1.9-2.7l2.6-6.6A2 2 0 017.2 1H14.7a2 2 0 012 1.7" />
+    </svg>
+  );
+}
+
 // ─── Stars ────────────────────────────────────────────────────────────────────
 function Stars({ rating }) {
   return (
@@ -248,6 +280,16 @@ function ReviewsModal({ listing, onClose }) {
                 {r.review_text && (
                   <p className={styles.reviewComment}>{r.review_text}</p>
                 )}
+                <div className={styles.reviewReactions}>
+                  <span className={styles.reactionCount}>
+                    <ThumbUpIcon />
+                    {r.like_count ?? 0}
+                  </span>
+                  <span className={styles.reactionCount}>
+                    <ThumbDownIcon />
+                    {r.dislike_count ?? 0}
+                  </span>
+                </div>
               </div>
             ))}
         </div>
