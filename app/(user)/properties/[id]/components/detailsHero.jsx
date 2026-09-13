@@ -55,6 +55,17 @@ function Stars({ rating }) {
   );
 }
 
+function getFingerprint() {
+  return (
+    localStorage.getItem("cr_fingerprint") ??
+    (() => {
+      const id = crypto.randomUUID();
+      localStorage.setItem("cr_fingerprint", id);
+      return id;
+    })()
+  );
+}
+
 export default function PropertyDetails({ listing }) {
   const {
     property_name,
@@ -119,7 +130,7 @@ export default function PropertyDetails({ listing }) {
 
   const active = mediaItems[activeIndex] ?? null;
   const secondary = mediaItems[activeIndex + 1] ?? mediaItems[1] ?? null;
-  const thumbnails = mediaItems.slice(0, 5);//Check why the thumbnails are not showing 5 slots
+  const thumbnails = mediaItems.slice(0, 5); //Check why the thumbnails are not showing 5 slots
 
   // Reviews fetch preserved as-is, now runs on mount (no tab gating).
   useEffect(() => {
@@ -127,7 +138,11 @@ export default function PropertyDetails({ listing }) {
     setReviewsLoading(true);
     setReviewsError(null);
 
-    fetch(`/api/v1/listings/reviews?listing_id=${listing_id}`)
+    const fingerprint = getFingerprint();
+
+    fetch(
+      `/api/v1/listings/reviews?listing_id=${listing_id}&fingerprint=${fingerprint}`,
+    )
       .then((r) => {
         if (!r.ok) throw new Error("Failed to fetch reviews");
         return r.json();
@@ -143,13 +158,7 @@ export default function PropertyDetails({ listing }) {
 
     setSubmitting(true);
 
-    const fingerprint =
-      localStorage.getItem("cr_fingerprint") ??
-      (() => {
-        const id = crypto.randomUUID();
-        localStorage.setItem("cr_fingerprint", id);
-        return id;
-      })();
+    const fingerprint = getFingerprint();
 
     try {
       const res = await fetch(`/api/v1/listings/reviews`, {
@@ -173,7 +182,9 @@ export default function PropertyDetails({ listing }) {
       setRating(0);
 
       // Refetch so the new review appears without a page reload.
-      const refreshed = await fetch(`/api/v1/listings/reviews?listing_id=${listing_id}`);
+      const refreshed = await fetch(
+        `/api/v1/listings/reviews?listing_id=${listing_id}&fingerprint=${fingerprint}`,
+      );
       if (refreshed.ok) {
         const json = await refreshed.json();
         setReviews(json.data ?? []);
@@ -182,6 +193,47 @@ export default function PropertyDetails({ listing }) {
       console.error(err);
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleReact(review_id, reaction_type) {
+    const fingerprint = getFingerprint();
+    const prevReviews = reviews;
+
+    setReviews((prev) =>
+      prev.map((r) => {
+        if (r.review_id !== review_id) return r;
+        const wasLiked = r.user_reaction === "like";
+        const wasDisliked = r.user_reaction === "dislike";
+        let like_count = r.like_count ?? 0;
+        let dislike_count = r.dislike_count ?? 0;
+        let user_reaction = r.user_reaction;
+
+        if (r.user_reaction === reaction_type) {
+          user_reaction = null;
+          if (reaction_type === "like") like_count--;
+          else dislike_count--;
+        } else {
+          if (wasLiked) like_count--;
+          if (wasDisliked) dislike_count--;
+          if (reaction_type === "like") like_count++;
+          else dislike_count++;
+          user_reaction = reaction_type;
+        }
+
+        return { ...r, like_count, dislike_count, user_reaction };
+      }),
+    );
+
+    try {
+      const res = await fetch(`/api/v1/listings/reviews/${review_id}/react`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fingerprint, reaction_type }),
+      });
+      if (!res.ok) throw new Error("React failed");
+    } catch (err) {
+      setReviews(prevReviews);
     }
   }
 
@@ -542,14 +594,20 @@ export default function PropertyDetails({ listing }) {
                   <p className={styles.reviewComment}>{r.review_text}</p>
                 )}
                 <div className={styles.reviewFooter}>
-                  {/* TODO: like/dislike counts not returned by reviews endpoint yet. Placeholder 0. */}
-                  <span className={styles.reviewAction}>
+                  <button
+                    type="button"
+                    className={styles.reviewAction}
+                    onClick={() => handleReact(r.review_id, "like")}>
                     <i className="hgi hgi-stroke hgi-rounded hgi-thumbs-up" />
-                    {r.likes ?? 0}
-                  </span>
-                  <span className={styles.reviewAction}>
+                    {r.like_count ?? 0}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.reviewAction}
+                    onClick={() => handleReact(r.review_id, "dislike")}>
                     <i className="hgi hgi-stroke hgi-rounded hgi-thumbs-down" />
-                  </span>
+                    {r.dislike_count ?? 0}
+                  </button>
                   <Stars rating={Number(r.rating)} />
                 </div>
               </div>

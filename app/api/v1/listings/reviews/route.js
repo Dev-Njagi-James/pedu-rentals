@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const listing_id = searchParams.get("listing_id");
+  const fingerprint = searchParams.get("fingerprint");
 
   if (!listing_id) {
     return NextResponse.json(
@@ -29,7 +30,37 @@ export async function GET(request) {
     );
   }
 
-  return NextResponse.json({ data });
+  const reviewIds = data.map((r) => r.review_id);
+  const counts = {};
+  const userReactions = {};
+
+  if (reviewIds.length > 0) {
+    const { data: reactions, error: reactionsError } = await paymentsSupabase
+      .from("review_reactions")
+      .select("review_id, reaction_type, fingerprint")
+      .in("review_id", reviewIds);
+
+    if (!reactionsError && reactions) {
+      for (const r of reactions) {
+        if (!counts[r.review_id]) {
+          counts[r.review_id] = { like_count: 0, dislike_count: 0 };
+        }
+        counts[r.review_id][`${r.reaction_type}_count`]++;
+        if (fingerprint && r.fingerprint === fingerprint) {
+          userReactions[r.review_id] = r.reaction_type;
+        }
+      }
+    }
+  }
+
+  const enriched = data.map((r) => ({
+    ...r,
+    like_count: counts[r.review_id]?.like_count ?? 0,
+    dislike_count: counts[r.review_id]?.dislike_count ?? 0,
+    user_reaction: userReactions[r.review_id] ?? null,
+  }));
+
+  return NextResponse.json({ data: enriched });
 }
 
 export async function POST(request) {
@@ -49,8 +80,6 @@ export async function POST(request) {
     );
   }
 
-  // Gate: only paid listings can receive reviews. Checked server-side —
-  // do not rely on the frontend only showing paid listings.
   const { data: listing, error: listingError } = await paymentsSupabase
     .from("listings_table")
     .select("listing_id, payment_status")
@@ -80,7 +109,6 @@ export async function POST(request) {
     .single();
 
   if (insertError) {
-    // UNIQUE(listing_id, fingerprint) violation — Postgres code 23505.
     if (insertError.code === "23505") {
       return NextResponse.json(
         { error: "You have already reviewed this listing" },
