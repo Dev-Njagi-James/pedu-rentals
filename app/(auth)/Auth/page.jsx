@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSignUp, useSignIn } from "@clerk/nextjs/legacy";
 import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
 import "./css/AuthForm.css";
 import "./css/AuthForm.v2.css";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
@@ -159,6 +160,111 @@ function Field({
   );
 }
 
+// Number of digits Clerk sends for the email_code strategy. Change this if
+// your Clerk instance is configured for a different code length — everything
+// else adapts automatically since this is the only hardcoded constant.
+const OTP_LENGTH = 6;
+
+function OtpInput({ value, onChange, onComplete, error, disabled }) {
+  const inputsRef = useRef([]);
+  const digits = value.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
+
+  const setDigitAt = (index, char) => {
+    const next = value.split("");
+    next[index] = char;
+    onChange(next.join("").slice(0, OTP_LENGTH));
+  };
+
+  const handleChange = (index, e) => {
+    const raw = e.target.value;
+    const char = raw.replace(/[^0-9]/g, "").slice(-1);
+
+    if (!char) {
+      setDigitAt(index, "");
+      return;
+    }
+
+    const next = value.split("");
+    next[index] = char;
+    const nextValue = next.join("").slice(0, OTP_LENGTH);
+    onChange(nextValue);
+
+    if (index < OTP_LENGTH - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+
+    if (nextValue.replace(/[^0-9]/g, "").length === OTP_LENGTH) {
+      onComplete?.(nextValue);
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace") {
+      if (value[index]) {
+        setDigitAt(index, "");
+      } else if (index > 0) {
+        inputsRef.current[index - 1]?.focus();
+        setDigitAt(index - 1, "");
+      }
+      return;
+    }
+    if (e.key === "ArrowLeft" && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/[^0-9]/g, "")
+      .slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    const nextValue = pasted
+      .padEnd(OTP_LENGTH, "")
+      .slice(0, OTP_LENGTH)
+      .trimEnd();
+    onChange(nextValue);
+    const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1);
+    inputsRef.current[focusIndex]?.focus();
+
+    if (pasted.length === OTP_LENGTH) {
+      onComplete?.(pasted);
+    }
+  };
+
+  return (
+    <div className="otp-wrap">
+      <div className={`otp-row${error ? " otp-row-error" : ""}`}>
+        {digits.map((digit, index) => (
+          <input
+            key={index}
+            ref={(el) => (inputsRef.current[index] = el)}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            className="otp-box"
+            value={digit.trim()}
+            onChange={(e) => handleChange(index, e)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+            onPaste={handlePaste}
+            disabled={disabled}
+            aria-label={`Digit ${index + 1} of verification code`}
+          />
+        ))}
+      </div>
+      {error && (
+        <span className="field-hint error-msg" role="alert">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
 const COPY = {
   login: {
     title: "Welcome back. Your listings are waiting.",
@@ -179,6 +285,11 @@ const COPY = {
 };
 
 const RESEND_COOLDOWN_SECONDS = 30;
+
+// Failed-verification escalation ladder. See runVerifyCode.
+const AUTO_SUBMIT_DISABLE_AFTER = 3;
+const LOCKOUT_AFTER = 6;
+const LOCKOUT_SECONDS = 60;
 
 export default function AuthForm() {
   const router = useRouter();
@@ -215,6 +326,12 @@ export default function AuthForm() {
   const [emailFactorId, setEmailFactorId] = useState(null);
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  // Failed-attempt escalation state. See runVerifyCode for the ladder logic.
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [autoSubmitDisabled, setAutoSubmitDisabled] = useState(false);
+  const [lockedOut, setLockedOut] = useState(false);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
@@ -222,6 +339,29 @@ export default function AuthForm() {
     }, 1000);
     return () => clearInterval(timer);
   }, [resendCooldown]);
+
+  useEffect(() => {
+    if (lockoutRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutRemaining((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutRemaining]);
+
+  useEffect(() => {
+    if (lockedOut && lockoutRemaining === 0) {
+      // Cooldown expired — force the user back to the email step to
+      // re-authenticate rather than silently re-enabling this code entry.
+      setLockedOut(false);
+      setPendingVerification(false);
+      setCode("");
+      setFailedAttempts(0);
+      setAutoSubmitDisabled(false);
+      setEmailFactorId(null);
+      setError(null);
+      toast.info("You can try signing in again now.");
+    }
+  }, [lockedOut, lockoutRemaining]);
 
   const toggleTopTab = useCallback(() => {
     setTopTab((value) => (value === "login" ? "signup" : "login"));
@@ -232,16 +372,15 @@ export default function AuthForm() {
     setCode("");
     setEmailFactorId(null);
     setResendCooldown(0);
+    setFailedAttempts(0);
+    setAutoSubmitDisabled(false);
+    setLockedOut(false);
+    setLockoutRemaining(0);
   }, []);
 
   const handleEmailChange = useCallback((event) => {
     setEmail(event.target.value);
     setEmailError(null);
-  }, []);
-
-  const handleCodeChange = useCallback((event) => {
-    setCode(event.target.value);
-    setCodeError(null);
   }, []);
 
   // ───────────────────────────────────────────────────────
@@ -338,6 +477,8 @@ export default function AuthForm() {
 
         console.log("VERIFICATION EMAIL PREPARED");
 
+        setFailedAttempts(0);
+        setAutoSubmitDisabled(false);
         setPendingVerification(true);
         setResendCooldown(RESEND_COOLDOWN_SECONDS);
       } else {
@@ -372,6 +513,8 @@ export default function AuthForm() {
 
         console.log("SIGNIN VERIFICATION PREPARED");
 
+        setFailedAttempts(0);
+        setAutoSubmitDisabled(false);
         setPendingVerification(true);
         setResendCooldown(RESEND_COOLDOWN_SECONDS);
       }
@@ -389,11 +532,19 @@ export default function AuthForm() {
     }
   };
 
-  const handleVerifyCode = async (event) => {
-    event.preventDefault();
+  // Pure verification runner — callable from the manual Verify button
+  // (via handleVerifyCode) or automatically from OtpInput's onComplete.
+  // Tracks consecutive failures and escalates: after
+  // AUTO_SUBMIT_DISABLE_AFTER failures, auto-submit turns off and the user
+  // must review the code and press Verify manually; after LOCKOUT_AFTER
+  // failures, the flow locks for LOCKOUT_SECONDS and then resets to the
+  // email step so the user re-authenticates from scratch.
+  const runVerifyCode = async (codeValue) => {
+    if (lockedOut) return;
+
     setError(null);
 
-    const validationError = validateCode(code);
+    const validationError = validateCode(codeValue);
     if (validationError) {
       setCodeError(validationError);
       return;
@@ -403,67 +554,80 @@ export default function AuthForm() {
     setLoading(true);
 
     try {
+      let result;
+
       if (topTab === "signup") {
         if (!signUpLoaded) return;
-
-        const result = await signUp.attemptEmailAddressVerification({
-          code: code.trim(),
+        result = await signUp.attemptEmailAddressVerification({
+          code: codeValue.trim(),
         });
-
-        if (result.status !== "complete") {
-          setError("Verification incomplete. Please try again.");
-          return;
-        }
-
-        await setActiveFromSignUp({ session: result.createdSessionId });
-
-        const syncResponse = await fetch("/api/v1/auth/sync", {
-          method: "POST",
-        });
-
-        if (!syncResponse.ok) {
-          setError("Account sync failed. Contact support.");
-          return;
-        }
-
-        invalidateAnalyticsCache();
-        invalidateMyListingsCache();
-        await user?.reload();
-        router.push("/Lister");
       } else {
         if (!signInLoaded) return;
-
-        const result = await signIn.attemptFirstFactor({
+        result = await signIn.attemptFirstFactor({
           strategy: "email_code",
-          code: code.trim(),
+          code: codeValue.trim(),
         });
-
-        if (result.status !== "complete") {
-          setError("Verification incomplete. Please try again.");
-          return;
-        }
-
-        await setActiveFromSignIn({ session: result.createdSessionId });
-
-        const syncResponse = await fetch("/api/v1/auth/sync", {
-          method: "POST",
-        });
-
-        if (!syncResponse.ok) {
-          setError("Account sync failed. Contact support.");
-          return;
-        }
-        
-        invalidateAnalyticsCache();
-        invalidateMyListingsCache();
-        await user?.reload();
-        router.push("/Lister");
       }
+
+      if (result.status !== "complete") {
+        throw new Error("Verification incomplete. Please try again.");
+      }
+
+      if (topTab === "signup") {
+        await setActiveFromSignUp({ session: result.createdSessionId });
+      } else {
+        await setActiveFromSignIn({ session: result.createdSessionId });
+      }
+
+      const syncResponse = await fetch("/api/v1/auth/sync", {
+        method: "POST",
+      });
+
+      if (!syncResponse.ok) {
+        setError("Account sync failed. Contact support.");
+        return;
+      }
+
+      invalidateAnalyticsCache();
+      invalidateMyListingsCache();
+      await user?.reload();
+      router.push("/Lister");
     } catch (err) {
-      setError(err?.errors?.[0]?.message ?? "Invalid or expired code.");
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+      setCode("");
+
+      const message = err?.errors?.[0]?.message ?? "Invalid or expired code.";
+      setError(message);
+
+      if (nextAttempts >= LOCKOUT_AFTER) {
+        setLockedOut(true);
+        setLockoutRemaining(LOCKOUT_SECONDS);
+        toast.error("Too many failed attempts", {
+          description: `You need to recheck your code and reauthenticate. Try again in ${LOCKOUT_SECONDS} seconds.`,
+          duration: 8000,
+        });
+      } else if (nextAttempts >= AUTO_SUBMIT_DISABLE_AFTER) {
+        setAutoSubmitDisabled(true);
+        toast.warning("Code didn't match", {
+          description: "Double-check the code and press Verify to try again.",
+          duration: 6000,
+        });
+      } else {
+        toast.error("Code didn't match", {
+          description: "Check the code and try again.",
+          duration: 5000,
+        });
+      }
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerifyCode = (event) => {
+    event.preventDefault();
+    if (lockedOut) return;
+    runVerifyCode(code);
   };
 
   const handleResend = async () => {
@@ -491,6 +655,8 @@ export default function AuthForm() {
         });
       }
 
+      setFailedAttempts(0);
+      setAutoSubmitDisabled(false);
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
     } catch (err) {
       setError(
@@ -590,14 +756,18 @@ export default function AuthForm() {
                     className="login-form-v2"
                     onSubmit={handleVerifyCode}
                     noValidate>
-                    <Field
-                      icon={MailIcon}
-                      name="code"
-                      placeholder="Verification code"
-                      type="text"
+                    <OtpInput
                       value={code}
-                      onChange={handleCodeChange}
+                      onChange={(val) => {
+                        setCode(val);
+                        setCodeError(null);
+                      }}
+                      onComplete={(val) => {
+                        if (!autoSubmitDisabled && !lockedOut)
+                          runVerifyCode(val);
+                      }}
                       error={codeError}
+                      disabled={loading || lockedOut}
                     />
 
                     {error && (
@@ -609,8 +779,12 @@ export default function AuthForm() {
                     <button
                       type="submit"
                       className="submit-btn-v2"
-                      disabled={loading}>
-                      {loading ? "Please wait…" : "Verify"}
+                      disabled={loading || lockedOut}>
+                      {lockedOut
+                        ? `Locked (${lockoutRemaining}s)`
+                        : loading
+                          ? "Please wait…"
+                          : "Verify"}
                       <span aria-hidden="true">→</span>
                     </button>
 
@@ -618,7 +792,7 @@ export default function AuthForm() {
                       type="button"
                       className="toggle-link"
                       onClick={handleResend}
-                      disabled={resendCooldown > 0 || loading}>
+                      disabled={resendCooldown > 0 || loading || lockedOut}>
                       {resendCooldown > 0
                         ? `Resend code (${resendCooldown}s)`
                         : "Resend code"}
