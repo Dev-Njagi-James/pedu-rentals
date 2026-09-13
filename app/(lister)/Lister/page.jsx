@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import ListerNav from "./ListerNav";
 import AccountSettings from "./components/Accountsetting";
 import AddListing from "./components/AddListing";
@@ -13,7 +14,9 @@ import {
   getListerProfile,
   getCachedListerProfileSync,
   subscribeListerProfile,
-} from "@/lib/cache/listerProfileCache"; 
+  computeMissingFields,
+  shouldShowIncompleteToast,
+} from "@/lib/cache/listerProfileCache";
 
 export default function ListerLand() {
   const [editingListing, setEditingListing] = useState(null);
@@ -32,8 +35,33 @@ export default function ListerLand() {
     setActiveTab("add");
   };
 
+  const maybeFireIncompleteToast = (profile) => {
+    const missing = computeMissingFields(profile);
+    if (missing.length === 0) return;
+    if (!shouldShowIncompleteToast()) return;
+
+    toast.warning("Finish setting up your account", {
+      description: "Complete your profile to start publishing listings.",
+      action: {
+        label: "Complete profile",
+        onClick: () => setActiveTab("account"),
+      },
+      duration: 8000,
+    });
+  };
+
   useEffect(() => {
-    getListerProfile().then((profile) => setV1Profile(profile ?? null));
+    const cached = getCachedListerProfileSync();
+    if (cached !== undefined) {
+      setV1Profile(cached ?? null);
+      maybeFireIncompleteToast(cached);
+    } else {
+      getListerProfile().then((profile) => {
+        setV1Profile(profile ?? null);
+        maybeFireIncompleteToast(profile);
+      });
+    }
+
     return subscribeListerProfile((profile) => setV1Profile(profile ?? null));
   }, []);
 

@@ -12,7 +12,7 @@ export async function GET() {
   const { data, error: queryError } = await paymentsSupabase
     .from("users_table")
     .select(
-      "lister_uuid, username, lister_organization, lister_email, phone_number, ward_name",
+      "lister_uuid, username, lister_organization, lister_email, phone_number, ward_name, created_at, account_type",
     )
     .eq("lister_uuid", user.id)
     .maybeSingle();
@@ -75,9 +75,7 @@ export async function PATCH(request) {
     .from("users_table")
     .update(update)
     .eq("lister_uuid", user.id)
-    .select(
-      "lister_uuid, username, lister_organization, lister_email, phone_number, ward_name",
-    )
+     .select('lister_uuid, username, lister_organization, lister_email, phone_number, ward_name, created_at, account_type')
     .maybeSingle();
 
   if (queryError) {

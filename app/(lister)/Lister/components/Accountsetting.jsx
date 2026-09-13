@@ -168,6 +168,28 @@ const EMPTY = {
   accountType: "",
 };
 
+// Single point of truth: coerces every text column that can be null in
+// users_table to "". Anything that reads `data` after this — including
+// startEdit's drafts — never has to null-check again.
+function normalizeProfile(profile) {
+  if (!profile) return EMPTY;
+  return {
+    ...profile,
+    username: profile.username ?? "",
+    lister_email: profile.lister_email ?? "",
+    phone_number: profile.phone_number ?? "",
+    lister_organization: profile.lister_organization ?? "",
+    ward_name: profile.ward_name ?? "",
+    memberSince: profile.created_at
+      ? new Date(profile.created_at).toLocaleDateString(undefined, {
+          year: "numeric",
+          month: "long",
+        })
+      : "",
+    accountType: profile.account_type ?? "Lister",
+  };
+}
+
 function fireIncompleteToast(profile) {
   const missing = computeMissingFields(profile);
   if (missing.length === 0) return;
@@ -178,7 +200,9 @@ function fireIncompleteToast(profile) {
 }
 
 export default function AccountSettings() {
-  const [data, setData] = useState(() => getCachedListerProfileSync() ?? EMPTY);
+  const [data, setData] = useState(() =>
+    normalizeProfile(getCachedListerProfileSync()),
+  );
 
   const [emailNotice, setEmailNotice] = useState(false);
   const [saveError, setSaveError] = useState(null);
@@ -221,20 +245,23 @@ export default function AccountSettings() {
   // network call; every later mount (including tab-away/tab-back on this
   // component) reads the resolved value synchronously — no fetch, no
   // loading flicker. Toast fires on every mount where required fields are
-  // still missing, no sessionStorage gate, per spec.
+  // still missing, no sessionStorage gate, per spec. fireIncompleteToast
+  // still receives the raw (un-normalized) profile — computeMissingFields
+  // already treats null/empty the same way, so normalization here doesn't
+  // change toast behavior.
   useEffect(() => {
     let cancelled = false;
 
     const cached = getCachedListerProfileSync();
     if (cached !== undefined) {
-      if (!cancelled) setData(cached ?? EMPTY);
+      if (!cancelled) setData(normalizeProfile(cached));
       fireIncompleteToast(cached);
       return;
     }
 
     getListerProfile().then((profile) => {
       if (cancelled) return;
-      setData(profile ?? EMPTY);
+      setData(normalizeProfile(profile));
       fireIncompleteToast(profile);
     });
 
@@ -262,6 +289,7 @@ export default function AccountSettings() {
   }, []);
 
   const startEdit = (section) => {
+    // data is already normalized — no null ever reaches these drafts.
     if (section === "auth")
       setAuthDraft({ lister_email: data.lister_email, password: "" });
     if (section === "profile")
@@ -315,7 +343,7 @@ export default function AccountSettings() {
       if (!res.ok) throw new Error(json.error ?? "Failed to save.");
 
       setListerProfile(json.data); // updates cache + notifies subscribers (e.g. nav orgName), no re-fetch
-      setData(json.data);
+      setData(normalizeProfile(json.data));
       setEditing((prev) => ({ ...prev, profile: false }));
       setDirty((prev) => ({ ...prev, profile: false }));
       setSaved((prev) => ({ ...prev, profile: true }));
@@ -343,7 +371,7 @@ export default function AccountSettings() {
       if (!res.ok) throw new Error(json.error ?? "Failed to save.");
 
       setListerProfile(json.data);
-      setData(json.data);
+      setData(normalizeProfile(json.data));
       setEditing((prev) => ({ ...prev, org: false }));
       setDirty((prev) => ({ ...prev, org: false }));
       setSaved((prev) => ({ ...prev, org: true }));
@@ -560,12 +588,7 @@ export default function AccountSettings() {
           <FieldDisplay
             icon="crown"
             label="Account type"
-            value={null}
-            badge={
-              data.accountType
-                ? { text: data.accountType, tone: "accent" }
-                : null
-            }
+            value={data.accountType}
           />
         </Section>
       </div>
