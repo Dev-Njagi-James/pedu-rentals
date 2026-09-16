@@ -2,11 +2,13 @@
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import FilterSidebar from './components/FilterSidebar'
 import PropertyCardV1 from './components/PropertyCardV1'
 import styles from './css/properties.module.css'
 import ReviewPrompt from './components/ReviewPrompt'
 import { useTrackVisit } from '@/app/hooks/useTrackVisit'
+import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
 import SearchBar from './components/SearchBar'
 
 const PAGE_SIZE = 20
@@ -65,6 +67,14 @@ export default function PropertiesClient() {
   const { data, isLoading, error, isFetching, failureCount } = useQuery({
     queryKey: [ 'listings', filters, bufferPage ],
     queryFn: () => fetchListings(filters, bufferPage),
+  })
+
+  const queryClient = useQueryClient()
+
+  useRealtimeChannel('listings:feed', (eventName) => {
+    if (eventName.startsWith('listing.')) {
+      queryClient.invalidateQueries({ queryKey: ['listings'] })
+    }
   })
 
   const allData = data?.data ?? []
