@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import PropertyHero from './components/detailsHero';
-import PropertyTabs from './components/detailsTab';
 import styles from './css/detailsPage.module.css';
 import RelatedListingsCarousel from './components/RelatedListingsCarousel'
 import ViewTracker from './components/ViewTracker';

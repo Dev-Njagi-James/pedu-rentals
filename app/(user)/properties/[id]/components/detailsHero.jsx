@@ -564,23 +564,11 @@ export default function PropertyDetails({ listing }) {
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Reviews</h2>
 
-        {reviewsLoading && (
-          <div className={styles.reviewsLoading}>
-            {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className={styles.reviewSkeleton} />
-            ))}
-          </div>
-        )}
-
         {reviewsError && (
           <p className={styles.empty}>Failed to load reviews.</p>
         )}
 
-        {!reviewsLoading && !reviewsError && reviews.length === 0 && (
-          <p className={styles.empty}>No reviews yet for this listing.</p>
-        )}
-
-        {!reviewsLoading && !reviewsError && reviews.length > 0 && (
+        {!reviewsError && (
           <div className={styles.reviewsList}>
             {reviews.map((r) => (
               <div key={r.review_id} className={styles.reviewCard}>
@@ -612,6 +600,14 @@ export default function PropertyDetails({ listing }) {
                 </div>
               </div>
             ))}
+
+            {reviewsLoading && reviews.length === 0 && (
+              <div className={styles.reviewsPending} aria-live="polite" />
+            )}
+
+            {!reviewsLoading && !reviewsError && reviews.length === 0 && (
+              <p className={styles.empty}>No reviews yet for this listing.</p>
+            )}
           </div>
         )}
 
