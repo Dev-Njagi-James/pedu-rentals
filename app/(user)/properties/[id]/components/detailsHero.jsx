@@ -6,6 +6,7 @@ import StarRatingInput from "./starRatingInput";
 import styles from "../css/detailsHero.module.css";
 import DescriptionRenderer from "./DescriptionRenderer";
 import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
+import { useRealtimeChannel } from "@/lib/hooks/useRealtimeChannel";
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -151,6 +152,29 @@ export default function PropertyDetails({ listing }) {
       .catch((e) => setReviewsError(e.message))
       .finally(() => setReviewsLoading(false));
   }, [listing_id]);
+
+  const refetchReviews = () => {
+    if (!listing_id) return;
+    const fingerprint = getFingerprint();
+    fetch(
+      `/api/v1/listings/reviews?listing_id=${listing_id}&fingerprint=${fingerprint}`,
+    )
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed to fetch reviews");
+        return r.json();
+      })
+      .then((json) => setReviews(json.data ?? []))
+      .catch((e) => setReviewsError(e.message));
+  };
+
+  useRealtimeChannel(
+    listing_id ? `listing:${listing_id}` : null,
+    (eventName) => {
+      if (eventName.startsWith('review.') || eventName.startsWith('reaction.')) {
+        refetchReviews();
+      }
+    }
+  );
 
   async function handleSubmitReview() {
     if (rating === 0) return;
