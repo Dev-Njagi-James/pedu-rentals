@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, keepPreviousData} from "@tanstack/react-query";
 import { useQueryClient } from '@tanstack/react-query'
 import FilterSidebar from './components/FilterSidebar'
 import PropertyCardV1 from './components/PropertyCardV1'
@@ -65,9 +65,10 @@ export default function PropertiesClient() {
   const indexInBuffer = (currentPage - 1) % BUFFER_SIZE
 
   const { data, isLoading, error, isFetching, failureCount } = useQuery({
-    queryKey: [ 'listings', filters, bufferPage ],
+    queryKey: ["listings", filters, bufferPage],
     queryFn: () => fetchListings(filters, bufferPage),
-  })
+    placeholderData: keepPreviousData,
+  });
 
   const queryClient = useQueryClient()
 
@@ -141,7 +142,10 @@ export default function PropertiesClient() {
     <>
       <ReviewPrompt />
       <div className={styles.pageLayout}>
-        <FilterSidebar onFilterChange={handleFilterChange} initialFilters={filters} />
+        <FilterSidebar
+          onFilterChange={handleFilterChange}
+          initialFilters={filters}
+        />
 
         <main className={styles.mainContent}>
           <SearchBar
@@ -149,9 +153,7 @@ export default function PropertiesClient() {
             onSearchResults={handleSearchResults}
             onClear={handleSearchClear}
           />
-          {searchLabel && (
-            <p className={styles.searchLabel}>{searchLabel}</p>
-          )}
+          {searchLabel && <p className={styles.searchLabel}>{searchLabel}</p>}
 
           {/*
           <div className={styles.resultsHeader}>
@@ -186,17 +188,38 @@ export default function PropertiesClient() {
           {!isLoading && !error && displayListings.length === 0 && (
             <div className={styles.emptyState}>
               <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                <path d="M3 10V20M21 10V20M3 10h18M3 10L12 3l9 7" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-                <rect x="9" y="14" width="6" height="6" stroke="currentColor" strokeWidth="1.2" />
+                <path
+                  d="M3 10V20M21 10V20M3 10h18M3 10L12 3l9 7"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                />
+                <rect
+                  x="9"
+                  y="14"
+                  width="6"
+                  height="6"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
               </svg>
-              <p>{isSearchActive ? 'No properties found for your search.' : 'No properties match your filters.'}</p>
+              <p>
+                {isSearchActive
+                  ? "No properties found for your search."
+                  : "No properties match your filters."}
+              </p>
             </div>
           )}
 
           {!isLoading && displayListings.length > 0 && (
-            <div className={styles.grid}>
-              {displayListings.map(listing => (
-                                <PropertyCardV1
+            <div
+              className={styles.grid}
+              style={{
+                opacity: isFetching ? 0.8 : 1,
+                transition: "opacity 0.15s",
+              }}>
+              {displayListings.map((listing) => (
+                <PropertyCardV1
                   key={listing.listing_id}
                   listing={listing}
                   onWardClick={(ward_id, ward_name, property_location) =>
@@ -213,34 +236,43 @@ export default function PropertiesClient() {
                 className={styles.pageBtn}
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                aria-label="Previous page"
-              >&#8592;</button>
+                aria-label="Previous page">
+                &#8592;
+              </button>
 
               {pageNumbers().map((p, i) =>
-                p === '...' ? (
-                  <span key={`ellipsis-${i}`} className={styles.ellipsis}>........</span>
+                p === "..." ? (
+                  <span key={`ellipsis-${i}`} className={styles.ellipsis}>
+                    ........
+                  </span>
                 ) : (
                   <button
                     key={p}
-                    className={`${styles.pageBtn} ${p === currentPage ? styles.pageBtnActive : ''}`}
-                    onClick={() => handlePageChange(p)}
-                  >{p}</button>
-                )
+                    className={`${styles.pageBtn} ${p === currentPage ? styles.pageBtnActive : ""}`}
+                    onClick={() => handlePageChange(p)}>
+                    {p}
+                  </button>
+                ),
               )}
 
               <button
                 className={styles.pageBtn}
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages}
-                aria-label="Next page"
-              >&#8594;</button>
+                aria-label="Next page">
+                &#8594;
+              </button>
             </div>
           )}
         </main>
 
         {wardPopup && (
-          <div className={styles.wardOverlay} onClick={() => setWardPopup(null)}>
-            <div className={styles.wardModal} onClick={e => e.stopPropagation()}>
+          <div
+            className={styles.wardOverlay}
+            onClick={() => setWardPopup(null)}>
+            <div
+              className={styles.wardModal}
+              onClick={(e) => e.stopPropagation()}>
               <div className={styles.wardModalHeader}>
                 <span>{wardPopup.ward_name}</span>
                 <button onClick={() => setWardPopup(null)}>&#x2715;</button>
@@ -251,14 +283,16 @@ export default function PropertiesClient() {
                     src={wardPopup.property_location}
                     width="100%"
                     height="100%"
-                    style={{ border: 'none', display: 'block' }}
+                    style={{ border: "none", display: "block" }}
                     allowFullScreen
                     loading="lazy"
                     referrerPolicy="no-referrer-when-downgrade"
                     title={`Map of ${wardPopup.ward_name}`}
                   />
                 ) : (
-                  <p style={{ padding: '1rem' }}>No map available for this ward.</p>
+                  <p style={{ padding: "1rem" }}>
+                    No map available for this ward.
+                  </p>
                 )}
               </div>
             </div>
@@ -266,5 +300,5 @@ export default function PropertiesClient() {
         )}
       </div>
     </>
-  )
+  );
 }
