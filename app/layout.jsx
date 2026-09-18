@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Toaster } from 'sonner';
 import Script from 'next/script';
 import { ClerkProvider } from '@clerk/nextjs';
+import { PostHogProvider } from '@/lib/analytics/PostHogProvider';
 import Providers from './providers';
 import FeedbackBanner from './FeedbackBanner';
 
@@ -53,20 +54,22 @@ export default function RootLayout({ children }) {
         data-scroll-behavior="smooth"
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}
       >
-        <ClerkProvider>
-          <Analytics />
-          <SpeedInsights />
-          <Toaster position="top-right" duration={4000} richColors />
+        <PostHogProvider>
+          <ClerkProvider>
+            <Analytics />
+            <SpeedInsights />
+            <Toaster position="top-right" duration={4000} richColors />
 
-          <main>
-            <Providers>{children}</Providers>
-          </main>
+            <main>
+              <Providers>{children}</Providers>
+            </main>
 
-          <Script
-            src="https://tally.so/widgets/embed.js"
-            strategy="lazyOnload"
-          />
-        </ClerkProvider>
+            <Script
+              src="https://tally.so/widgets/embed.js"
+              strategy="lazyOnload"
+            />
+          </ClerkProvider>
+        </PostHogProvider>
       </body>
     </html>
    );

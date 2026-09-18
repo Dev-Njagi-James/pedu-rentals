@@ -4,7 +4,7 @@
   background: var(--background);
   padding: 0;
   overflow: visible;
-  margin-top:var(--page-top-offset);
+  margin-top: var(--page-top-offset);
 }
 
 .sidebar {
@@ -17,6 +17,14 @@
   overflow: hidden;
   z-index: 10;
   flex-shrink: 0;
+  transition: width 0.18s ease, min-width 0.18s ease;
+}
+
+/* Hover expands only toward the content area on the right.
+   It does not change sidebar padding, item dimensions, icon size, or label size. */
+.sidebarExpanded {
+  width: 92px;
+  min-width: 92px;
 }
 
 /* ─────────────────────────────────────────
@@ -55,32 +63,73 @@
 
 .navItem {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   width: 44px;
+  min-width: 44px;
   height: 44px;
+  min-height: 48px;
+  padding: 0;
+  box-sizing: border-box;
   background: transparent;
   border: none;
   border-radius: 10px;
   cursor: pointer;
   color: #4a4a4a;
-  transition: color 0.15s ease, background 0.15s ease;
+  position: relative;
+  transition: color 0.2s ease;
 }
 
 .navItem:hover {
   color: #000000;
-  background: #dedede;
 }
 
 .navItemActive {
   color: #DEA806;
-  background: #ffffff;
 }
 
 .navIcon {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 28px;
+  border-radius: 5px;
+  background: transparent;
+  transition:
+    background 0.22s ease,
+    color 0.22s ease;
+}
+
+.navItem:not(.navItemActive):hover .navIcon {
+  background: #dedede;
+}
+
+.navItemActive .navIcon {
+  background: #ffffff;
+}
+
+/* Hidden in the collapsed rail. The label uses the same compact size in
+   both states; it is revealed without changing the button dimensions. */
+.navLabel {
+  display: none;
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: currentColor;
+  font-family: var(--font-geist-sans);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+}
+
+.sidebarExpanded .navLabel {
+  display: block;
 }
 
 /* ─────────────────────────────────────────
@@ -118,19 +167,20 @@
 .mobileBar {
   display: none;
 }
+
 /* ─────────────────────────────────────────
    480px — sidebar hidden, mobile drawer on
    Root reverts to normal scroll so the fixed
    bottom sheet / backdrop aren't clipped.
 ───────────────────────────────────────── */
 @media (max-width: 480px) {
-    .root {
-      height: auto;
-      min-height: calc(100vh - var(--page-top-offset, 64px));
-      overflow-x: hidden;
-      overflow-y: visible;
-      margin-top: 10px;
-    }
+  .root {
+    height: auto;
+    min-height: calc(100vh - var(--page-top-offset, 64px));
+    overflow-x: hidden;
+    overflow-y: visible;
+    margin-top: 10px;
+  }
 
   .sidebar {
     display: none;
@@ -142,9 +192,9 @@
     padding: 6px 0 8px;
   }
 
- .panelWrap {
-   padding: 6px 0;
- }
+  .panelWrap {
+    padding: 6px 0;
+  }
 
   /* ── floating trigger pill ── */
   .mobileBar {

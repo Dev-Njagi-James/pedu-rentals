@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import styles from '../css/propertyCard.module.css';
 import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
+import { posthog } from "@/lib/analytics/posthog-client";
 
 const planClassMap = {
   Regular: styles.planRegular,
@@ -260,11 +261,8 @@ export default function PropertyCardV1({ listing, onWardClick }) {
                     );
                   }
 
-                  fetch(`/api/listings/${listing_id}/calls`, {
-                    method: "POST",
-                  }).finally(() => {
-                    window.location.href = `tel:0${phone_number}`;
-                  });
+                  posthog.capture('property_call_clicked', { listing_id, listing_name, phone_number, ward: ward_display_name, plan_name });
+                  window.location.href = `tel:0${phone_number}`;
                 }}>
                 <svg
                   width="16"
