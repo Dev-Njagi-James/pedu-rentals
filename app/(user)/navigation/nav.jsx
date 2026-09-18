@@ -255,6 +255,34 @@ export default function AppNav() {
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
   const { count: notificationCount, hasUnread } = useNotifications();
+  const [profileUsername, setProfileUsername] = useState(null);
+  const [profileOrgName, setProfileOrgName] = useState(null);
+
+  useEffect(() => {
+    if (!isSignedIn) {
+      setProfileUsername(null);
+      setProfileOrgName(null);
+      return;
+    }
+    let cancelled = false;
+    fetch("/api/v1/users/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (!cancelled) {
+          setProfileUsername(json?.data?.username ?? null);
+          setProfileOrgName(json?.data?.lister_organization ?? null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setProfileUsername(null);
+          setProfileOrgName(null);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn]);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -267,10 +295,10 @@ export default function AppNav() {
     (item) => !item.requiresAuth || isSignedIn,
   );
 
-  const orgName = user?.publicMetadata?.orgName || "Account";
+  profileUsername || user?.primaryEmailAddress?.emailAddress || "Account";
   const orgSubtitle = user?.publicMetadata?.orgSubtitle || "";
   const displayName =
-    user?.username || user?.primaryEmailAddress?.emailAddress || "Account";
+    profileUsername || user?.primaryEmailAddress?.emailAddress || "Account";
   const initial = (displayName || "?").charAt(0).toUpperCase();
 
   // ── scroll shadow ──
