@@ -179,7 +179,7 @@
     min-height: calc(100vh - var(--page-top-offset, 64px));
     overflow-x: hidden;
     overflow-y: visible;
-    margin-top: 10px;
+    margin-top: 80px;
   }
 
   .sidebar {
@@ -189,7 +189,7 @@
   .content {
     overflow-y: visible;
     height: auto;
-    padding: 6px 0 8px;
+    padding: 6px 0 14px;
   }
 
   .panelWrap {

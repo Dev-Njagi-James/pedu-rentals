@@ -7,6 +7,7 @@ import styles from "../css/detailsHero.module.css";
 import DescriptionRenderer from "./DescriptionRenderer";
 import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
 import { useRealtimeChannel } from "@/lib/hooks/useRealtimeChannel";
+import { initPostHogClient, posthog } from "@/lib/analytics/posthog-client";
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -153,6 +154,24 @@ export default function PropertyDetails({ listing }) {
       .finally(() => setReviewsLoading(false));
   }, [listing_id]);
 
+  useEffect(() => {
+    if (!listing.plan_name) return;
+    initPostHogClient();
+    posthog.capture("property_view", {
+      listing_id: listing.listing_id,
+      listing_name: listing.property_name,
+      ward: listing.ward_name,
+      plan_name: listing.plan_name,
+      listing_category: listing.category_name,
+    });
+  }, [
+    listing.listing_id,
+    listing.plan_name,
+    listing.property_name,
+    listing.ward_name,
+    listing.category_name,
+  ]);
+
   const refetchReviews = () => {
     if (!listing_id) return;
     const fingerprint = getFingerprint();
@@ -170,10 +189,13 @@ export default function PropertyDetails({ listing }) {
   useRealtimeChannel(
     listing_id ? `listing:${listing_id}` : null,
     (eventName) => {
-      if (eventName.startsWith('review.') || eventName.startsWith('reaction.')) {
+      if (
+        eventName.startsWith("review.") ||
+        eventName.startsWith("reaction.")
+      ) {
         refetchReviews();
       }
-    }
+    },
   );
 
   async function handleSubmitReview() {
