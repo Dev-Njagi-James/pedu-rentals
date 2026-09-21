@@ -40,6 +40,7 @@ const icons = {
   crown: "M2 20h20M4 20l1.5-9L9 15l3-8 3 8 3.5-4L20 20",
   alertCircle: "M12 8v5M12 16h.01M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z",
   key: "M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4",
+  pencil: "M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z",
 };
 
 const FieldDisplay = ({
@@ -198,6 +199,188 @@ function fireIncompleteToast(profile) {
     duration: 8000,
   });
 }
+const STATUS_TONES = {
+  active: "statusGood",
+  pending: "statusWarn",
+};
+
+const BannerStat = ({ icon, label, children }) => (
+  <div className={styles.bannerStat}>
+    <span className={styles.bannerStatIcon}>
+      <Icon d={icons[icon]} size={20} />
+    </span>
+    <div className={styles.bannerStatBody}>
+      <span className={styles.bannerStatLabel}>{label}</span>
+      {children}
+    </div>
+  </div>
+);
+
+const ProfileBanner = ({
+  data,
+  missing,
+  editing,
+  draft,
+  onChange,
+  onEdit,
+  onSave,
+  onCancel,
+  loading,
+  dirty,
+  saved,
+}) => {
+  const usernameMissing = missing.includes("username");
+  const phoneMissing = missing.includes("phone_number");
+
+  const statusTone =
+    STATUS_TONES[data.accountStatus?.toLowerCase()] ?? "statusNeutral";
+
+  const listings =
+    data.totalListings === "" || data.totalListings == null
+      ? "—"
+      : data.totalListings;
+
+  return (
+    <section className={styles.banner} aria-label="Profile">
+      <div className={styles.bannerIdentity}>
+        <div className={styles.bannerAvatar}>
+          <div className={styles.bannerAvatarInner}>
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <circle cx="32" cy="22" r="11" fill="currentColor" />
+              <circle cx="32" cy="22" r="3.5" fill="#fff" opacity="0.9" />
+              <path
+                d="M14 52a18 18 0 0 1 36 0"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="10"
+                strokeLinecap="round"
+              />
+            </svg>
+          </div>
+        </div>
+
+        {editing ? (
+          <div className={styles.bannerEditFields}>
+            <div className={styles.bannerField}>
+              <label
+                className={styles.bannerFieldLabel}
+                htmlFor="banner-username">
+                Username
+              </label>
+
+              <input
+                id="banner-username"
+                name="username"
+                value={draft.username}
+                onChange={onChange}
+                className={styles.bannerInput}
+                autoComplete="off"
+              />
+            </div>
+
+            <div className={styles.bannerField}>
+              <label className={styles.bannerFieldLabel} htmlFor="banner-phone">
+                Contact
+              </label>
+
+              <input
+                id="banner-phone"
+                name="phone_number"
+                type="tel"
+                value={draft.phone_number}
+                onChange={onChange}
+                className={styles.bannerInput}
+                autoComplete="off"
+              />
+            </div>
+          </div>
+        ) : (
+          <div className={styles.bannerInfo}>
+            <div className={styles.bannerNameRow}>
+              <h2
+                className={`${styles.bannerName} ${
+                  usernameMissing ? styles.bannerMissing : ""
+                }`}>
+                {data.username || "Add a username"}
+              </h2>
+
+              {data.accountType && (
+                <span className={styles.bannerTag}>{data.accountType}</span>
+              )}
+            </div>
+
+            <p
+              className={`${styles.bannerPhone} ${
+                phoneMissing ? styles.bannerMissing : ""
+              }`}>
+              <Icon d={icons.phone} size={16} />
+              {data.phone_number || "Add a phone number"}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className={styles.bannerStats}>
+        <BannerStat icon="list" label="Total listings">
+          <span className={styles.bannerStatValue}>{listings}</span>
+        </BannerStat>
+
+        <BannerStat icon="calendar" label="Member since">
+          <span className={styles.bannerStatValue}>
+            {data.memberSince || "—"}
+          </span>
+        </BannerStat>
+
+        <BannerStat icon="shield" label="Account status">
+          {data.accountStatus ? (
+            <span className={`${styles.bannerPill} ${styles[statusTone]}`}>
+              <i className={styles.bannerDot} />
+              {data.accountStatus}
+            </span>
+          ) : (
+            <span className={styles.bannerStatValue}>—</span>
+          )}
+        </BannerStat>
+      </div>
+
+      {/* Only ONE edit icon */}
+      {!editing && (
+        <button
+          type="button"
+          className={styles.bannerEditIconButton}
+          onClick={onEdit}
+          aria-label="Edit profile"
+          title="Edit profile">
+          <Icon d={icons.pencil} size={16} />
+        </button>
+      )}
+
+      <div className={styles.bannerActions}>
+        {saved && <span className={styles.savedBadge}>saved</span>}
+
+        {editing && (
+          <>
+            <button
+              type="button"
+              className={styles.bannerGhostBtn}
+              onClick={onCancel}
+              disabled={loading}>
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              className={styles.bannerPrimaryBtn}
+              onClick={onSave}
+              disabled={loading || !dirty}>
+              {loading ? "Saving…" : "Save changes"}
+            </button>
+          </>
+        )}
+      </div>
+    </section>
+  );
+};
 
 export default function AccountSettings() {
   const [data, setData] = useState(() =>
@@ -410,6 +593,20 @@ export default function AccountSettings() {
         </p>
       )}
 
+      <ProfileBanner
+        data={data}
+        missing={missingFields}
+        editing={editing.profile}
+        draft={profileDraft}
+        onChange={handleProfileChange}
+        onEdit={() => startEdit("profile")}
+        onSave={saveProfile}
+        onCancel={() => cancelEdit("profile")}
+        loading={loading.profile}
+        dirty={dirty.profile}
+        saved={saved.profile}
+      />
+
       <div className={styles.sectionsGrid}>
         <Section
           title="Login & Security"
@@ -461,54 +658,6 @@ export default function AccountSettings() {
         </Section>
 
         <Section
-          title="Profile"
-          subtitle="Your personal profile information."
-          icon="user"
-          iconTone="toneBlue"
-          editing={editing.profile}
-          onEdit={() => startEdit("profile")}
-          onSave={saveProfile}
-          onCancel={() => cancelEdit("profile")}
-          saved={saved.profile}
-          loading={loading.profile}
-          dirty={dirty.profile}>
-          {editing.profile ? (
-            <>
-              <FieldEdit
-                icon="user"
-                label="Username"
-                name="username"
-                value={profileDraft.username}
-                onChange={handleProfileChange}
-              />
-              <FieldEdit
-                icon="phone"
-                label="Contact"
-                name="phone_number"
-                type="tel"
-                value={profileDraft.phone_number}
-                onChange={handleProfileChange}
-              />
-            </>
-          ) : (
-            <>
-              <FieldDisplay
-                icon="user"
-                label="Username"
-                value={data.username}
-                missing={missingFields.includes("username")}
-              />
-              <FieldDisplay
-                icon="phone"
-                label="Contact"
-                value={data.phone_number}
-                missing={missingFields.includes("phone_number")}
-              />
-            </>
-          )}
-        </Section>
-
-        <Section
           title="Organisation"
           subtitle="Your organisation and location details."
           icon="building"
@@ -549,47 +698,6 @@ export default function AccountSettings() {
               <FieldDisplay icon="map" label="Ward" value={data.ward_name} />
             </>
           )}
-        </Section>
-
-        <Section
-          title="Account summary"
-          subtitle="Quick overview of your account."
-          icon="key"
-          iconTone="toneDark"
-          editable={false}>
-          <FieldDisplay
-            icon="calendar"
-            label="Member since"
-            value={data.memberSince}
-          />
-          <div className={styles.fieldRowSplit}>
-            <FieldDisplay
-              icon="shield"
-              label="Account status"
-              value={null}
-              badge={
-                data.accountStatus
-                  ? {
-                      text: data.accountStatus,
-                      tone:
-                        data.accountStatus.toLowerCase() === "active"
-                          ? "good"
-                          : "warn",
-                    }
-                  : null
-              }
-            />
-            <FieldDisplay
-              icon="list"
-              label="Total listings"
-              value={data.totalListings}
-            />
-          </div>
-          <FieldDisplay
-            icon="crown"
-            label="Account type"
-            value={data.accountType}
-          />
         </Section>
       </div>
 

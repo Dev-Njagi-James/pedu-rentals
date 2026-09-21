@@ -3,7 +3,6 @@ import Link from 'next/link';
 import PropertyHero from './components/detailsHero';
 import styles from './css/detailsPage.module.css';
 import RelatedListingsCarousel from './components/RelatedListingsCarousel'
-import ViewTracker from './components/ViewTracker';
 import ReviewForm from './components/reviewPrompt'
 
 // Map a v1 row (payments listings_table shape) onto the legacy field names the
@@ -95,7 +94,6 @@ export default async function PropertyDetailPage({ params, searchParams }) {
 
   return (
     <>
-      <ViewTracker listingId={listing.listing_id} />
       <div className={styles.page}>
         <div className={styles.container}>
           {/* Back nav */}

@@ -53,7 +53,7 @@
   display: inline-flex;
   align-items: center;
   min-height: 34px;
-  padding: 0 16px;
+  padding: 0 16px 0 24px;
   background: #fbbd08;
   color: #111827;
   font-family: var(--font-geist-sans);
@@ -63,6 +63,25 @@
   text-transform: capitalize;
   white-space: nowrap;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.18);
+
+  /* Left-facing arrow with a square right edge */
+  clip-path: polygon(0 50%,
+      14px 0,
+      100% 0,
+      100% 100%,
+      14px 100%);
+}
+
+.planBadge::before {
+  content: '';
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-50%);
 }
 
 .planRegular {

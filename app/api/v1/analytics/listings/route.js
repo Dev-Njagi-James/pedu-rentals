@@ -6,7 +6,10 @@
 import { NextResponse } from "next/server";
 import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
-import { getCallCountsByListing } from "@/lib/analytics/query";
+import {
+  getCallCountsByListing,
+  getViewCountsByListing,
+} from "@/lib/analytics/query";
 
 export async function GET() {
   try {
@@ -33,6 +36,7 @@ export async function GET() {
       return NextResponse.json({ error: dbError.message }, { status: 500 });
     }
     const callCounts = await getCallCountsByListing();
+    const viewCounts = await getViewCountsByListing();
 
     const rows = (data ?? []).map(({ images_table, ...row }) => {
       const imageRows = Array.isArray(images_table)
@@ -50,7 +54,9 @@ export async function GET() {
       return {
         ...row,
         image_url: sorted[0]?.publicUrl ?? null,
-        views: null,
+        views: viewCounts
+          ? (viewCounts[String(row.listing_id)] ?? 0)
+          : null,
         call_logs: callCounts
           ? (callCounts[String(row.listing_id)] ?? 0)
           : null,
