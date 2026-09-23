@@ -492,6 +492,7 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    justify-content: space-between;
   }
 
   .drawerLink {
@@ -507,6 +508,13 @@
     border-radius: 10px;
     transition: background 0.15s ease, color 0.15s ease;
     box-sizing: border-box;
+    justify-content: space-between;
+  }
+
+  .drawerLinkChevron {
+    display: inline-flex;
+    color: #6b6b7a;
+    margin-left: auto;
   }
 
   .drawerLink:hover {
@@ -522,6 +530,49 @@
   .drawerLinkIcon {
     display: inline-flex;
     color: #6b6b7a;
+  }
+
+  .drawerSublinks {
+    list-style: none;
+    margin: 2px 0 8px;
+    padding-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    border-left: 2px solid #eee;
+  }
+
+  .drawerSublinks .drawerLink {
+    padding: 10px 16px;
+    font-size: 0.875rem;
+    font-weight: 450;
+    color: #5a5a6a;
+  }
+
+  .drawerSublinks .drawerLinkActive {
+    color: var(--primary);
+    font-weight: 600;
+    background: rgba(0, 46, 255, 0.06);
+  }
+
+  .drawerDashboardLabel {
+    cursor: default;
+    width: 100%;
+    background: transparent;
+    border: none;
+    text-align: left;
+  }
+
+  .drawerDashboardLabel:hover {
+    background: transparent;
+  }
+
+  .chevronOpen {
+    transform: rotate(180deg);
+  }
+
+  .drawerLinkChevron {
+    transition: transform 0.2s ease;
   }
 
   .drawerBadge {

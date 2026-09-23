@@ -65,6 +65,14 @@ const EMPTY_DESCRIPTION = {
   content: [{ type: "paragraph" }],
 };
 
+const draftKey = (listingId) =>
+  listingId ? `addListing:draft:edit:${listingId}` : "addListing:draft:new";
+
+const serializeDraft = (form) => {
+  const { images, video, ...rest } = form;
+  return JSON.stringify(rest);
+};
+
 const normalizeDescription = (value) => {
   if (value && typeof value === "object" && value.type === "doc") {
     return value;
@@ -355,6 +363,31 @@ export default function AddListing({
   const prepProgressTimerRef = useRef(null);
 
   useEffect(() => {
+    if (!isDirty) return;
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(
+          draftKey(isEdit ? prefill?.listing_id : null),
+          serializeDraft(form),
+        );
+      } catch (err) {
+        console.error("[AddListing] draft save failed:", err);
+      }
+    }, 600);
+    return () => clearTimeout(id);
+  }, [form, isDirty, isEdit, prefill]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (!isDirty) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
+
+  useEffect(() => {
     if (!prefill || filtersLoading) return;
     setForm({
       name: prefill.property_name ?? "",
@@ -373,6 +406,24 @@ export default function AddListing({
     });
     setIsDirty(false);
   }, [prefill, filtersLoading]);
+
+  useEffect(() => {
+    if (isEdit) return;
+    try {
+      const saved = localStorage.getItem(draftKey(null));
+      if (!saved) return;
+      const parsed = JSON.parse(saved);
+      setForm((prev) => ({
+        ...prev,
+        ...parsed,
+        description: normalizeDescription(parsed.description),
+      }));
+      setIsDirty(true);
+      toast.info("Restored your unsaved draft. Re-add images/video if needed.");
+    } catch (err) {
+      console.error("[AddListing] draft restore failed:", err);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const wardOptions = filters.wards.map((w) => ({
     value: w.ward_name,
@@ -495,8 +546,17 @@ export default function AddListing({
     setIsDirty(false);
     setShowPopup(false);
     setServerError(null);
+    clearDraft();
     toast.success("Data Discarded");
     if (isEdit && onDone) onDone();
+  };
+
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(draftKey(isEdit ? prefill?.listing_id : null));
+    } catch (err) {
+      console.error("[AddListing] draft clear failed:", err);
+    }
   };
 
   const dismissPopup = () => setShowPopup(false);
@@ -511,17 +571,9 @@ export default function AddListing({
     }
   };
 
-  // Fake progress ceiling/timing — tuned so the fake curve visibly moves before
-  // real bytes report anything. Never overtakes real progress: display always
-  // takes Math.max(real, fake), so real data wins the instant it exists.
   const FAKE_CEILING_FRACTION = 0.9;
   const FAKE_TAU_MS = 1500;
 
-  // Prep-stage fake progress — covers the 'Preparing upload' wait (listing
-  // insert + SCALE create() calls), which has no byte total to derive real
-  // progress from. Slower tau than the byte-upload curve above: this wait
-  // has been observed at 8-40s depending on SCALE backend latency, so the
-  // curve needs to keep crawling rather than hit its ceiling in ~1.5s.
   const PREP_CEILING_FRACTION = 0.85;
   const PREP_TAU_MS = 8000;
 
@@ -572,9 +624,6 @@ export default function AddListing({
     }
   };
 
-  // Per-file byte-progress bookkeeping for the SCALE PUT loop. Instantaneous
-  // speed comes from the loaded-delta between consecutive events divided by
-  // elapsed seconds; smoothed as an EMA (0.7 previous / 0.3 instant).
   const handleFileProgress = (event) => {
     const prevEntry = fileProgress[event.fileId];
     const now = Date.now();
@@ -601,9 +650,6 @@ export default function AddListing({
     }));
   };
 
-  // Aggregated per-type upload stats, derived from fileProgress on every
-  // render. All zeros until progress events arrive — no guards needed to
-  // avoid throwing, the loop simply runs zero times over an empty map.
   const uploadStats = useMemo(() => {
     const stats = {
       imagesLoaded: 0,
@@ -749,6 +795,7 @@ export default function AddListing({
         if (!res.ok) throw new Error(json.error ?? "Failed to update listing.");
 
         toast.success("Listing updated!");
+        clearDraft();
         onDone?.();
       } else {
         const selectedWard = filters.wards.find(
@@ -998,6 +1045,7 @@ export default function AddListing({
     onUploadStateChange?.(false);
     setForm(EMPTY);
     setIsDirty(false);
+    clearDraft();
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
