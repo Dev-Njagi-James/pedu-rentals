@@ -1,5 +1,7 @@
 "use client";
 
+
+import { Suspense } from "react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import ListerNav from "./ListerNav";
@@ -17,22 +19,26 @@ import {
   computeMissingFields,
   shouldShowIncompleteToast,
 } from "@/lib/cache/listerProfileCache";
+import { useSearchParams, useRouter } from "next/navigation";
 
-export default function ListerLand() {
+function ListerLandContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const activeTab = searchParams.get("tab") ?? "listings";
+
   const [editingListing, setEditingListing] = useState(null);
-  const [activeTab, setActiveTab] = useState("listings");
   const [isUploading, setIsUploading] = useState(false);
   const [v1Profile, setV1Profile] = useState(
     () => getCachedListerProfileSync() ?? null,
   );
 
   const handleTabChange = (id) => {
-    setActiveTab(id);
+    router.push(`/Lister?tab=${id}`, { scroll: false });
     if (id !== "add") setEditingListing(null);
   };
   const handleEdit = (listing) => {
     setEditingListing(listing);
-    setActiveTab("add");
+    router.push("/Lister?tab=add", { scroll: false });
   };
 
   const maybeFireIncompleteToast = (profile) => {
@@ -44,7 +50,7 @@ export default function ListerLand() {
       description: "Complete your profile to start publishing listings.",
       action: {
         label: "Complete profile",
-        onClick: () => setActiveTab("account"),
+        onClick: () => router.push("/Lister?tab=account", { scroll: false }),
       },
       duration: 8000,
     });
@@ -88,5 +94,13 @@ export default function ListerLand() {
         help: <HelpCenter />,
       }}
     />
+  );
+}
+
+export default function ListerLand() {
+  return (
+    <Suspense fallback={null}>
+      <ListerLandContent />
+    </Suspense>
   );
 }

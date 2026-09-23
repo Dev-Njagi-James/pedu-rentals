@@ -9,11 +9,11 @@ import {
   useCallback,
 } from "react";
 import styles from "./css/nav.module.css";
-import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { useNavVisibility } from "@/app/hooks/useNavVisibility";
 import { useUser, useClerk } from "@clerk/nextjs";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 // ────────────────────────────────────────────────────────────────────────
 // Config — single source of truth for nav content. Desktop bar, mobile
@@ -37,6 +37,14 @@ function getPrimaryNavItems(role) {
     { key: "about", label: "About", href: "/about", requiresAuth: false },
   ];
 }
+const DASHBOARD_SUBLINKS = [
+  { id: "listings", label: "Listings" },
+  { id: "add", label: "Add Listing" },
+  { id: "analytics", label: "Analytics" },
+  { id: "account", label: "Account" },
+  { id: "pricing", label: "Pricing" },
+  { id: "help", label: "Help" },
+];
 
 // Insights and Notifications used to be their own top-bar icons. They now
 // live here instead, alongside the account-management links — one list
@@ -258,6 +266,10 @@ export default function AppNav() {
   const [profileUsername, setProfileUsername] = useState(null);
   const [profileOrgName, setProfileOrgName] = useState(null);
 
+  const searchParams = useSearchParams();
+  const activeLisTab = searchParams.get("tab") ?? "listings";
+  const [dashboardOpen, setDashboardOpen] = useState(false);
+
   useEffect(() => {
     if (!isSignedIn) {
       setProfileUsername(null);
@@ -294,6 +306,10 @@ export default function AppNav() {
   const visiblePrimaryItems = primaryNavItems.filter(
     (item) => !item.requiresAuth || isSignedIn,
   );
+
+  useEffect(() => {
+    setDashboardOpen(pathname === "/Lister");
+  }, [pathname]);
 
   profileUsername || user?.primaryEmailAddress?.emailAddress || "Account";
   const orgSubtitle = user?.publicMetadata?.orgSubtitle || "";
@@ -536,16 +552,51 @@ export default function AppNav() {
 
         <div className={styles.drawerBody}>
           <ul className={styles.drawerLinks}>
-            {visiblePrimaryItems.map((item) => (
-              <li key={item.key}>
-                <Link
-                  href={item.href}
-                  className={`${styles.drawerLink} ${isActive(item.href) ? styles.drawerLinkActive : ""}`}
-                  onClick={closeMenu}>
-                  {item.label}
-                </Link>
-              </li>
-            ))}
+            {visiblePrimaryItems.map((item) => {
+              if (item.key === "dashboard" && role !== "admin") {
+                const dashboardActive = pathname === "/Lister";
+                return (
+                  <li key={item.key}>
+                     <button
+                     type="button"
+                     className={`${styles.drawerLink} ${styles.drawerDashboardLabel}`}
+                     aria-current={dashboardActive ? "page" : undefined}
+                     aria-expanded={dashboardOpen}
+                     onClick={() => setDashboardOpen((v) => !v)}>
+                     {item.label}
+                     <span
+                      className={`${styles.drawerLinkChevron} ${dashboardOpen ? styles.chevronOpen : ""}`}>
+                       <Icon.chevronDown />
+                    </span>
+                   </button>
+                   {dashboardOpen && (
+                     <ul className={styles.drawerSublinks}>
+                       {DASHBOARD_SUBLINKS.map((sub) => (
+                         <li key={sub.id}>
+                          <Link
+                             href={`/Lister?tab=${sub.id}`}
+                             className={`${styles.drawerLink} ${dashboardActive && activeLisTab === sub.id ? styles.drawerLinkActive : ""}`}
+                             onClick={closeMenu}>
+                             {sub.label}
+                           </Link>
+                         </li>
+                       ))}
+                     </ul>
+                   )}
+                  </li>
+                );
+              }
+              return (
+                <li key={item.key}>
+                  <Link
+                    href={item.href}
+                    className={`${styles.drawerLink} ${isActive(item.href) ? styles.drawerLinkActive : ""}`}
+                    onClick={closeMenu}>
+                    {item.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
           {isSignedIn && (
