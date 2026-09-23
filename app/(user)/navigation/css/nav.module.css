@@ -383,7 +383,7 @@
   display: none;
 }
 
-@media (max-width: 1023px) {
+@media (max-width: 740px) {
   .navbar {
     padding: 8px 16px;
     gap: 8px;

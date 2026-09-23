@@ -173,7 +173,7 @@
    Root reverts to normal scroll so the fixed
    bottom sheet / backdrop aren't clipped.
 ───────────────────────────────────────── */
-@media (max-width: 480px) {
+@media (max-width: 740px) {
   .root {
     height: auto;
     min-height: calc(100vh - var(--page-top-offset, 64px));
