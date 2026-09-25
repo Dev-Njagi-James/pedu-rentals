@@ -337,8 +337,9 @@
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  border-radius: 16px;
   z-index: 50;
 }
 
