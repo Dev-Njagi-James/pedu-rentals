@@ -1,53 +1,15 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { paymentsSupabase } from '@/lib/supabase/paymentsClient';
-import { resolveWardNames } from '@/lib/resolveWardName';
 import { CATEGORY_ID_TO_V1_NAME, TYPE_ID_TO_V1_NAME, RENT_DURATION_TO_V1, FURNISHING_TO_V1, PRICE_BUCKET_RANGES } from '@/lib/categoryMapping';
 import { rankListings } from '@/lib/ranking/rankListings';
 import { NextResponse } from 'next/server';
 
-/*
- * Public listings endpoint — merges legacy (Property_Listing) + v1 (listings_table).
- *
- * - Legacy query body is copied verbatim from app/api/listings/route.js.
- * - V1 query hits paymentsSupabase.from('listings_table'), applies a base
- *   payment_status='paid' filter, then chains any v1 filter params present
- *   (listing_ward via ward_id, listing_category, category_type, rent_duration,
- *   furnishing, and a price_kes bucket). ward_id is shared with the legacy
- *   branch — same ID space.
- * - Both row sets are normalized into the legacy Property_Listing shape so the
- *   public properties page can consume a single array without changes.
- */
 
 const PAGE_SIZE = 20;
 const PREFETCH_SIZE = 40;
-const HIDDEN_LISTING_IDS = [40, 43, 34];
 
 export const revalidate = 0;
 
-// Helper: parse legacy price string into a number (defensive sanitization)
-function parsePrice(value) {
-  if (value === null || value === undefined) return null;
-  const cleaned = String(value).replace(/[^0-9.]/g, '');
-  const num = parseFloat(cleaned);
-  return Number.isFinite(num) ? num : null;
-}
 
-// Helper: build images_url array from legacy media objects.
-//   Legacy media elements look like: { image_url: null, cloudinary_url, cloudinary_public_id, video_url: null, position }
-//   The usable URL is in cloudinary_url; images point at an /image/ path, videos at /video/.
-function buildImagesUrlArray(media) {
-  if (!Array.isArray(media)) return [];
-  return media
-    .filter((m) => m.cloudinary_url && !m.cloudinary_url.includes('/video/'))
-    .map((m) => ({ publicUrl: m.cloudinary_url, position: m.position ?? 0 }));
-}
-
-// Helper: extract the single video_url from legacy media, if present.
-function extractVideoUrl(media) {
-  if (!Array.isArray(media)) return null;
-  const videoItem = media.find((m) => m.cloudinary_url && m.cloudinary_url.includes('/video/'));
-  return videoItem?.cloudinary_url ?? null;
-}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
@@ -100,91 +62,8 @@ export async function GET(request) {
   const resolvedFurnishing = v1_furnishing
     ?? (property_interior ? FURNISHING_TO_V1[property_interior] ?? null : null);
 
-  const supabase = await createServerSupabaseClient();
 
-  // B. LEGACY QUERY — verbatim from app/api/listings/route.js.
-  let legacyData = [];
-  let legacyCount = 0;
-
-  {
-    let countQuery = supabase
-      .from('Property_Listing')
-      .select('listing_id', { count: 'exact', head: true })
-      .not('listing_id', 'in', `(${HIDDEN_LISTING_IDS.join(',')})`);
-
-    if (ward_id) countQuery = countQuery.eq('ward_id', ward_id);
-    if (category_id) countQuery = countQuery.eq('category_id', category_id);
-    if (type_ids?.length) countQuery = countQuery.in('property_type_id', type_ids);
-    if (rent_duration) countQuery = countQuery.eq('rent_duration', rent_duration);
-    if (property_interior) countQuery = countQuery.ilike('property_interior', property_interior);
-
-    const { count, error: countError } = await countQuery;
-
-    if (countError) {
-      return NextResponse.json({ error: 'Failed to fetch count', details: countError.message }, { status: 500 });
-    }
-
-      // Offset is now applied once, after the merge (step F), so the legacy RPC fetches
-  // from the beginning. p_limit is increased to cover enough legacy rows to satisfy
-  // the requested page position (offset + limit), capped at 200 for safety.
-  const legacyFetchLimit = isSearch ? 200 : Math.min(offset + limit, 200);
-
-  const { data: rawData, error } = await supabase.rpc('get_listings_paginated', {
-      p_limit: legacyFetchLimit,
-      p_offset: 0,
-      p_ward_id: ward_id,
-      p_category_id: category_id,
-      p_type_ids: type_ids,
-      p_price_range: price_range,
-      p_rent_duration: rent_duration,
-      p_property_interior: property_interior,
-    });
-
-    if (error) {
-      return NextResponse.json({ error: 'Failed to fetch listings', details: error.message }, { status: 500 });
-    }
-
-    legacyData = rawData.filter(l => !HIDDEN_LISTING_IDS.includes(l.listing_id));
-
-    // Reroute ward-name resolution to the new-scheme table (payments project).
-    const wardMap = await resolveWardNames(legacyData.map(l => l.ward_id));
-    for (const l of legacyData) {
-      const resolved = wardMap.get(l.ward_id);
-      l.ward_name = resolved?.ward_name ?? null;
-      l.ward_id = resolved?.ward_id ?? l.ward_id;
-    }
-
-    legacyCount = count ?? 0;
-  }
-
-    // D. NORMALIZE legacy rows into the v1 listings_table shape.
-  const remappedLegacyData = legacyData.map((row) => ({
-    _source: 'legacy',
-    listing_id: row.listing_id,
-    listing_name: row.property_name,
-    price_kes: parsePrice(row.property_price),
-    furnishing: row.property_interior,
-    ward_display_name: row.ward_name,
-    listing_ward: row.ward_id,
-    category_type: row.type_name,
-    listing_category: row.category_name,
-    location_url: row.property_location,
-    ward_location: row.ward_location,
-    phone_number: row.phone_number,
-    rent_duration: row.rent_duration,
-    avg_rating: row.avg_rating ?? null,
-    review_count: row.review_count ?? null,
-    created_at: row.created_at,
-    plan_name: 'Regular',
-    images_table: {
-      images_url: buildImagesUrlArray(row.media),
-      video_url: extractVideoUrl(row.media),
-    },
-  }));
-
-    // E. V1 rows pass through with native field names (no conversion).
   // C. V1 QUERY — payments project, paid listings only.
-  //    v1 filters wired below, chained onto the same query builder (additive).
   let v1Data = [];
   let v1Count = 0;
   try {
@@ -230,10 +109,7 @@ export async function GET(request) {
     v1Count = 0;
   }
 
-  // F. MERGE. Offset is applied once here, after the merge, so neither source
-  //    offsets independently. Legacy rows are remapped to v1 shape; v1 rows pass
-  //    through natively.
-  const merged = rankListings([...remappedLegacyData, ...v1Data]);
+ const merged = rankListings(v1Data);
   // F2. TEXT SEARCH (?q=) — case-insensitive substring match on the normalized
   //     `listing_name` field. Legacy rows are remapped to that field name in D
   //     above and v1 rows carry it natively, so this one filter covers both
@@ -250,7 +126,7 @@ export async function GET(request) {
 
 
   // G. total_records.
-  const total_records = legacyCount + v1Count;
+  const total_records = v1Count;
 
   // H. SAME response shape as app/api/listings/route.js.
   const totalPages = Math.ceil((total_records ?? 0) / PAGE_SIZE);
