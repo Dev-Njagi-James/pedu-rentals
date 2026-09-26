@@ -127,6 +127,14 @@
   cursor: not-allowed;
 }
 
+.deleteBtn i,
+.editBtn i {
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
 /* ── Confirm row ── */
 .confirmRow {
   display: flex;
