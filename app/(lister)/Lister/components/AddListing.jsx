@@ -11,6 +11,7 @@ import RichTextEditor from "./RichTextEditor";
 import styles from "../css/AddListing.module.css";
 import { uploadListingMedia } from "@/lib/uploadMedia";
 import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
+
 /* ─── Icon primitive ─── */
 const Icon = ({ d, className }) => (
   <svg
@@ -764,36 +765,202 @@ export default function AddListing({
 
     try {
       if (isEdit) {
-        const fd = new FormData();
         const selectedWard = filters.wards.find(
           (w) => w.ward_name === form.ward,
         );
 
-        fd.append("property_name", form.name);
-        fd.append("ward_name", form.ward);
-        fd.append("ward_id", selectedWard?.ward_id ?? "");
-        fd.append("ward_location", form.ward_location);
-        fd.append("property_location", form.property_location);
-        fd.append("category_id", form.category);
-        fd.append("type_id", form.type);
-        fd.append("rent_duration", form.duration);
-        fd.append("property_interior", form.furniture);
-        fd.append("phone_number", form.phone.replace(/\s/g, ""));
-        fd.append("property_price", form.price);
-        fd.append("description", form.description);
+        // Only changed slots go up as files — matches finalize's merge-by-position.
+        const fileObjects = form.images
+          .map((f, i) =>
+            f instanceof File ? { file: f, type: "image", position: i } : null,
+          )
+          .filter(Boolean);
+        if (form.video instanceof File) {
+          fileObjects.push({ file: form.video, type: "video", position: 0 });
+        }
+        const files = fileObjects.map(({ file, type, position }) => ({
+          filename: file.name,
+          contentType: file.type,
+          fileSize: file.size,
+          type,
+          position,
+        }));
 
-        form.images.forEach((file, i) => {
-          if (file) fd.append(`image_${i}`, file);
-        });
-        if (form.video) fd.append("video", form.video);
+        setUploadProgress({ stage: "Preparing upload", percent: 0 });
+        onUploadStateChange?.(true);
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        startPrepProgress();
 
-        const res = await fetch(`/api/listings/${prefill.listing_id}`, {
+        // Step 1: PATCH metadata  request upload targets for changed files only.
+        const patchRes = await fetch(`/api/v1/listings/${prefill.listing_id}`, {
           method: "PATCH",
-          body: fd,
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            property_name: form.name,
+            ward_name: form.ward,
+            ward_id: selectedWard?.ward_id ?? "",
+            ward_location: form.ward_location,
+            property_location: form.property_location,
+            category_name: form.category,
+            category_type_name: form.type,
+            rent_duration: form.duration,
+            property_interior: form.furniture,
+            phone_number: form.phone.replace(/\s/g, ""),
+            property_price: form.price,
+            description: form.description,
+            files,
+          }),
         });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Failed to update listing.");
+        const patchText = await patchRes.text();
+        let patchJson;
+        try {
+          patchJson = JSON.parse(patchText);
+        } catch {
+          stopPrepProgress();
+          throw new Error(
+            `Non-JSON response (${patchRes.status}): ${patchText.slice(0, 200)}`,
+          );
+        }
+        stopPrepProgress();
+        if (!patchRes.ok)
+          throw new Error(patchJson.error ?? "Failed to update listing.");
 
+        const uploadTargets = patchJson.uploadTargets ?? [];
+
+        if (uploadTargets.length === 0) {
+          // Nothing to upload — text-only edit. Skip straight to completion.
+          setUploadProgress({ stage: "Saving", percent: 100 });
+          await new Promise((r) => setTimeout(r, 300));
+          setUploadProgress({ stage: "Done", percent: 100 });
+          await new Promise((r) => setTimeout(r, 300));
+        } else {
+          setUploadTotals({
+            imagesTotalCount: uploadTargets.filter((t) => t.type === "image")
+              .length,
+            videoTotalCount: uploadTargets.filter((t) => t.type === "video")
+              .length,
+          });
+
+          setUploadProgress({ stage: "Uploading", percent: 0 });
+
+          const putFile = (target, index) =>
+            new Promise((resolve, reject) => {
+              const file = fileObjects.find(
+                (f) => f.position === target.position && f.type === target.type,
+              )?.file;
+
+              const start = () => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("PUT", target.uploadUrl, true);
+                xhr.setRequestHeader("Content-Type", file.type);
+                xhr.setRequestHeader(
+                  "Cache-Control",
+                  "public, max-age=31536000, immutable",
+                );
+
+                setFileProgress((prev) => ({
+                  ...prev,
+                  [target.key]: {
+                    type: target.type,
+                    realLoaded: 0,
+                    fakeLoaded: 0,
+                    total: file.size,
+                    status: "uploading",
+                    speed: 0,
+                  },
+                }));
+                startFakeProgress(target.key, file.size);
+
+                xhr.upload.onprogress = (event) => {
+                  handleFileProgress({
+                    fileId: target.key,
+                    type: target.type,
+                    loaded: event.loaded,
+                    total: event.total,
+                  });
+                  onFileProgress?.({
+                    fileId: target.key,
+                    type: target.type,
+                    loaded: event.loaded,
+                    total: event.total,
+                  });
+                };
+
+                xhr.onload = () => {
+                  stopFakeProgress(target.key);
+                  if (xhr.status >= 200 && xhr.status <= 299) {
+                    setFileProgress((prev) => ({
+                      ...prev,
+                      [target.key]: {
+                        ...prev[target.key],
+                        status: "done",
+                        realLoaded: prev[target.key]?.total,
+                      },
+                    }));
+                    resolve();
+                  } else {
+                    setFileProgress((prev) => ({
+                      ...prev,
+                      [target.key]: { ...prev[target.key], status: "failed" },
+                    }));
+                    reject(
+                      new Error(
+                        `Upload failed for ${file.name} (status ${xhr.status})`,
+                      ),
+                    );
+                  }
+                };
+
+                xhr.onerror = () => {
+                  stopFakeProgress(target.key);
+                  setFileProgress((prev) => ({
+                    ...prev,
+                    [target.key]: { ...prev[target.key], status: "failed" },
+                  }));
+                  reject(
+                    new Error(`Network error while uploading ${file.name}`),
+                  );
+                };
+
+                xhr.send(file);
+              };
+
+              if (index === 0) start();
+              else setTimeout(start, index * 120);
+            });
+
+          await Promise.all(
+            uploadTargets.map((target, index) => putFile(target, index)),
+          );
+
+          setUploadProgress({ stage: "Saving", percent: 100 });
+
+          const finalizeRes = await fetch("/api/v1/listings/finalize", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            credentials: "include",
+            body: JSON.stringify({
+              listing_id: prefill.listing_id,
+              uploads: uploadTargets.map((t) => ({
+                key: t.key,
+                publicUrl: t.publicUrl,
+                position: t.position,
+                type: t.type,
+              })),
+            }),
+          });
+          const finalizeJson = await finalizeRes.json();
+          if (!finalizeRes.ok)
+            throw new Error(finalizeJson.error ?? "Failed to finalize edit.");
+
+           setUploadProgress({ stage: "Done", percent: 100 });
+           (await new Promise((r) => setTimeout(r, 300)));
+        }
+
+        invalidateMyListingsCache();
+        setUploadProgress(null);
+        onUploadStateChange?.(false);
         toast.success("Listing updated!");
         clearDraft();
         onDone?.();
@@ -802,7 +969,7 @@ export default function AddListing({
           (w) => w.ward_name === form.ward,
         );
 
-        // Build files metadata array (non-null images + optional video), in the
+        // Build files metadata array (non-null images  optional video), in the
         // same order as the actual File objects we'll PUT directly to R2 later.
         // Each entry is tagged by type so finalize can split images vs video.
         const fileObjects = form.images
@@ -822,7 +989,7 @@ export default function AddListing({
         window.scrollTo({ top: 0, behavior: "smooth" });
         startPrepProgress();
 
-        // Step 1: POST JSON to /api/v1/listings — listing fields + files metadata.
+        // Step 1: POST JSON to /api/v1/listings — listing fields  files metadata.
         console.log("[AddListing] create request body:", {
           property_name: form.name,
           ward_id: selectedWard?.ward_id ?? "",
@@ -1082,8 +1249,8 @@ export default function AddListing({
       )}
 
       <div>
-        {uploadProgress && hasSelectedImages ? (
-          <UploadOverlay
+        {uploadProgress ? (
+           <UploadOverlay
             onCancel={() => {}}
             uploadProgress={uploadProgress}
             fileProgress={fileProgress}
