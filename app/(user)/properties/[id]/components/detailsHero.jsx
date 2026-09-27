@@ -8,7 +8,7 @@ import DescriptionRenderer from "./DescriptionRenderer";
 import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
 import { useRealtimeChannel } from "@/lib/hooks/useRealtimeChannel";
 import { initPostHogClient, posthog } from "@/lib/analytics/posthog-client";
-j
+import { useUser } from "@clerk/nextjs";
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -106,6 +106,7 @@ export default function PropertyDetails({ listing }) {
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [infoRef, infoVisible] = useRevealOnScroll();
+  const { isLoaded, isSignedIn } = useUser();
   const [overviewRef, overviewVisible] = useRevealOnScroll();
   const [locationRef, locationVisible] = useRevealOnScroll();
   const [reviewsRef, reviewsVisible] = useRevealOnScroll();
@@ -157,6 +158,20 @@ export default function PropertyDetails({ listing }) {
 
   useEffect(() => {
     if (!listing.plan_name) return;
+    // Signed-in users are listers (only auth flow in the app today) — exclude
+    // them so property_view reflects real anonymous visitor traffic, not
+    // listers checking their own or competitors' listings.
+    //
+    // TODO: this assumption breaks once buyer/visitor accounts exist (planned:
+    // Google login for visitors paying to view properties). At that point
+    // "isSignedIn" will also be true for legitimate paying visitors, and this
+    // check will need to distinguish lister accounts from visitor accounts
+    // (e.g. by role/publicMetadata, the same field AppNav uses for
+    // role === "admin") rather than excluding all signed-in traffic.
+
+    if (!isLoaded) return; // wait for Clerk to resolve before deciding
+    if (isSignedIn) return;
+
     initPostHogClient();
     posthog.capture("property_view", {
       listing_id: listing.listing_id,
@@ -171,6 +186,8 @@ export default function PropertyDetails({ listing }) {
     listing.property_name,
     listing.ward_name,
     listing.category_name,
+    isLoaded,
+    isSignedIn,
   ]);
 
   const refetchReviews = () => {
