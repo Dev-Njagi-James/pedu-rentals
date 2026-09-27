@@ -462,13 +462,22 @@ export default function PropertyDetails({ listing }) {
                 onClick={() => setActiveIndex(i)}
                 aria-label={`View media ${i + 1}`}>
                 {item.image_url ? (
-                  <Image
-                    src={item.image_url}
-                    alt={`${property_name} thumbnail ${i + 1}`}
-                    fill
-                    sizes="200px"
-                    className={styles.thumbImage}
-                  />
+                  (() => {
+                    const { src, isTransformed } = buildCdnImageUrl(
+                      item.image_url,
+                      { width: 200 },
+                    );
+                    return (
+                      <Image
+                        src={src}
+                        alt={`${property_name} thumbnail ${i + 1}`}
+                        fill
+                        unoptimized={isTransformed}
+                        sizes="200px"
+                        className={styles.thumbImage}
+                      />
+                    );
+                  })()
                 ) : (
                   <div className={styles.thumbVideoPlaceholder} />
                 )}
