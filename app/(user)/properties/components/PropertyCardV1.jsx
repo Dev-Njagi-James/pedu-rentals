@@ -222,13 +222,7 @@ export default function PropertyCardV1({ listing, onWardClick }) {
           </div>
 
           <div className={styles.actions}>
-            <Link
-              href={
-                _source === "v1"
-                  ? `/properties/${listing_id}?src=v1`
-                  : `/properties/${listing_id}`
-              }
-              className={styles.viewBtn}>
+            <Link href={`/properties/${listing_id}`} className={styles.viewBtn}>
               View Details
             </Link>
 
@@ -261,7 +255,13 @@ export default function PropertyCardV1({ listing, onWardClick }) {
                     );
                   }
 
-                  posthog.capture('property_call_clicked', { listing_id, listing_name, phone_number, ward: ward_display_name, plan_name });
+                  posthog.capture("property_call_clicked", {
+                    listing_id,
+                    listing_name,
+                    phone_number,
+                    ward: ward_display_name,
+                    plan_name,
+                  });
                   window.location.href = `tel:0${phone_number}`;
                 }}>
                 <svg
