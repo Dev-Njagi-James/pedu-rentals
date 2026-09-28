@@ -315,3 +315,104 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Free pass ── */
+.freePriceGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.priceStruck {
+  color: #9ca3af;
+  font-size: 0.8125rem;
+}
+
+.freeBadge {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #065f46;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.phoneRowDisabled {
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* ── Cancel confirm (from AddListing DiscardPopup) ── */
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 24, 39, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.confirmPopup {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 28px 28px 22px;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.confirmTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0 0 8px;
+}
+
+.confirmBody {
+  font-size: 0.8125rem;
+  color: #6b7280;
+  margin: 0 0 22px;
+  line-height: 1.55;
+}
+
+.confirmActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.confirmContinue {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #fff;
+  background: #1a1a2e;
+  border: none;
+  border-radius: 4px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.confirmContinue:hover {
+  opacity: 0.82;
+}
+
+.confirmDelist {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #b91c1c;
+  background: none;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  padding: 7px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.confirmDelist:hover {
+  background: #fef2f2;
+}
