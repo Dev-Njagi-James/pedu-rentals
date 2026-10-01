@@ -1,18 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import styles from "../css/CheckoutPopup.module.css";
-
-// Matches app/(lister)/Lister/components/AddListing.jsx phone handling —
-// same sanitisation contract as lib/payments/phone.js (server side).
-const normalisePhone = (raw) => {
-  const digits = raw.replace(/\D/g, "");
-  if (digits.startsWith("0") && digits.length === 10)
-    return "254" + digits.slice(1);
-  if (digits.startsWith("254") && digits.length === 12) return digits;
-  return null;
-};
 
 // REMOVABLE: temporary free pass. Delete with the server block in initiate.
 const hasFreePass = (category, plan) =>
@@ -30,10 +20,11 @@ export default function CheckoutPopup({
   const [plansError, setPlansError] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
 
-  const [phone, setPhone] = useState("");
   const [step, setStep] = useState("select"); // select | processing | success | error
   const [errorMsg, setErrorMsg] = useState("");
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [iframeUrl, setIframeUrl] = useState(null);
+  const pollRef = useRef({ cancelled: false });
 
   useEffect(() => {
     if (!categoryName) {
@@ -81,37 +72,70 @@ export default function CheckoutPopup({
     onClose?.();
   };
 
-  const pollForCompletion = async (checkoutRequestId) => {
-    for (let i = 0; i < 12; i++) {
-      await new Promise((r) => setTimeout(r, 5000));
-      const res = await fetch(`/api/v1/payments/status/${checkoutRequestId}`, {
+  // Messages from /payment/return and /payment/cancelled loaded inside the iframe.
+  useEffect(() => {
+    const onMsg = (e) => {
+      if (
+        e.origin !== window.location.origin ||
+        e.data?.source !== "pedu-payment"
+      )
+        return;
+      if (e.data.type === "cancelled") {
+        pollRef.current.cancelled = true;
+        setIframeUrl(null);
+        setErrorMsg("Payment cancelled.");
+        setStep("error");
+      } else if (e.data.type === "returned") {
+        setIframeUrl(null); // polling continues; UI shows "Confirming payment…"
+      }
+    };
+    window.addEventListener("message", onMsg);
+    return () => {
+      window.removeEventListener("message", onMsg);
+      pollRef.current.cancelled = true;
+    };
+  }, []);
+
+  const closePaymentFrame = () => {
+    pollRef.current.cancelled = true;
+    setIframeUrl(null);
+    setErrorMsg(
+      "Payment window closed. If you already paid, the listing publishes automatically.",
+    );
+    setStep("error");
+  };
+
+  const pollForCompletion = async (providerRef, token) => {
+    const deadline = Date.now() + 15 * 60_000;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 3000));
+      if (token.cancelled) return "aborted";
+      const res = await fetch(`/api/v1/payments/status/${providerRef}`, {
         credentials: "include",
       });
-      const json = await res.json();
-      if (json.status === "completed") return;
-      if (json.status === "failed")
-        throw new Error("Payment rejected. Try again.");
-      if (json.status === "error")
+      const json = await res.json().catch(() => ({}));
+      if (token.cancelled) return "aborted";
+      if (json.status === "completed") return "completed";
+      if (json.status === "failed" || json.status === "reversed")
+        throw new Error("Payment was not completed. Try again.");
+      if (json.status === "expired")
+        throw new Error("Payment session expired. Start again.");
+      if (json.status === "needs_review")
         throw new Error(
           "Payment received but confirmation failed. Contact support.",
         );
     }
-    throw new Error("Payment timed out. Check your M-Pesa and retry.");
+    throw new Error(
+      "Payment timed out. If you paid, the listing publishes automatically.",
+    );
   };
 
+  const token = { cancelled: false };
+  pollRef.current = token;
   const handleCheckout = async () => {
     if (!selectedPlan) {
       setErrorMsg("Select a package.");
       return;
-    }
-
-    let sanitised = null;
-    if (!freePass) {
-      sanitised = normalisePhone(phone);
-      if (!sanitised) {
-        setErrorMsg("Enter a valid Safaricom number (07XX or 2547XX).");
-        return;
-      }
     }
 
     setErrorMsg("");
@@ -125,26 +149,31 @@ export default function CheckoutPopup({
         body: JSON.stringify({
           listing_id: listingId,
           plan_name: selectedPlan,
-          ...(sanitised ? { phone: sanitised } : {}),
         }),
       });
       const json = await res.json();
       if (!res.ok || !json.success)
         throw new Error(json.error ?? "Payment initiation failed.");
 
-      if (!json.free_pass) {
-        await pollForCompletion(json.checkout_request_id);
+      if (json.free_pass) {
+        setStep("success");
+        toast.success("Listing published.");
+        onPaid?.();
+        return;
       }
 
+      setIframeUrl(json.redirect_url);
+      const outcome = await pollForCompletion(json.provider_ref, token);
+      if (outcome === "aborted") return;
+
+      setIframeUrl(null);
       setStep("success");
-      toast.success(
-        json.free_pass
-          ? "Listing published."
-          : "Payment confirmed — your listing is live.",
-      );
+      toast.success("Payment confirmed — your listing is live.");
       onPaid?.();
     } catch (err) {
+      if (token.cancelled) return;
       setErrorMsg(err.message ?? "Payment failed. Try again.");
+      setIframeUrl(null);
       setStep("error");
     }
   };
@@ -162,13 +191,22 @@ export default function CheckoutPopup({
           </div>
           <button
             className={styles.cancelBtn}
-            onClick={requestCancel}
-            disabled={step === "processing"}>
+            onClick={iframeUrl ? closePaymentFrame : requestCancel}
+            disabled={step === "processing" && !iframeUrl}>
             Cancel
           </button>
         </div>
 
-        <div className={styles.body}>
+        {iframeUrl && (
+          <iframe
+            src={iframeUrl}
+            className={styles.payFrame}
+            title="Secure payment"
+          />
+        )}
+        <div
+          className={styles.body}
+          style={iframeUrl ? { display: "none" } : undefined}>
           <div className={styles.message}>
             <h2 className={styles.title}>Give Your Listing More Visibility</h2>
             <p className={styles.subtitle}>
@@ -233,24 +271,6 @@ export default function CheckoutPopup({
 
         <div className={styles.totalSection}>
           <h3 className={styles.checkoutDetailsTitle}>Checkout Details</h3>
-
-          <div className={styles.phoneField}>
-            <label className={styles.fieldLabel}>Phone Number</label>
-            <div
-              className={`${styles.phoneRow} ${freePass ? styles.phoneRowDisabled : ""}`}>
-              <div className={styles.phonePrefix}>+ 254</div>
-              <input
-                className={styles.phoneInput}
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="789 908 567"
-                maxLength={12}
-                disabled={step === "processing" || freePass}
-              />
-            </div>
-          </div>
-
           <div className={styles.totalRow}>
             <span>Total</span>
             <strong>
@@ -275,7 +295,9 @@ export default function CheckoutPopup({
               <span>
                 {freePass
                   ? "Publishing…"
-                  : "STK push sent — approve on your phone"}
+                  : iframeUrl
+                    ? "Complete payment above"
+                    : "Confirming payment…"}
               </span>
             </div>
           ) : (

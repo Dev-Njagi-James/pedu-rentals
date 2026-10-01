@@ -146,3 +146,117 @@ create index if not exists auth_identity_map_legacy_user_idx
 
 create index if not exists auth_identity_map_clerk_user_idx
   on public.auth_identity_map (clerk_user_id);
+
+ 
+begin;
+ 
+-- Re-run the snapshot for rows inserted between Phase A and now, then enforce.
+update payments_table p
+   set category_name = l.listing_category
+  from listings_table l
+ where l.listing_id = p.listing_id
+   and p.category_name is null;
+ 
+alter table payments_table alter column category_name set not null;
+ 
+alter table payments_table rename column checkout_request_id to provider_ref;
+alter table payments_table rename column mpesa_receipt to provider_receipt;
+alter table payments_table drop column phone;
+ 
+alter table payments_table
+  add constraint payments_table_provider_ref_key unique (provider_ref);
+ 
+alter table payments_table
+  add constraint payments_table_status_check
+  check (status in ('pending', 'completed', 'failed', 'reversed',
+                    'expired', 'needs_review'));
+ 
+drop function if exists public.complete_payment(bigint, text, jsonb);
+ 
+-- Single settlement point for every terminal outcome. Idempotent:
+-- only a 'pending' row can transition; repeats return 'already_settled'.
+create or replace function public.settle_payment(
+  p_payment_id       bigint,
+  p_status           text,
+  p_provider_receipt text  default null,
+  p_payment_method   text  default null,
+  p_failure_reason   text  default null,
+  p_raw              jsonb default null
+) returns text
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_current    text;
+  v_listing_id bigint;
+  v_plan_name  text;
+begin
+  if p_status not in ('completed', 'failed', 'reversed', 'expired', 'needs_review') then
+    raise exception 'invalid terminal status %', p_status;
+  end if;
+ 
+  select status, listing_id, plan_name
+    into v_current, v_listing_id, v_plan_name
+    from payments_table
+   where payment_id = p_payment_id
+     for update;
+ 
+  if not found then
+    raise exception 'payments_table row % not found', p_payment_id;
+  end if;
+ 
+  -- Allowed transitions:
+  --   pending   -> any terminal status
+  --   expired   -> completed   (customer paid after our sweep closed it)
+  --   completed -> reversed    (provider reversed a settled payment)
+  -- Everything else is a duplicate or out-of-order delivery: no-op.
+  if not (
+       v_current = 'pending'
+    or (v_current = 'expired'   and p_status = 'completed')
+    or (v_current = 'completed' and p_status = 'reversed')
+  ) then
+    return 'already_settled';
+  end if;
+ 
+  update payments_table
+     set status           = p_status,
+         provider_receipt = coalesce(p_provider_receipt, provider_receipt),
+         payment_method   = coalesce(p_payment_method, payment_method),
+         failure_reason   = coalesce(p_failure_reason, failure_reason),
+         raw_callback     = coalesce(p_raw, raw_callback),
+         settled_at       = case when v_current = 'completed'
+                                 then settled_at else now() end,
+         updated_at       = now()
+   where payment_id = p_payment_id;
+ 
+  if p_status = 'completed' then
+    insert into subscriptions_table (listing_id, plan_name, payment_id, status, expires_at)
+    values (v_listing_id, v_plan_name, p_payment_id, 'active', now() + interval '30 days');
+ 
+    update listings_table
+       set payment_status = 'paid',
+           plan_name      = v_plan_name
+     where listing_id = v_listing_id;
+ 
+  elsif p_status = 'reversed' then
+    update subscriptions_table
+       set status = 'cancelled'
+     where payment_id = p_payment_id;
+ 
+    -- Unpublish only if no other active subscription still covers the listing.
+    if not exists (
+      select 1 from subscriptions_table
+       where listing_id = v_listing_id and status = 'active'
+    ) then
+      update listings_table
+         set payment_status = 'pending',
+             plan_name      = 'Regular'
+       where listing_id = v_listing_id;
+    end if;
+  end if;
+ 
+  return p_status;
+end;
+$$;
+ 
+commit;

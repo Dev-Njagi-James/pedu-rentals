@@ -52,7 +52,7 @@ export const config = {
     "/Admin/(.*)",
     "/Lister",
     "/Lister/(.*)",
-    "/api/v1/((?!listings/public|listings/filters).*)",
+    "/api/v1/((?!listings/public|listings/filters|payments/ipn).*)",
     "/api/analytics/(.*)",
   ],
 };
