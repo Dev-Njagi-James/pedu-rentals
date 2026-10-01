@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
-import { sanitisePhone } from "@/lib/payments/phone";
-import { initiateStkPush } from "@/lib/payments/daraja/stkPush";
+import { randomUUID } from "crypto";
+import { initiatePayment } from "@/lib/payments";
+
 
 export async function POST(request) {
   let payment_id = null;
@@ -23,7 +24,7 @@ export async function POST(request) {
       );
     }
 
-    const { listing_id, plan_name, phone } = body;
+    const { listing_id, plan_name } = body;
     if (!listing_id || !plan_name) {
       return NextResponse.json(
         { success: false, error: "listing_id and plan_name are required." },
@@ -33,7 +34,7 @@ export async function POST(request) {
 
     const { data: listingRow, error: listingErr } = await paymentsSupabase
       .from("listings_table")
-      .select("listing_category, lister_uuid, payment_status")
+      .select("listing_category, lister_uuid, payment_status, phone_number")
       .eq("listing_id", listing_id)
       .single();
 
@@ -92,22 +93,7 @@ export async function POST(request) {
       return NextResponse.json({ success: true, free_pass: true });
     }
 
-    // Paid path
-    if (!phone) {
-      return NextResponse.json(
-        { success: false, error: "phone is required." },
-        { status: 400 },
-      );
-    }
-    const sanitisedPhone = sanitisePhone(phone);
-    if (!sanitisedPhone) {
-      return NextResponse.json(
-        { success: false, error: "Invalid phone number." },
-        { status: 400 },
-      );
-    }
-
-    const { data: plan, error: planErr } = await paymentsSupabase
+        const { data: plan, error: planErr } = await paymentsSupabase
       .from("plan_category_pricing")
       .select("price_kes")
       .eq("plan_name", plan_name)
@@ -117,128 +103,110 @@ export async function POST(request) {
     if (planErr) {
       if (planErr.code === "PGRST116") {
         return NextResponse.json(
-          {
-            success: false,
-            error: "No pricing found for this plan and category.",
-          },
+          { success: false, error: "No pricing found for this plan and category." },
           { status: 400 },
         );
       }
-      return NextResponse.json(
-        { success: false, error: planErr.message },
-        { status: 500 },
-      );
+      return NextResponse.json({ success: false, error: planErr.message }, { status: 500 });
     }
 
     const amount_kes = plan.price_kes;
-    // Insert pending payment row
+
+    // Billing details come from the server, never the client.
+    const { data: profile } = await paymentsSupabase
+      .from("users_table")
+      .select("username, lister_email, phone_number")
+      .eq("lister_uuid", user.id)
+      .maybeSingle();
+    const billing = {
+      email: profile?.lister_email ?? null,
+      phone: profile?.phone_number ?? listingRow.phone_number ?? null,
+      firstName: profile?.username ?? null,
+    };
+    if (!billing.email && !billing.phone) {
+      return NextResponse.json(
+        { success: false, error: "Add an email or phone number to your account first." },
+        { status: 400 },
+      );
+    }
+
+    const merchant_reference = `PEDU-${randomUUID()}`;
+
     const { data: paymentRecord, error: insertErr } = await paymentsSupabase
       .from("payments_table")
       .insert({
         lister_uuid: user.id,
         listing_id,
         plan_name,
-        phone: sanitisedPhone,
+        category_name: listingRow.listing_category,
         amount_kes,
+        merchant_reference,
         status: "pending",
-        checkout_request_id: null,
+        provider_ref: null,
       })
       .select("payment_id")
       .single();
 
     if (insertErr) {
+      return NextResponse.json({ success: false, error: insertErr.message }, { status: 500 });
+    }
+    payment_id = paymentRecord.payment_id;
+
+    const base = process.env.NEXT_PUBLIC_BASE_URL;
+    const { providerRef, redirectUrl } = await initiatePayment({
+      merchantReference: merchant_reference,
+      amountKes: amount_kes,
+      description: `${plan_name} listing`,
+      callbackUrl: `${base}/payment/return`,
+      cancellationUrl: `${base}/payment/cancelled`,
+      billing,
+    });
+
+    let saved = false;
+    for (let attempt = 0; attempt < 3 && !saved; attempt++) {
+      const { error: updateErr } = await paymentsSupabase
+        .from("payments_table")
+        .update({ provider_ref: providerRef, updated_at: new Date().toISOString() })
+        .eq("payment_id", payment_id);
+      if (!updateErr) saved = true;
+      else await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+    }
+
+    if (!saved) {
+      await paymentsSupabase
+        .from("payments_table")
+        .update({
+          status: "needs_review",
+          failure_reason: `Order created at provider (${providerRef}) but ref not saved.`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("payment_id", payment_id);
       return NextResponse.json(
-        { success: false, error: insertErr.message },
+        { success: false, error: "Could not start payment. Contact support.", payment_id },
         { status: 500 },
       );
     }
 
-    payment_id = paymentRecord.payment_id;
-
-    // Call Daraja STK Push
-    const stkJson = await initiateStkPush({
-      amount_kes,
-      phone: sanitisedPhone,
-      listing_id,
-      plan_name,
+    return NextResponse.json({
+      success: true,
+      redirect_url: redirectUrl,
+      provider_ref: providerRef,
     });
-
-    if (stkJson.ResponseCode === "0") {
-      let updateSuccess = false;
-      let lastUpdateErr = null;
-
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const { error: updateErr } = await paymentsSupabase
-          .from("payments_table")
-          .update({
-            checkout_request_id: stkJson.CheckoutRequestID,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("payment_id", payment_id);
-
-        if (!updateErr) {
-          updateSuccess = true;
-          break;
-        }
-        lastUpdateErr = updateErr;
-        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
-      }
-
-      if (!updateSuccess) {
-        try {
-          await paymentsSupabase
-            .from("payments_table")
-            .update({
-              status: "orphaned_checkout_id",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("payment_id", payment_id);
-        } catch {}
-
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "STK push sent but failed to record checkout ID. Contact support with your phone number and timestamp.",
-            payment_id,
-          },
-          { status: 500 },
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        checkout_request_id: stkJson.CheckoutRequestID,
-        customer_message: stkJson.CustomerMessage,
-      });
-    } else {
+  } catch (err) {
+    console.error("[payments/initiate]", err);
+    if (payment_id) {
       await paymentsSupabase
         .from("payments_table")
         .update({
           status: "failed",
+          failure_reason: String(err.message).slice(0, 200),
           updated_at: new Date().toISOString(),
         })
-        .eq("payment_id", payment_id);
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: stkJson.errorMessage ?? "STK push rejected.",
-        },
-        { status: 502 },
-      );
-    }
-  } catch (err) {
-    if (payment_id) {
-      try {
-        await paymentsSupabase
-          .from("payments_table")
-          .update({ status: "failed", updated_at: new Date().toISOString() })
-          .eq("payment_id", payment_id);
-      } catch {}
+        .eq("payment_id", payment_id)
+        .eq("status", "pending");
     }
     return NextResponse.json(
-      { success: false, error: err.message },
+      { success: false, error: "Payment initiation failed. Try again." },
       { status: 502 },
     );
   }
