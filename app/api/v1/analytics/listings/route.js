@@ -11,6 +11,16 @@ import {
   getViewCountsByListing,
 } from "@/lib/analytics/query";
 
+// Engagement weights. Tune here.
+const WEIGHT_VIEW = 1;
+const WEIGHT_CALL = 5;
+const WEIGHT_REVIEW = 10;
+
+const engagementScore = (r) =>
+  (r.views ?? 0) * WEIGHT_VIEW +
+  (r.call_logs ?? 0) * WEIGHT_CALL +
+  (r.review_count ?? 0) * WEIGHT_REVIEW;
+
 export async function GET() {
   try {
     const { user, error, status } = await requireAuth();
@@ -54,14 +64,19 @@ export async function GET() {
       return {
         ...row,
         image_url: sorted[0]?.publicUrl ?? null,
-        views: viewCounts
-          ? (viewCounts[String(row.listing_id)] ?? 0)
-          : null,
+        views: viewCounts ? (viewCounts[String(row.listing_id)] ?? 0) : null,
         call_logs: callCounts
           ? (callCounts[String(row.listing_id)] ?? 0)
           : null,
       };
     });
+
+      rows.sort(
+      (a, b) =>
+        engagementScore(b) - engagementScore(a) ||
+        (b.avg_rating ?? 0) - (a.avg_rating ?? 0) ||
+        b.listing_id - a.listing_id,
+    );
 
     return NextResponse.json({ data: rows }, { status: 200 });
   } catch (err) {
