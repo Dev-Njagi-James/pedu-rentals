@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import PropertyCard from "@/app/(user)/properties/components/PropertyCardV1";
 import styles from "../css/MyListing.module.css";
 import AddListing from "./AddListing";
@@ -232,8 +232,18 @@ export default function ListingsPanel({ onUploadStateChange }) {
       {/* ── Grid ── */}
       {!loading && listings.length > 0 && (
         <div className={styles.grid}>
-          {listings.map((listing) => (
-            <div key={listing.listing_id} className={styles.cardWrapper}>
+          {listings.map((listing, i) => {
+            const isPending = listing.payment_status === "pending";
+            const prevPending = i > 0 && listings[i - 1].payment_status === "pending";
+            return (
+            <Fragment key={listing.listing_id}>
+              {isPending && i === 0 && (
+                <h3 className={styles.sectionHeading}>Pending listings</h3>
+              )}
+              {!isPending && prevPending && (
+                <h3 className={styles.sectionHeading}>Published listings</h3>
+              )}
+            <div className={styles.cardWrapper}>
               <PropertyCard
                 listing={listing}
                 onWardClick={(ward_id, ward_name, property_location) =>
@@ -288,7 +298,9 @@ export default function ListingsPanel({ onUploadStateChange }) {
                 </button>
               </div>
             </div>
-          ))}
+          </Fragment>
+            );
+          })}
         </div>
       )}
 
