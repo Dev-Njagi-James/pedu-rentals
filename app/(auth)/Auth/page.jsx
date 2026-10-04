@@ -670,53 +670,28 @@ export default function AuthForm() {
     }
   };
 
-  const handleGoogleAuth = () => {
-    setError(null);
+   const handleGoogleAuth = async () => {
+     setError(null);
+     const resource = topTab === "signup" ? signUp : signIn;
+     const loaded = topTab === "signup" ? signUpLoaded : signInLoaded;
 
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
+     try {
+       if (!loaded) throw new Error("Clerk is not loaded yet.");
 
-    const popup = window.open(
-      "",
-      "clerk-oauth",
-      `width=${width},height=${height},left=${left},top=${top}`,
-    );
-
-    const run = async () => {
-      try {
-        if (topTab === "signup") {
-          if (!signUpLoaded) throw new Error("Clerk SignUp is not loaded yet.");
-
-          await signUp.authenticateWithPopup({
-            strategy: "oauth_google",
-            redirectUrl: `${window.location.origin}/sso-callback`,
-            redirectUrlComplete: `${window.location.origin}/sso-callback`,
-            popup,
-          });
-        } else {
-          if (!signInLoaded) throw new Error("Clerk SignIn is not loaded yet.");
-
-          await signIn.authenticateWithPopup({
-            strategy: "oauth_google",
-            redirectUrl: `${window.location.origin}/sso-callback`,
-            redirectUrlComplete: `${window.location.origin}/sso-callback`,
-            popup,
-          });
-        }
-      } catch (err) {
-        setError(
-          err?.errors?.[0]?.longMessage ??
-            err?.errors?.[0]?.message ??
-            err?.message ??
-            "Google sign-in failed.",
-        );
-      }
-    };
-
-    run();
-  };
+       await resource.authenticateWithRedirect({
+         strategy: "oauth_google",
+         redirectUrl: "/sso-callback",
+         redirectUrlComplete: "/auth-complete",
+       });
+     } catch (err) {
+       setError(
+         err?.errors?.[0]?.longMessage ??
+           err?.errors?.[0]?.message ??
+           err?.message ??
+           "Google sign-in failed.",
+       );
+     }
+   };
 
   const copy = COPY[topTab];
 
@@ -810,7 +785,6 @@ export default function AuthForm() {
                     noValidate>
                     <button
                       type="button"
-                      disabled
                       className="google-btn-v2"
                       onClick={handleGoogleAuth}>
                       <GoogleIcon /> Continue with Google
