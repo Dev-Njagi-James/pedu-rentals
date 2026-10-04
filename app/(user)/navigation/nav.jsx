@@ -277,20 +277,28 @@ export default function AppNav() {
       return;
     }
     let cancelled = false;
-    fetch("/api/v1/users/me")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((json) => {
-        if (!cancelled) {
-          setProfileUsername(json?.data?.username ?? null);
-          setProfileOrgName(json?.data?.lister_organization ?? null);
+    const MAX_RETRIES = 2;
+    const RETRY_DELAY_MS = 1500;
+    (async () => {
+      try {
+        let res;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+          res = await fetch("/api/v1/users/me");
+          if (res.status !== 409 || attempt === MAX_RETRIES) break;
+          await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+          if (cancelled) return;
         }
-      })
-      .catch(() => {
+        const json = res.ok ? await res.json() : null;
+        if (cancelled) return;
+        setProfileUsername(json?.data?.username ?? null);
+        setProfileOrgName(json?.data?.lister_organization ?? null);
+      } catch {
         if (!cancelled) {
           setProfileUsername(null);
           setProfileOrgName(null);
         }
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -311,8 +319,7 @@ export default function AppNav() {
     setDashboardOpen(pathname === "/Lister");
   }, [pathname]);
 
-  profileUsername || user?.primaryEmailAddress?.emailAddress || "Account";
-  const orgSubtitle = user?.publicMetadata?.orgSubtitle || "";
+  
   const displayName =
     profileUsername || user?.primaryEmailAddress?.emailAddress || "Account";
   const initial = (displayName || "?").charAt(0).toUpperCase();
@@ -496,6 +503,11 @@ export default function AppNav() {
                         {displayName}
                       </div>
                     </div>
+                    {profileOrgName && (
+                        <div className={styles.accountMenuOrg}>
+                          {profileOrgName}
+                        </div>
+                      )}
                   </div>
 
                   <div className={styles.accountMenuDivider} />
@@ -557,32 +569,32 @@ export default function AppNav() {
                 const dashboardActive = pathname === "/Lister";
                 return (
                   <li key={item.key}>
-                     <button
-                     type="button"
-                     className={`${styles.drawerLink} ${styles.drawerDashboardLabel}`}
-                     aria-current={dashboardActive ? "page" : undefined}
-                     aria-expanded={dashboardOpen}
-                     onClick={() => setDashboardOpen((v) => !v)}>
-                     {item.label}
-                     <span
-                      className={`${styles.drawerLinkChevron} ${dashboardOpen ? styles.chevronOpen : ""}`}>
-                       <Icon.chevronDown />
-                    </span>
-                   </button>
-                   {dashboardOpen && (
-                     <ul className={styles.drawerSublinks}>
-                       {DASHBOARD_SUBLINKS.map((sub) => (
-                         <li key={sub.id}>
-                          <Link
-                             href={`/Lister?tab=${sub.id}`}
-                             className={`${styles.drawerLink} ${dashboardActive && activeLisTab === sub.id ? styles.drawerLinkActive : ""}`}
-                             onClick={closeMenu}>
-                             {sub.label}
-                           </Link>
-                         </li>
-                       ))}
-                     </ul>
-                   )}
+                    <button
+                      type="button"
+                      className={`${styles.drawerLink} ${styles.drawerDashboardLabel}`}
+                      aria-current={dashboardActive ? "page" : undefined}
+                      aria-expanded={dashboardOpen}
+                      onClick={() => setDashboardOpen((v) => !v)}>
+                      {item.label}
+                      <span
+                        className={`${styles.drawerLinkChevron} ${dashboardOpen ? styles.chevronOpen : ""}`}>
+                        <Icon.chevronDown />
+                      </span>
+                    </button>
+                    {dashboardOpen && (
+                      <ul className={styles.drawerSublinks}>
+                        {DASHBOARD_SUBLINKS.map((sub) => (
+                          <li key={sub.id}>
+                            <Link
+                              href={`/Lister?tab=${sub.id}`}
+                              className={`${styles.drawerLink} ${dashboardActive && activeLisTab === sub.id ? styles.drawerLinkActive : ""}`}
+                              onClick={closeMenu}>
+                              {sub.label}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </li>
                 );
               }
@@ -624,7 +636,14 @@ export default function AppNav() {
               <div className={styles.drawerDivider} />
               <div className={styles.drawerAccountHeader}>
                 <Avatar showDot={hasUnread} />
-                {displayName}
+                <div>
+                  <div>{displayName}</div>
+                  {profileOrgName && (
+                    <div className={styles.drawerAccountOrg}>
+                      {profileOrgName}
+                    </div>
+                  )}
+                </div>
               </div>
               <ul className={styles.drawerLinks}>
                 {ACCOUNT_MENU_ITEMS.map((item) => {
