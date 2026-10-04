@@ -1,48 +1,24 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
-import { createServerClient } from "@supabase/ssr";
 import { NextResponse } from "next/server";
 
+const matchesPath = (pathname, base) =>
+  pathname === base || pathname.startsWith(`${base}/`);
+
 export const proxy = clerkMiddleware(async (auth, request) => {
-  let supabaseResponse = NextResponse.next({ request });
+  const { pathname } = request.nextUrl;
+  const isAdminPage = matchesPath(pathname, "/Admin");
+  const isListerPage = matchesPath(pathname, "/Lister");
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
-        },
-      },
-    },
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isAdminRoute = request.nextUrl.pathname.startsWith("/User/Admin");
-  const isListerRoute = request.nextUrl.pathname.startsWith("/User/Lister");
-  const role = user?.user_metadata?.role;
-
-  if (isAdminRoute && role !== "admin") {
-    return NextResponse.redirect(new URL("/Auth", request.url));
+  if (isAdminPage || isListerPage) {
+    await auth.protect();
   }
 
-  if (isListerRoute && role !== "lister") {
-    return NextResponse.redirect(new URL("/Auth", request.url));
+  if (isAdminPage) {
+    const { sessionClaims } = await auth();
+    if (sessionClaims?.metadata?.role !== "admin") {
+      return NextResponse.redirect(new URL("/Lister", request.url));
+    }
   }
-
-  return supabaseResponse;
 });
 
 export const config = {
