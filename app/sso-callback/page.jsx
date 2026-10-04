@@ -2,6 +2,8 @@
 import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useClerk } from "@clerk/nextjs";
+import AuthTransitionShell from "@/app/(auth)/Auth/transitionShell";
+
 
 export default function SSOCallback() {
   const router = useRouter();
@@ -22,10 +24,13 @@ export default function SSOCallback() {
   }, [handleRedirectCallback, router]);
 
   return (
-    <>
-      <p>Signing you in…</p>
-      {/* Clerk bot protection mounts its CAPTCHA widget here. */}
-      <div id="clerk-captcha" />
-    </>
+    <AuthTransitionShell
+      variant="callback"
+      eyebrow="For landlords & agents"
+      heading="Signing you in securely."
+      description="One quick security check, then we’ll get your Pedu Rentals lister account ready."
+      status="Signing you in…"
+      statusDetail="Your secure sign-in is in progress."
+    />
   );
 }

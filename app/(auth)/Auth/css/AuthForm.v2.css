@@ -284,6 +284,28 @@
   cursor: not-allowed;
 }
 
+.google-btn-v2:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.google-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: -3px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: google-spin 0.7s linear infinite;
+}
+
+@keyframes google-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 @media (max-width: 960px) {
   .photo-panel {
     width: 38%;
