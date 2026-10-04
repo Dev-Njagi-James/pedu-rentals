@@ -10,10 +10,9 @@ import "./css/AuthForm.v2.css";
 import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
 import { invalidateAnalyticsCache } from "@/lib/cache/analyticsCache";
+import { homeForRole } from "@/lib/auth/routes";
 
 const supabase = createBrowserSupabaseClient();
-
-
 
 function validateEmail(email) {
   const trimmed = email.trim();
@@ -39,8 +38,6 @@ function validateCode(code) {
 
   return null;
 }
-
-
 
 const MailIcon = () => (
   <svg
@@ -220,9 +217,8 @@ function OtpInput({ value, onChange, onComplete, error, disabled }) {
 
 const COPY = {
   login: {
-    title: "Welcome back. Your listings are waiting.",
-    subtitle:
-      "Log in to manage your properties, track inquiries, and keep your listings active.",
+    title: "Welcome back.",
+    subtitle: "Log in to continue.",
     submitLabel: "Log In",
     toggleQuestion: "Don't have an account?",
     toggleAction: "Create Account",
@@ -234,6 +230,31 @@ const COPY = {
     submitLabel: "Sign Up",
     toggleQuestion: "Already have an account?",
     toggleAction: "Log In",
+  },
+};
+
+const ACCOUNT_TYPES = [
+  {
+    value: "user",
+    label: "Find a property",
+    desc: "Browse listings and view property details.",
+  },
+  {
+    value: "lister",
+    label: "List a property",
+    desc: "Post and manage your own listings.",
+  },
+];
+
+const SIGNUP_COPY_BY_TYPE = {
+  user: {
+    title: "Find your next home.",
+    subtitle: "Create an account to browse properties and view their details.",
+  },
+  lister: {
+    title: "Post your property. Start receiving inquiries.",
+    subtitle:
+      "You're steps away from meeting your first tenant. Let's get your property listed.",
   },
 };
 
@@ -268,6 +289,7 @@ export default function AuthForm() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [accountType, setAccountType] = useState("user");
 
   // Needed to re-issue signin.prepareFirstFactor on resend.
   const [emailFactorId, setEmailFactorId] = useState(null);
@@ -318,8 +340,18 @@ export default function AuthForm() {
     };
     window.addEventListener("pageshow", onPageShow);
     return () => window.removeEventListener("pageshow", onPageShow);
-    }, []);
-  
+  }, []);
+
+  // /Auth?type=lister (from the "Become a Lister" CTA) preselects Lister
+  // and opens the Sign Up tab.
+  useEffect(() => {
+    const type = new URLSearchParams(window.location.search).get("type");
+    if (type === "lister") {
+      setAccountType("lister");
+      setTopTab("signup");
+    }
+  }, []);
+
   const toggleTopTab = useCallback(() => {
     setTopTab((value) => (value === "login" ? "signup" : "login"));
     setError(null);
@@ -339,7 +371,6 @@ export default function AuthForm() {
     setEmail(event.target.value);
     setEmailError(null);
   }, []);
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -488,6 +519,10 @@ export default function AuthForm() {
 
       const syncResponse = await fetch("/api/v1/auth/sync", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountType: topTab === "signup" ? accountType : "user",
+        }),
       });
 
       if (!syncResponse.ok) {
@@ -495,10 +530,12 @@ export default function AuthForm() {
         return;
       }
 
+      const syncData = await syncResponse.json().catch(() => null);
+
       invalidateAnalyticsCache();
       invalidateMyListingsCache();
       await user?.reload();
-      router.push("/Lister");
+      router.push(homeForRole(syncData?.role));
     } catch (err) {
       const nextAttempts = failedAttempts + 1;
       setFailedAttempts(nextAttempts);
@@ -577,33 +614,43 @@ export default function AuthForm() {
     }
   };
 
-   const handleGoogleAuth = async () => {
-     setError(null);
-     if (googleLoading) return;
-     const resource = topTab === "signup" ? signUp : signIn;
-     const loaded = topTab === "signup" ? signUpLoaded : signInLoaded;
+  const handleGoogleAuth = async () => {
+    setError(null);
+    if (googleLoading) return;
+    const resource = topTab === "signup" ? signUp : signIn;
+    const loaded = topTab === "signup" ? signUpLoaded : signInLoaded;
 
-     try {
-       if (!loaded) throw new Error("Clerk is not loaded yet.");
-       setGoogleLoading(true);
+    try {
+      if (!loaded) throw new Error("Clerk is not loaded yet.");
+      setGoogleLoading(true);
 
-       await resource.authenticateWithRedirect({
-         strategy: "oauth_google",
-         redirectUrl: "/sso-callback",
-         redirectUrlComplete: "/auth-complete",
-       });
-     } catch (err) {
-       setGoogleLoading(false);
-       setError(
-         err?.errors?.[0]?.longMessage ??
-           err?.errors?.[0]?.message ??
-           err?.message ??
-           "Google sign-in failed.",
-       );
-     }
-   };
+      try {
+        sessionStorage.setItem(
+          "pedu_account_type",
+          topTab === "signup" ? accountType : "user",
+        );
+      } catch {}
 
-  const copy = COPY[topTab];
+      await resource.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/auth-complete",
+      });
+    } catch (err) {
+      setGoogleLoading(false);
+      setError(
+        err?.errors?.[0]?.longMessage ??
+          err?.errors?.[0]?.message ??
+          err?.message ??
+          "Google sign-in failed.",
+      );
+    }
+  };
+
+  const copy =
+    topTab === "signup"
+      ? { ...COPY.signup, ...SIGNUP_COPY_BY_TYPE[accountType] }
+      : COPY.login;
 
   return (
     <main className="auth-scene-v2">
@@ -693,6 +740,30 @@ export default function AuthForm() {
                     className="login-form-v2"
                     onSubmit={handleSubmit}
                     noValidate>
+                    {topTab === "signup" && (
+                      <fieldset
+                        className="account-type-v2"
+                        disabled={loading || googleLoading}>
+                        <legend>Account type</legend>
+                        {ACCOUNT_TYPES.map((t) => (
+                          <label
+                            key={t.value}
+                            className={`account-type-option${accountType === t.value ? " is-selected" : ""}`}>
+                            <input
+                              type="radio"
+                              name="accountType"
+                              value={t.value}
+                              checked={accountType === t.value}
+                              onChange={() => setAccountType(t.value)}
+                            />
+                            <span className="account-type-title">
+                              {t.label}
+                            </span>
+                            <span className="account-type-desc">{t.desc}</span>
+                          </label>
+                        ))}
+                      </fieldset>
+                    )}
                     <button
                       type="button"
                       className="google-btn-v2"
