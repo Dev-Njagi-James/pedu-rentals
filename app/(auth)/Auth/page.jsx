@@ -13,23 +13,7 @@ import { invalidateAnalyticsCache } from "@/lib/cache/analyticsCache";
 
 const supabase = createBrowserSupabaseClient();
 
-// ─────────────────────────────────────────────────────────
-// PARKED — legacy username/password validation.
-// Not deleted. Reference for future Clerk wiring.
-// ─────────────────────────────────────────────────────────
-// function validateLegacyLogin(fields) {
-//   const errors = {};
-//
-//   if (!fields.username.trim()) {
-//     errors.username = 'Username is required.';
-//   }
-//
-//   if (!fields.password) {
-//     errors.password = 'Password is required.';
-//   }
-//
-//   return errors;
-// }
+
 
 function validateEmail(email) {
   const trimmed = email.trim();
@@ -56,38 +40,7 @@ function validateCode(code) {
   return null;
 }
 
-// ─────────────────────────────────────────────────────────
-// PARKED — legacy icon components (username/password panel UI).
-// Not deleted. Reference for future Clerk wiring.
-// ─────────────────────────────────────────────────────────
-// const LockIcon = () => (
-//   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="input-icon" aria-hidden="true">
-//     <path d="M17 11V7a5 5 0 0 0-10 0v4M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2z" />
-//   </svg>
-// );
-//
-// const UserIcon = () => (
-//   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="input-icon" aria-hidden="true">
-//     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-//   </svg>
-// );
-//
-// const EyeIcon = ({ open }) => (
-//   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" width="18" height="18" aria-hidden="true">
-//     {open ? (
-//       <>
-//         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-//         <circle cx="12" cy="12" r="3" />
-//       </>
-//     ) : (
-//       <>
-//         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
-//         <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
-//         <line x1="1" y1="1" x2="23" y2="23" />
-//       </>
-//     )}
-//   </svg>
-// );
+
 
 const MailIcon = () => (
   <svg
@@ -286,7 +239,6 @@ const COPY = {
 
 const RESEND_COOLDOWN_SECONDS = 30;
 
-// Failed-verification escalation ladder. See runVerifyCode.
 const AUTO_SUBMIT_DISABLE_AFTER = 3;
 const LOCKOUT_AFTER = 6;
 const LOCKOUT_SECONDS = 60;
@@ -308,12 +260,6 @@ export default function AuthForm() {
 
   const [topTab, setTopTab] = useState("login");
 
-  // ───────────────────────────────────────────────────────
-  // PARKED — legacy sub-mode / fields state. Not deleted.
-  // ───────────────────────────────────────────────────────
-  // const [loginSubMode, setLoginSubMode] = useState('legacy');
-  // const [loginFields, setLoginFields] = useState({ username: '', password: '' });
-
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(null);
   const [code, setCode] = useState("");
@@ -321,6 +267,7 @@ export default function AuthForm() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
 
   // Needed to re-issue signin.prepareFirstFactor on resend.
   const [emailFactorId, setEmailFactorId] = useState(null);
@@ -363,6 +310,16 @@ export default function AuthForm() {
     }
   }, [lockedOut, lockoutRemaining]);
 
+  // Browser Back from Google restores this page from bfcache with state
+  // intact. Reset so the button is not stuck on "Signing you in…".
+  useEffect(() => {
+    const onPageShow = (e) => {
+      if (e.persisted) setGoogleLoading(false);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+    }, []);
+  
   const toggleTopTab = useCallback(() => {
     setTopTab((value) => (value === "login" ? "signup" : "login"));
     setError(null);
@@ -383,60 +340,10 @@ export default function AuthForm() {
     setEmailError(null);
   }, []);
 
-  // ───────────────────────────────────────────────────────
-  // PARKED — legacy handleSubmit (username/password → /api/auth
-  // → supabase.auth.signInWithPassword → role-based route).
-  // Not deleted. Reference for future Clerk wiring.
-  // ───────────────────────────────────────────────────────
-  // const handleSubmit = async (event) => {
-  //   event.preventDefault();
-  //
-  //   if (!(topTab === 'login' && loginSubMode === 'legacy')) return;
-  //
-  //   setError(null);
-  //   const errors = validateLegacyLogin(loginFields);
-  //
-  //   if (Object.keys(errors).length > 0) {
-  //     setFieldErrors(errors);
-  //     return;
-  //   }
-  //
-  //   setFieldErrors({});
-  //   setLoading(true);
-  //
-  //   try {
-  //     const response = await fetch('/api/auth', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({ mode: 'login', ...loginFields }),
-  //     });
-  //     const data = await response.json();
-  //
-  //     if (!response.ok) {
-  //       setError(data.error ?? 'Something went wrong.');
-  //       return;
-  //     }
-  //
-  //     const { error: signInError } = await supabase.auth.signInWithPassword({
-  //       email: data.email,
-  //       password: loginFields.password,
-  //     });
-  //
-  //     if (signInError) {
-  //       setError('Invalid username or password.');
-  //       return;
-  //     }
-  //
-  //     router.push(data.role === 'admin' ? '/Admin' : '/Lister');
-  //   } catch {
-  //     setError('Network error. Please try again.');
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (googleLoading) return;
 
     console.log("SUBMIT FIRED");
     console.log("topTab:", topTab);
@@ -672,11 +579,13 @@ export default function AuthForm() {
 
    const handleGoogleAuth = async () => {
      setError(null);
+     if (googleLoading) return;
      const resource = topTab === "signup" ? signUp : signIn;
      const loaded = topTab === "signup" ? signUpLoaded : signInLoaded;
 
      try {
        if (!loaded) throw new Error("Clerk is not loaded yet.");
+       setGoogleLoading(true);
 
        await resource.authenticateWithRedirect({
          strategy: "oauth_google",
@@ -684,6 +593,7 @@ export default function AuthForm() {
          redirectUrlComplete: "/auth-complete",
        });
      } catch (err) {
+       setGoogleLoading(false);
        setError(
          err?.errors?.[0]?.longMessage ??
            err?.errors?.[0]?.message ??
@@ -786,8 +696,21 @@ export default function AuthForm() {
                     <button
                       type="button"
                       className="google-btn-v2"
-                      onClick={handleGoogleAuth}>
-                      <GoogleIcon /> Continue with Google
+                      onClick={handleGoogleAuth}
+                      disabled={googleLoading || loading}
+                      aria-busy={googleLoading}>
+                      {googleLoading ? (
+                        <>
+                          <span className="google-spinner" aria-hidden="true" />
+                          {topTab === "signup"
+                            ? "Signing you up…"
+                            : "Signing you in…"}
+                        </>
+                      ) : (
+                        <>
+                          <GoogleIcon /> Continue with Google
+                        </>
+                      )}
                     </button>
                     <div className="or-divider-v2">Or</div>
                     <Field
@@ -811,7 +734,7 @@ export default function AuthForm() {
                     <button
                       type="submit"
                       className="submit-btn-v2"
-                      disabled={loading}>
+                      disabled={loading || googleLoading}>
                       {loading ? "Please wait…" : copy.submitLabel}
                       <span aria-hidden="true">→</span>
                     </button>
@@ -826,7 +749,8 @@ export default function AuthForm() {
                 <button
                   type="button"
                   className="toggle-link"
-                  onClick={toggleTopTab}>
+                  onClick={toggleTopTab}
+                  disabled={googleLoading}>
                   {copy.toggleAction}
                 </button>
               </p>

@@ -1,0 +1,348 @@
+.screen {
+   position: relative;
+   isolation: isolate;
+   height: 100vh;
+   height: 100dvh;
+   min-height: 0;
+   overflow-y: auto;
+   color: #f8f7f4;
+   background-color: #807e78;
+}
+
+.screen::before {
+   position: absolute;
+   z-index: -1;
+   inset: 0;
+   content: "";
+   background: linear-gradient(90deg,
+         rgba(12, 15, 38, 0.97) 0%,
+         rgba(12, 15, 38, 0.88) 30%,
+         rgba(12, 15, 38, 0.52) 55%,
+         rgba(12, 15, 38, 0.1) 82%,
+         rgba(12, 15, 38, 0.08) 100%);
+}
+
+.backgroundImage {
+   position: absolute;
+   z-index: -2;
+   inset: 0;
+   width: 100%;
+   height: 100%;
+   object-fit: cover;
+   object-position: center;
+   pointer-events: none;
+}
+
+.topbar {
+   position: absolute;
+   z-index: 2;
+   inset: 0 0 auto;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   padding: 25px clamp(24px, 5vw, 72px);
+   background: linear-gradient(180deg, rgba(12, 15, 38, 0.46), transparent);
+}
+
+.brand {
+   display: inline-flex;
+   align-items: center;
+   gap: 10px;
+   font-size: 16px;
+   font-weight: 700;
+   letter-spacing: 0.01em;
+   font-family:var(--font-geist-sans)
+}
+
+.logo {
+   display: block;
+   width: 38px;
+   height: 38px;
+   object-fit: contain;
+}
+
+.secureNote {
+   display: inline-flex;
+   align-items: center;
+   font-family:var(--font-geist-mono);
+   gap: 8px;
+   color: rgba(255, 255, 255, 0.84);
+   font-size: 12px;
+}
+
+.lock {
+   position: relative;
+   width: 11px;
+   height: 6px;
+   border: 1px solid currentColor;
+   border-radius: 2px;
+   opacity: 0.8;
+}
+
+.lock::before {
+   position: absolute;
+   top: -6px;
+   left: 2px;
+   width: 5px;
+   height: 5px;
+   border: 1px solid currentColor;
+   border-bottom: 0;
+   border-radius: 5px 5px 0 0;
+   content: "";
+}
+
+.copyPanel {
+   display: flex;
+   width: min(61%, 830px);
+   height: 100%;
+   min-height: 0;
+   box-sizing: border-box;
+   flex-direction: column;
+   justify-content: flex-end;
+   padding: 145px clamp(24px, 5vw, 72px) 8vh;
+}
+
+.copy {
+   width: min(100%, 560px);
+}
+
+.eyebrow {
+   display: flex;
+   align-items: center;
+   gap: 10px;
+   margin: 0 0 17px;
+   color: #ffc400;
+   font-family:var(--font-geist-mono);
+   font-size: 10px;
+   font-weight: 750;
+   letter-spacing: 0.17em;
+   text-transform: uppercase;
+}
+
+.eyebrow::before {
+   width: 23px;
+   height: 1px;
+   background: currentColor;
+   content: "";
+}
+
+.copy h1 {
+   max-width: 560px;
+   margin: 0;
+   font-family:var(--font-geist-sans);
+   font-size: clamp(44px, 5vw, 68px);
+   font-weight: 400;
+   letter-spacing: -0.025em;
+   line-height: 0.99;
+}
+
+.description {
+   max-width: 500px;
+   margin: 18px 0 0;
+   font-family:var(--font-inter);
+   color: rgba(248, 247, 244, 0.78);
+   font-size: 15px;
+   line-height: 1.65;
+}
+
+.securityCard {
+   width: min(100%, 430px);
+   margin-top: 25px;
+   padding: 15px 17px 16px;
+   border: 1px solid rgba(255, 255, 255, 0.2);
+   border-radius: 10px;
+   background: rgba(255, 255, 255, 0.96);
+   color: #1a1a2e;
+   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.15);
+}
+
+.securityTitle {
+   display: flex;
+   align-items: center;
+   gap: 9px;
+   margin: 0 0 11px;
+   font-size: 12px;
+   font-weight: 750;
+}
+
+.shield {
+   display: grid;
+   width: 22px;
+   height: 22px;
+   place-items: center;
+   border-radius: 6px;
+   background: rgba(0, 46, 255, 0.09);
+   color: #002eff;
+   font-size: 12px;
+}
+
+.captchaMount {
+   min-width: 0;
+   min-height: 55px;
+}
+
+.progress {
+   display: flex;
+   align-items: center;
+   gap: 13px;
+   margin-top: 24px;
+   padding-top: 18px;
+   border-top: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.spinner {
+   width: 22px;
+   height: 22px;
+   flex: 0 0 auto;
+   border: 2px solid rgba(255, 255, 255, 0.27);
+   border-top-color: #ffc400;
+   border-radius: 50%;
+   animation: pedu-auth-spin 1s linear infinite;
+}
+
+.progressCopy {
+   display: grid;
+   gap: 4px;
+}
+
+.progressTitle {
+   font-size: 13px;
+   font-family:var(--font-geist-sans);
+   font-weight: 700;
+}
+
+.progressDetail {
+   color: rgba(248, 247, 244, 0.78);
+   font-size: 12px;
+   line-height: 1.45;
+   font-family:var(--font-inter);
+}
+
+.stepTrack {
+   display: flex;
+   align-items: center;
+   gap: 7px;
+   margin-top: 22px;
+   color: rgba(255, 255, 255, 0.72);
+   font-size: 9px;
+   letter-spacing: 0.1em;
+   text-transform: uppercase;
+   font-family:var(--font-geist-mono);
+}
+
+.bar {
+   width: 25px;
+   height: 2px;
+   background: rgba(255, 255, 255, 0.3);
+}
+
+.active {
+   background: #ffc400;
+}
+
+@keyframes pedu-auth-spin {
+   to {
+      transform: rotate(360deg);
+   }
+}
+
+@media (max-width: 1024px) {
+   .screen::before {
+      background: linear-gradient(180deg,
+            rgba(12, 15, 38, 0.22) 0%,
+            rgba(12, 15, 38, 0.1) 24%,
+            rgba(12, 15, 38, 0.39) 42%,
+            rgba(12, 15, 38, 0.84) 63%,
+            rgba(12, 15, 38, 0.98) 100%);
+   }
+
+   .copyPanel {
+      width: 100%;
+      padding: 35vh clamp(24px, 5vw, 72px) 6vh;
+   }
+
+   .copyPanel::before {
+      position: absolute;
+      z-index: -1;
+      inset: 40% 0 0;
+      background: rgba(12, 15, 38, 0.16);
+      backdrop-filter: blur(15px);
+      -webkit-backdrop-filter: blur(15px);
+      mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 100%);
+      -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 100%);
+      content: "";
+   }
+
+   .copy {
+      width: min(100%, 650px);
+   }
+
+   .copy h1 {
+      max-width: 620px;
+      font-size: clamp(50px, 7vw, 68px);
+   }
+
+   .description {
+      max-width: 590px;
+   }
+}
+
+@media (max-width: 600px) {
+   .screen{
+      height: 100vh;
+      height: 100dvh;
+   }
+   .topbar {
+      padding-top: 18px;
+   }
+
+   .secureNote {
+      font-size: 10px;
+   }
+
+   .copyPanel {
+      padding: 27vh 24px 5vh;
+   }
+
+   .copyPanel::before {
+      inset-block-start: 34%;
+   }
+
+   .eyebrow {
+      margin-bottom: 13px;
+      font-size: 9px;
+   }
+
+   .copy h1 {
+      max-width: 360px;
+      font-size: clamp(43px, 11.7vw, 54px);
+   }
+
+   .description {
+      margin-top: 13px;
+      font-size: 13px;
+      line-height: 1.55;
+   }
+
+   .securityCard {
+      margin-top: 18px;
+      padding: 12px;
+   }
+
+   .progress {
+      gap: 11px;
+      margin-top: 18px;
+      padding-top: 14px;
+   }
+
+   .stepTrack {
+      margin-top: 17px;
+      font-size: 8px;
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .spinner {
+      animation: none;
+   }
+}
