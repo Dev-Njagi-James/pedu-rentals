@@ -5,13 +5,14 @@ import { useAuth } from "@clerk/nextjs";
 import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
 import { invalidateAnalyticsCache } from "@/lib/cache/analyticsCache";
 import AuthTransitionShell from "@/app/(auth)/Auth/transitionShell";
-
+import { useUser } from "@clerk/nextjs";
+import { homeForRole } from "@/lib/auth/routes";
 
 // OAuth landing page: runs the account sync once the Clerk session is active,
 // then enters the app. Mirrors what AuthForm does after OTP verification.
 export default function AuthComplete() {
   const router = useRouter();
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, user } = useUser();
   const started = useRef(false);
 
   useEffect(() => {
@@ -25,20 +26,37 @@ export default function AuthComplete() {
     if (started.current) return;
     started.current = true;
 
-    fetch("/api/v1/auth/sync", { method: "POST" })
-      .then((res) => {
+    let storedType = null;
+    try {
+      storedType = sessionStorage.getItem("pedu_account_type");
+    } catch {}
+
+    fetch("/api/v1/auth/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        accountType: storedType === "lister" ? "lister" : "user",
+      }),
+    })
+      .then(async (res) => {
         if (!res.ok) {
           router.replace("/Auth?error=sync_failed");
           return;
         }
+        const data = await res.json().catch(() => null);
+        try {
+          sessionStorage.removeItem("pedu_account_type");
+        } catch {}
         invalidateAnalyticsCache();
         invalidateMyListingsCache();
-        router.replace("/Lister");
+        await user?.reload();
+        router.replace(homeForRole(data?.role));
       })
-      .catch(() => router.replace("/Auth?error=sync_failed"));
-  }, [isLoaded, isSignedIn, router]);
 
-  return(
+      .catch(() => router.replace("/Auth?error=sync_failed"));
+  }, [isLoaded, isSignedIn, user, router]);
+
+  return (
     <AuthTransitionShell
       variant="finalizing"
       eyebrow="Account setup"
@@ -47,5 +65,5 @@ export default function AuthComplete() {
       status="Finalizing your account…"
       statusDetail="Your dashboard is the next stop."
     />
-  );;
+  );
 }

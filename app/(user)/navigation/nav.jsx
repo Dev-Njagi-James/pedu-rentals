@@ -22,19 +22,20 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 // ────────────────────────────────────────────────────────────────────────
 
 const NAV_BREAKPOINT = 1024; // matches CSS module — keep both in sync
+const STAFF_ROLES = ["lister", "admin"];
 
 function getPrimaryNavItems(role) {
   const dashboardHref = role === "admin" ? "/Admin" : "/Lister";
   return [
-    { key: "properties", label: "Properties", href: "/", requiresAuth: false },
+    { key: "properties", label: "Properties", href: "/" },
     {
       key: "dashboard",
       label: "Dashboard",
       href: dashboardHref,
-      requiresAuth: true,
+      roles: STAFF_ROLES,
     },
-    { key: "home", label: "Home", href: "/properties", requiresAuth: false },
-    { key: "about", label: "About", href: "/about", requiresAuth: false },
+    { key: "home", label: "Home", href: "/properties" },
+    { key: "about", label: "About", href: "/about" },
   ];
 }
 const DASHBOARD_SUBLINKS = [
@@ -50,22 +51,53 @@ const DASHBOARD_SUBLINKS = [
 // live here instead, alongside the account-management links — one list
 // feeds both the desktop dropdown and the mobile drawer's account section.
 const ACCOUNT_MENU_ITEMS = [
-  { key: "insights", label: "Insights", href: "/insights", icon: "insights" },
+  {
+    key: "insights",
+    label: "Insights",
+    href: "/insights",
+    icon: "insights",
+    roles: STAFF_ROLES,
+  },
   {
     key: "notifications",
     label: "Notifications",
     href: "/notifications",
     icon: "bell",
     showBadge: true,
+    roles: STAFF_ROLES,
   },
-  { key: "profile", label: "Profile", href: "/profile", icon: "user" },
-  { key: "settings", label: "Settings", href: "/settings", icon: "settings" },
-  { key: "support", label: "Help & Support", href: "/support", icon: "help" },
+   {
+    key: "profile",
+    label: "Profile",
+    href: "/profile",
+    icon: "user",
+    roles: STAFF_ROLES,
+  },
+  {
+    key: "settings",
+    label: "Settings",
+    href: "/settings",
+    icon: "settings",
+    roles: STAFF_ROLES,
+  },
+  {
+    key: "support",
+    label: "Help & Support",
+    href: "/support",
+    icon: "help",
+    roles: STAFF_ROLES,
+  },
 ];
 
 // Anything signed-in-only that ISN'T an account concern stays a plain nav item.
 const STANDALONE_UTILITY_ITEMS = [
-  { key: "boards", label: "Boards", href: "/boards", icon: "boards" },
+  {
+    key: "boards",
+    label: "Boards",
+    href: "/boards",
+    icon: "boards",
+    roles: STAFF_ROLES,
+  },
 ];
 
 // ────────────────────────────────────────────────────────────────────────
@@ -311,9 +343,13 @@ export default function AppNav() {
 
   const role = user?.publicMetadata?.role;
   const primaryNavItems = useMemo(() => getPrimaryNavItems(role), [role]);
-  const visiblePrimaryItems = primaryNavItems.filter(
-    (item) => !item.requiresAuth || isSignedIn,
-  );
+  const canSee = (item) =>
+    !item.roles || (isLoaded && isSignedIn && item.roles.includes(role));
+  const visiblePrimaryItems = primaryNavItems.filter(canSee);
+  const visibleAccountItems = ACCOUNT_MENU_ITEMS.filter(canSee);
+  const visibleUtilityItems = STANDALONE_UTILITY_ITEMS.filter(canSee);
+  const showUnreadDot =
+    hasUnread && visibleAccountItems.some((i) => i.key === "notifications");
 
   useEffect(() => {
     setDashboardOpen(pathname === "/Lister");
@@ -427,7 +463,7 @@ export default function AppNav() {
 
   const AccountMenuList = ({ onItemClick }) => (
     <>
-      {ACCOUNT_MENU_ITEMS.map((item) => {
+      {visibleAccountItems.map((item) => {
         const ItemIcon = Icon[item.icon];
         return (
           <Link
@@ -472,7 +508,9 @@ export default function AppNav() {
         <div className={styles.actions}>
           {!isSignedIn && (
             <>
-              <Link href="/Auth" className={styles.ctaButtonSecondary}>
+              <Link
+                href="/Auth?type=lister"
+                className={styles.ctaButtonSecondary}>
                 BECOME A LISTER
               </Link>
               <Link href="/Auth" className={styles.ctaButtonOutline}>
@@ -504,14 +542,18 @@ export default function AppNav() {
                       </div>
                     </div>
                     {profileOrgName && (
-                        <div className={styles.accountMenuOrg}>
-                          {profileOrgName}
-                        </div>
-                      )}
+                      <div className={styles.accountMenuOrg}>
+                        {profileOrgName}
+                      </div>
+                    )}
                   </div>
 
-                  <div className={styles.accountMenuDivider} />
-                  <AccountMenuList onItemClick={closeAccountMenu} />
+                  {visibleAccountItems.length > 0 && (
+                    <>
+                      <div className={styles.accountMenuDivider} />
+                      <AccountMenuList onItemClick={closeAccountMenu} />
+                    </>
+                  )}
 
                   <div className={styles.accountMenuDivider} />
                   <button
@@ -613,9 +655,11 @@ export default function AppNav() {
 
           {isSignedIn && (
             <>
-              <div className={styles.drawerDivider} />
+              {visibleUtilityItems.length > 0 && (
+                <div className={styles.drawerDivider} />
+              )}
               <ul className={styles.drawerLinks}>
-                {STANDALONE_UTILITY_ITEMS.map((item) => {
+                {visibleUtilityItems.map((item) => {
                   const ItemIcon = Icon[item.icon];
                   return (
                     <li key={item.key}>
@@ -635,7 +679,7 @@ export default function AppNav() {
 
               <div className={styles.drawerDivider} />
               <div className={styles.drawerAccountHeader}>
-                <Avatar showDot={hasUnread} />
+                <Avatar showDot={showUnreadDot} />
                 <div>
                   <div>{displayName}</div>
                   {profileOrgName && (
@@ -646,7 +690,7 @@ export default function AppNav() {
                 </div>
               </div>
               <ul className={styles.drawerLinks}>
-                {ACCOUNT_MENU_ITEMS.map((item) => {
+                {visibleAccountItems.map((item) => {
                   const ItemIcon = Icon[item.icon];
                   return (
                     <li key={item.key}>
@@ -676,7 +720,7 @@ export default function AppNav() {
           {!isSignedIn && (
             <>
               <Link
-                href="/Auth"
+                href="/Auth?type=lister"
                 className={styles.ctaButtonSecondary}
                 onClick={closeMenu}>
                 BECOME A LISTER

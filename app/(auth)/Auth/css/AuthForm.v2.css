@@ -381,6 +381,49 @@
   }
 }
 
+.account-type-v2 {
+  border: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.account-type-v2 legend {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-family:var(--font-geist-sans);
+  padding: 0;
+}
+
+.account-type-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  font-family:var(--font-inter);
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.account-type-option.is-selected {
+  border-color: currentColor;
+}
+
+.account-type-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.account-type-desc {
+  grid-column: 2;
+  font-size: 0.78rem;
+  opacity: 0.7;
+}
+
 @media (max-width: 380px) {
   .form-panel-v2 {
     padding: 20px 14px;
