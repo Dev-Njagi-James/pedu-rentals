@@ -4,7 +4,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Toaster } from 'sonner';
 import Script from 'next/script';
-import { ClerkProvider } from '@clerk/nextjs';
+import { ClerkProvider, GoogleOneTap } from "@clerk/nextjs";
 import { PostHogProvider } from '@/lib/analytics/PostHogProvider';
 import Providers from './providers';
 import FeedbackBanner from './FeedbackBanner';
@@ -41,21 +41,21 @@ export default function RootLayout({ children }) {
           type="application/ld+json"
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@type': 'Organization',
-              name: 'Pedu Rentals',
-              url: 'https://www.pedurentals.com',
-              logo: 'https://www.pedurentals.com/logo2.png',
-            } ),
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              name: "Pedu Rentals",
+              url: "https://www.pedurentals.com",
+              logo: "https://www.pedurentals.com/logo2.png",
+            }),
           }}
         />
       </head>
       <body
         data-scroll-behavior="smooth"
-        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}
-      >
+        className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}>
         <PostHogProvider>
           <ClerkProvider>
+            <GoogleOneTap />
             <Analytics />
             <SpeedInsights />
             <Toaster position="top-right" duration={4000} richColors />
@@ -72,5 +72,5 @@ export default function RootLayout({ children }) {
         </PostHogProvider>
       </body>
     </html>
-   );
+  );
 }

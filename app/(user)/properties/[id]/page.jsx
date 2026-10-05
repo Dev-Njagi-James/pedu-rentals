@@ -20,7 +20,6 @@ function normalizeV1Listing(v1Row) {
     type_name: v1Row.category_type,
     ward_name: v1Row.ward_display_name,
     description: v1Row.listing_description,
-    property_location: v1Row.location_url,
     media: [
       ...(v1Row.images_table?.video_url
         ? [
@@ -47,8 +46,8 @@ async function getListing(id) {
     .from("listings_table")
     .select(
       `listing_id, listing_name, listing_category, category_type, furnishing,
-       rent_duration, phone_number, price_kes, listing_ward, ward_display_name,
-       ward_location, location_url, listing_description, plan_name, created_at, updated_at,
+       rent_duration, price_kes, listing_ward, ward_display_name,
+       listing_description, plan_name, created_at, updated_at,
        images_table (images_url, video_url)`,
     )
     .eq("listing_id", listing_id)

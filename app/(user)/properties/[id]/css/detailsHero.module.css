@@ -57,6 +57,41 @@
   color: #6b7280;
 }
 
+.locationHint {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #edf4ff;
+  color: #455a78;
+  font-size: 14px;
+  line-height: 1.3;
+  font-family: var(--font-geist-sans);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.locationHint svg {
+  flex: 0 0 auto;
+  color: #3d5f9a;
+}
+
+.locationHint:hover {
+  background: #e4efff;
+  text-decoration: none;
+}
+
+.locationState {
+  margin-top: 8px;
+  color: #6b7280;
+  font-size: 14px;
+  font-family: var(--font-geist-sans);
+}
+
 /* ---------- Gallery ---------- */
 .galleryGrid {
   display: grid;
@@ -396,16 +431,54 @@
 }
 
 .mapEmpty {
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: #9ca3af;
+  gap: 10px;
+  padding: 24px;
+  color: #6b7280;
   font-size: 14px;
   font-family: var(--font-inter);
+  text-align: center;
+}
+
+.mapEmptyIcon {
+  flex: 0 0 auto;
+  color: #8b95a5;
+}
+
+.mapEmptySignedOut {
+  background: #edf4ff;
+  color: #455a78;
+}
+
+.mapEmptySignedOut .mapEmptyIcon {
+  color: #3d5f9a;
+}
+
+.mapSignInLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 0 18px;
+  border-radius: 8px;
+  background: var(--primary, #1742e7);
+  color: #fff;
+  font-family: var(--font-inter);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.mapSignInLink:hover {
+  background: #1237c7;
+  text-decoration: none;
 }
 
 /* ---------- Reviews ---------- */

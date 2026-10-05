@@ -9,6 +9,9 @@ import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
 import { useRealtimeChannel } from "@/lib/hooks/useRealtimeChannel";
 import { initPostHogClient, posthog } from "@/lib/analytics/posthog-client";
 import { useUser } from "@clerk/nextjs";
+import { fetchContact } from "@/lib/contact/fetchContact";
+import Link from "next/link";
+
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -77,14 +80,11 @@ export default function PropertyDetails({ listing }) {
     rent_duration,
     category_name,
     type_name,
-    ward_name,
-    ward_location,
-    listing_id,
-    phone_number,
+    ward_name,    
+    listing_id,   
     avg_rating,
     review_count,
     description,
-    property_location,
     media = [],
     // TODO: backend does not yet return agent data on listing.
     // Expected shape once endpoint exists: { agent_name, agent_avatar_url, agent_verified, agency_name }
@@ -107,10 +107,15 @@ export default function PropertyDetails({ listing }) {
   const [submitting, setSubmitting] = useState(false);
   const [infoRef, infoVisible] = useRevealOnScroll();
   const { isLoaded, isSignedIn } = useUser();
+  const [contact, setContact] = useState(null);
+  const [contactStatus, setContactStatus] = useState("loading");
   const [overviewRef, overviewVisible] = useRevealOnScroll();
   const [locationRef, locationVisible] = useRevealOnScroll();
   const [reviewsRef, reviewsVisible] = useRevealOnScroll();
 
+  const ward_location = contact?.ward_location ?? null;
+  const phone_number = contact?.phone_number ?? null;
+  const property_location = contact?.location_url ?? null;
   const embedUrl = convertToEmbedUrl(property_location);
   const furnished = property_interior?.toLowerCase();
 
@@ -190,6 +195,29 @@ export default function PropertyDetails({ listing }) {
     isSignedIn,
   ]);
 
+    useEffect(() => {
+      if (!isLoaded || !listing_id) return;
+      if (!isSignedIn) {
+        setContact(null);
+        setContactStatus("signed_out");
+        return;
+      }
+      let cancelled = false;
+      setContactStatus("loading");
+      fetchContact(listing_id).then((result) => {
+        if (cancelled) return;
+        if (result.status === "ok") {
+          setContact(result.data);
+          setContactStatus("ok");
+        } else {
+          setContactStatus(result.status);
+        }
+      });
+      return () => {
+        cancelled = true;
+      };
+    }, [isLoaded, isSignedIn, listing_id]);
+  
   const refetchReviews = () => {
     if (!listing_id) return;
     const fingerprint = getFingerprint();
@@ -342,9 +370,43 @@ export default function PropertyDetails({ listing }) {
             <span className={styles.titleWard}>, {ward_name}</span>
           ) : null}
         </h1>
-        {ward_location && (
+        {!isLoaded ? null : !isSignedIn ? (
+          <Link href="/Auth" className={styles.locationHint}>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              aria-hidden="true">
+              <rect
+                x="5"
+                y="10"
+                width="14"
+                height="11"
+                rx="2"
+                stroke="currentColor"
+                strokeWidth="1.8"
+              />
+              <path
+                d="M8 10V7a4 4 0 0 1 8 0v3"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
+              <circle cx="12" cy="15" r="1" fill="currentColor" />
+            </svg>
+            <span>Sign in to view exact location</span>
+          </Link>
+        ) : contactStatus === "loading" ? (
+          <div className={styles.locationState}>Loading exact location…</div>
+        ) : contactStatus === "ok" && ward_location ? (
           <div className={styles.locationLine}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              aria-hidden="true">
               <path
                 d="M8 1.5A4.5 4.5 0 0 1 12.5 6c0 3-4.5 8.5-4.5 8.5S3.5 9 3.5 6A4.5 4.5 0 0 1 8 1.5Z"
                 stroke="currentColor"
@@ -359,6 +421,14 @@ export default function PropertyDetails({ listing }) {
               />
             </svg>
             <span>{ward_location}</span>
+          </div>
+        ) : contactStatus === "ok" ? (
+          <div className={styles.locationState}>
+            Exact location not provided
+          </div>
+        ) : (
+          <div className={styles.locationState}>
+            Couldn’t load location. Please try again.
           </div>
         )}
       </div>
@@ -569,9 +639,20 @@ export default function PropertyDetails({ listing }) {
               {agentInfo.username ?? "Agent name"}
             </span>
             <a
-              href={phone_number ? `tel:${phone_number}` : undefined}
+              href={
+                phone_number
+                  ? `tel:${phone_number}`
+                  : contactStatus === "signed_out"
+                    ? "/Auth"
+                    : undefined
+              }
               className={styles.contactBtn}>
-              <span className={styles.contactText}>CONTACT</span>
+              <span className={styles.contactText}>
+                {" "}
+                {contactStatus === "signed_out"
+                  ? "SIGN IN TO CONTACT"
+                  : "CONTACT"}{" "}
+              </span>
               <span className={styles.contactIcon}>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -601,8 +682,9 @@ export default function PropertyDetails({ listing }) {
       {/* Location */}
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Location</h2>
+
         <div className={styles.mapWrap}>
-          {embedUrl ? (
+          {contactStatus === "ok" && embedUrl ? (
             <iframe
               src={embedUrl}
               className={styles.mapIframe}
@@ -612,22 +694,116 @@ export default function PropertyDetails({ listing }) {
               title="Property location map"
             />
           ) : (
-            <div className={styles.mapEmpty}>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-                <circle
-                  cx="12"
-                  cy="9"
-                  r="2.5"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-              </svg>
-              <span>Location not available</span>
+            <div
+              className={`${styles.mapEmpty} ${
+                contactStatus === "signed_out" ? styles.mapEmptySignedOut : ""
+              }`}>
+              {contactStatus === "signed_out" ? (
+                <>
+                  <svg
+                    className={styles.mapEmptyIcon}
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true">
+                    <rect
+                      x="5"
+                      y="10"
+                      width="14"
+                      height="11"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                    />
+                    <path
+                      d="M8 10V7a4 4 0 0 1 8 0v3"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="12" cy="15" r="1" fill="currentColor" />
+                  </svg>
+
+                  <span>Sign in to view the exact location on the map</span>
+
+                  <Link href="/Auth" className={styles.mapSignInLink}>
+                    Sign in
+                  </Link>
+                </>
+              ) : contactStatus === "loading" ? (
+                <>
+                  <svg
+                    className={styles.mapEmptyIcon}
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true">
+                    <path
+                      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                    <circle
+                      cx="12"
+                      cy="9"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                  </svg>
+                  <span>Loading location map…</span>
+                </>
+              ) : contactStatus === "ok" ? (
+                <>
+                  <svg
+                    className={styles.mapEmptyIcon}
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true">
+                    <path
+                      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                    <circle
+                      cx="12"
+                      cy="9"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                  </svg>
+                  <span>Map location not provided</span>
+                </>
+              ) : (
+                <>
+                  <svg
+                    className={styles.mapEmptyIcon}
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true">
+                    <path
+                      d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7Z"
+                      stroke="currentColor"
+                      strokeWidth="1.4"
+                    />
+                    <circle
+                      cx="12"
+                      cy="9"
+                      r="2.5"
+                      stroke="currentColor"
+                      strokeWidth="1.2"
+                    />
+                  </svg>
+                  <span>Couldn’t load the location. Please try again.</span>
+                </>
+              )}
             </div>
           )}
         </div>

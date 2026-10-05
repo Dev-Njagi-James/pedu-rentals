@@ -9,11 +9,11 @@ export default async function PropertiesPage() {
   return (
     <>
       <Hero />
-      <TrendingListings />
+      {/* <TrendingListings /> */}
       <BrowseCategories />
       <HomeSeekers />
       <Testimonials />
       <CTABanner />
     </>
-  )
+  );
 }
