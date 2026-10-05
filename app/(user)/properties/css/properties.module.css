@@ -70,21 +70,120 @@
 
 /* ── Empty state ────────────────────── */
 .emptyState {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 340px;
+  padding: 36px 24px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 80px 24px;
-  color: #bbb;
   text-align: center;
+  background: #fff;
+  border: 1px solid #e5ebf3;
+  border-radius: 16px;
+}
+
+.emptyIllustration {
+  width: 180px;
+  max-width: 100%;
+  margin-bottom: 16px;
+  color: #315fca;
+}
+
+.emptyIllustration svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.emptyState h2 {
+  margin: 0;
+  color: #14213d;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family:var(--font-geist-sans);
+  line-height: 1.25;
 }
 
 .emptyState p {
-  font-family: var(--font-inter);
-  font-size: 0.875rem;
-  margin: 0;
-  color: #aaa;
+  max-width: 520px;
+  margin: 10px 0 22px;
+  font-family:var(--font-inter);
+  color: #5f6b7a;
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
+
+.emptyActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-family:var(--font-geist-mono)
+}
+
+.emptyPrimary,
+.emptySecondary {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 8px;
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.emptyPrimary {
+  border: 1px solid #1742e7;
+  background: #1742e7;
+  color: #fff;
+}
+
+.emptyPrimary:hover {
+  border-color: #1237c7;
+  background: #1237c7;
+}
+
+.emptySecondary {
+  border: 1px solid #d7e0ed;
+  background: #fff;
+  color: #315fca;
+}
+
+.emptySecondary:hover {
+  border-color: #315fca;
+  background: #f5f8ff;
+}
+
+@media (max-width: 600px) {
+  .emptyState {
+    min-height: 280px;
+    padding: 28px 18px;
+  }
+
+  .emptyState h2 {
+    font-size: 1.25rem;
+  }
+
+  .emptyState p {
+    font-size: 0.9rem;
+  }
+
+  .emptyActions {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .emptyPrimary,
+  .emptySecondary {
+    width: 100%;
+  }
 }
 
 /* ── Error state ────────────────────── */

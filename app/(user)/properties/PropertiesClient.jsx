@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useQuery, keepPreviousData} from "@tanstack/react-query";
 import { useQueryClient } from '@tanstack/react-query'
@@ -13,30 +13,71 @@ import SearchBar from './components/SearchBar'
 
 const PAGE_SIZE = 20
 
-const DEFAULT_CATEGORY_ID = 1
+const LEGACY_CATEGORY_NAMES = {
+  1: "Rentals",
+  2: "Airbnbs",
+  3: "Commercial Apartments",
+  4: "Lodgings",
+  5: "Private Houses and Homes",
+  7: "Penthouses",
+};
+
+const LEGACY_RENT_DURATION = {
+  "short-term": "Short Term",
+  "long-term": "Long Term",
+};
+
+const LEGACY_FURNISHING = {
+  furnished: "Furnished",
+  unfurnished: "Unfurnished",
+};
 
 function filtersFromParams(params) {
+  const rentDuration = params.get("rent_duration") || null;
+  const furnishing =
+    params.get("furnishing") || params.get("property_interior") || null;
+
+  const hasCategoryParam = params.has("category") || params.has("category_id");
+
+  const categoryParam = params.get("category");
+  const legacyCategory =
+    LEGACY_CATEGORY_NAMES[Number(params.get("category_id"))];
+
+  const category =
+    categoryParam === "all"
+      ? null
+      : categoryParam ||
+        legacyCategory ||
+        (hasCategoryParam ? null : "Rentals");
+
   return {
-    ward_id: params.get('ward_id') ? Number(params.get('ward_id')) : null,
-    category_id: params.get('category_id') ? Number(params.get('category_id')) : DEFAULT_CATEGORY_ID,
-    type_ids: params.get('type_ids') ? params.get('type_ids').split(',').map(Number) : [],
-    price_range: params.get('price_range') || null,
-    rent_duration: params.get('rent_duration') || null,
-    property_interior: params.get('property_interior') || null,
-  }
+    ward_id: params.get("ward_id") ? Number(params.get("ward_id")) : null,
+    category,
+    types: params.getAll("types").filter(Boolean),
+    price_range: params.get("price_range") || null,
+    rent_duration: LEGACY_RENT_DURATION[rentDuration] ?? rentDuration,
+    furnishing: LEGACY_FURNISHING[furnishing] ?? furnishing,
+  };
 }
 
+
 function filtersToParams(filters, page) {
-  const params = new URLSearchParams()
-  if (filters.ward_id) params.set('ward_id', filters.ward_id)
-  if (filters.category_id) params.set('category_id', filters.category_id)
-  if (filters.type_ids?.length) params.set('type_ids', filters.type_ids.join(','))
-  if (filters.price_range) params.set('price_range', filters.price_range)
-  if (filters.rent_duration) params.set('rent_duration', filters.rent_duration)
-  if (filters.property_interior) params.set('property_interior', filters.property_interior)
-  if (page > 1) params.set('page', page)
-  return params
+  const params = new URLSearchParams();
+
+  if (filters.ward_id) params.set("ward_id", filters.ward_id);
+  params.set("category", filters.category || "all");
+  filters.types?.forEach((type) => params.append("types", type));
+  if (filters.price_range) params.set("price_range", filters.price_range);
+  if (filters.rent_duration) {
+    params.set("rent_duration", filters.rent_duration);
+  }
+  if (filters.furnishing) params.set("furnishing", filters.furnishing);
+  if (page > 1) params.set("page", page);
+
+  return params;
 }
+
+
 
 async function fetchListings(filters, bufferPage) {
   const params = filtersToParams(filters, bufferPage)
@@ -51,11 +92,13 @@ export default function PropertiesClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [ filters, setFilters ] = useState(() => filtersFromParams(searchParams))
+  const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
   const [ currentPage, setCurrentPage ] = useState(() => Number(searchParams.get('page') ?? 1))
   const [ wardPopup, setWardPopup ] = useState(null)
   const [ searchLabel, setSearchLabel ] = useState(null)
-  const [ searchResults, setSearchResults ] = useState(null)
+  const [searchResults, setSearchResults] = useState(null)
+  const [searchBarKey, setSearchBarKey] = useState(0);
+
   const BUFFER_SIZE = 2  // pages per buffer block
 
   // which 40-block we're in (pages 1-2 = buffer 1, pages 3-4 = buffer 2, etc.)
@@ -90,6 +133,47 @@ export default function PropertiesClient() {
   const displayListings = searchResults !== null ? searchResults : listings
   const isSearchActive = searchResults !== null
 
+  const hasActiveFilters = Boolean(
+    filters.ward_id ||
+    filters.category ||
+    filters.types?.length ||
+    filters.price_range ||
+    filters.rent_duration ||
+    filters.furnishing,
+  );
+
+  const emptyStateKind =
+    isSearchActive && hasActiveFilters
+      ? "search-and-filters"
+      : isSearchActive
+        ? "search"
+        : hasActiveFilters
+          ? "filters"
+          : "none";
+
+  const emptyStateCopy = {
+    "search-and-filters": {
+      title: "Let’s widen the search",
+      message:
+        "We couldn’t find a match for your search with these filters. Remove a filter or start a new search.",
+    },
+    search: {
+      title: "Let’s widen the search",
+      message:
+        "We couldn’t find a match this time. Try a different search or start a new one.",
+    },
+    filters: {
+      title: "Let’s widen the search",
+      message:
+        "We couldn’t find a match with these filters. Remove a filter to explore more homes.",
+    },
+    none: {
+      title: "No homes available right now",
+      message: "New listings are added regularly. Please check back soon.",
+    },
+  };
+
+
   // sync URL
   const syncUrl = (f, p) => {
     const params = filtersToParams(f, p)
@@ -97,6 +181,13 @@ export default function PropertiesClient() {
     router.replace(qs ? `?${qs}` : '?', { scroll: false })
   }
 
+  // One-time rewrite of legacy URL params to the name-based contract.
+  useEffect(() => {
+    if (searchParams.has('category_id') || searchParams.has('type_ids') || searchParams.has('property_interior')) {
+      syncUrl(filters, currentPage)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
 
   const handleFilterChange = (updated) => {
@@ -110,6 +201,28 @@ export default function PropertiesClient() {
     syncUrl(filters, page)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
+
+  const handleClearFilters = () => {
+    const resetFilters = {
+      ward_id: null,
+      category: null,
+      types: [],
+      price_range: null,
+      rent_duration: null,
+      furnishing: null,
+    };
+
+    setFilters(resetFilters);
+    setCurrentPage(1);
+    syncUrl(resetFilters, 1);
+  };
+
+  const handleStartNewSearch = () => {
+    setSearchResults(null);
+    setSearchLabel(null);
+    setSearchBarKey((key) => key + 1);
+  };
+
 
   const handleSearchResults = (results, label) => {
     setSearchResults(results)
@@ -149,6 +262,7 @@ export default function PropertiesClient() {
 
         <main className={styles.mainContent}>
           <SearchBar
+            key={searchBarKey}
             allData={allData}
             onSearchResults={handleSearchResults}
             onClear={handleSearchClear}
@@ -186,29 +300,74 @@ export default function PropertiesClient() {
           )}
 
           {!isLoading && !error && displayListings.length === 0 && (
-            <div className={styles.emptyState}>
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M3 10V20M21 10V20M3 10h18M3 10L12 3l9 7"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                  strokeLinejoin="round"
-                />
-                <rect
-                  x="9"
-                  y="14"
-                  width="6"
-                  height="6"
-                  stroke="currentColor"
-                  strokeWidth="1.2"
-                />
-              </svg>
-              <p>
-                {isSearchActive
-                  ? "No properties found for your search."
-                  : "No properties match your filters."}
-              </p>
-            </div>
+            <section className={styles.emptyState}>
+              <div className={styles.emptyIllustration} aria-hidden="true">
+                <svg viewBox="0 0 180 110" fill="none">
+                  <path
+                    d="M20 92h140M32 92V59l23-19 23 19v33M42 70h12v12H42zM64 70h8v22h-8"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M105 92V58l21-18 22 18v34M115 70h12v12h-12z"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    strokeLinejoin="round"
+                  />
+                  <circle
+                    cx="91"
+                    cy="43"
+                    r="19"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    d="m105 57 17 17"
+                    stroke="currentColor"
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M25 94h130"
+                    stroke="#39bf84"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </div>
+
+              <h2>{emptyStateCopy[emptyStateKind].title}</h2>
+              <p>{emptyStateCopy[emptyStateKind].message}</p>
+
+              {emptyStateKind !== "none" && (
+                <div className={styles.emptyActions}>
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      className={styles.emptyPrimary}
+                      onClick={handleClearFilters}>
+                      Remove filters
+                    </button>
+                  )}
+
+                  {isSearchActive && (
+                    <button
+                      type="button"
+                      className={
+                        hasActiveFilters
+                          ? styles.emptySecondary
+                          : styles.emptyPrimary
+                      }
+                      onClick={handleStartNewSearch}>
+                      Start a new search
+                    </button>
+                  )}
+
+                  {!hasActiveFilters && !isSearchActive && null}
+                </div>
+              )}
+            </section>
           )}
 
           {!isLoading && displayListings.length > 0 && (

@@ -2,7 +2,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useQuery } from '@tanstack/react-query'
-import PropertyCard from '../../properties/components/PropertyCard'
+import PropertyCard from '../../properties/components/PropertyCardV1'
 import ReviewPrompt from '../../properties/components/ReviewPrompt'
 import styles from '../css/TrendingListingsSection.module.css'
 

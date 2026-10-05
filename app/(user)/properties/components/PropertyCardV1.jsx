@@ -1,10 +1,15 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import styles from '../css/propertyCard.module.css';
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import styles from "../css/propertyCard.module.css";
 import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
 import { posthog } from "@/lib/analytics/posthog-client";
+import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { toast } from "sonner";
+import { fetchContact } from "@/lib/contact/fetchContact";
 
 const planClassMap = {
   Regular: styles.planRegular,
@@ -13,42 +18,112 @@ const planClassMap = {
 };
 
 const planDisplayLabelMap = {
-  Regular: 'Regular',
-  Premium: 'VIP',
-  Enterprise: 'VVIP',
+  Regular: "Regular",
+  Premium: "VIP",
+  Enterprise: "VVIP",
 };
 
 export default function PropertyCardV1({ listing, onWardClick }) {
   const {
-    _source,
     listing_id,
     listing_name,
     price_kes,
-    furnishing,
     ward_display_name,
-    ward_location,
     listing_ward,
     category_type,
     listing_category,
     plan_name,
-    location_url,
     images_table,
-    phone_number,
   } = listing;
-
+  const [contact, setContact] = useState(null);
+  const [contactStatus, setContactStatus] = useState("loading");
+  const router = useRouter();
+  const { isLoaded, isSignedIn } = useUser();
   const images = images_table?.images_url ?? [];
 
-  const coverImage = [...images]
-    .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))[0];
+  const coverImage = [...images].sort(
+    (a, b) => (a.position ?? 0) - (b.position ?? 0),
+  )[0];
 
   const firstImage = coverImage?.publicUrl ?? null;
 
-  const planClassName = planClassMap[plan_name] ?? '';
+  const planClassName = planClassMap[plan_name] ?? "";
+  const ward_location = contact?.ward_location ?? null;
 
-  const handleWardClick = (event) => {
+  useEffect(() => {
+    if (!isLoaded || !listing_id) return;
+    if (!isSignedIn) {
+      setContact(null);
+      setContactStatus("signed_out");
+      return;
+    }
+    let cancelled = false;
+    setContactStatus("loading");
+    fetchContact(listing_id).then((result) => {
+      if (cancelled) return;
+      if (result.status === "ok") {
+        setContact(result.data);
+        setContactStatus("ok");
+      } else {
+        setContactStatus(result.status);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, listing_id]);
+
+  const handleWardClick = async (event) => {
     event.preventDefault();
     event.stopPropagation();
-    onWardClick?.(listing_ward, ward_display_name, location_url);
+    if (!isSignedIn) {
+      toast.info("Sign in to view the location");
+      router.push("/Auth");
+      return;
+    }
+    const result = await fetchContact(listing_id);
+    if (result.status !== "ok") {
+      toast.error("Could not load the location. Try again.");
+      return;
+    }
+    onWardClick?.(listing_ward, ward_display_name, result.data.location_url);
+  };
+
+  const handleCall = async (event) => {
+    event.preventDefault();
+
+    if (!isSignedIn) {
+      toast.info("Sign in to view contact details");
+      router.push("/Auth");
+      return;
+    }
+
+    const result = await fetchContact(listing_id);
+    if (result.status !== "ok" || !result.data.phone_number) {
+      toast.error("Could not load the contact number. Try again.");
+      return;
+    }
+
+    let fingerprint = localStorage.getItem("cr_fingerprint");
+    if (!fingerprint) {
+      fingerprint = crypto.randomUUID();
+      localStorage.setItem("cr_fingerprint", fingerprint);
+    }
+
+    if (!localStorage.getItem(`reviewed:${listing_id}`)) {
+      localStorage.setItem(
+        "pending_review",
+        JSON.stringify({ listing_id, listing_name, timestamp: Date.now() }),
+      );
+    }
+
+    posthog.capture("property_call_clicked", {
+      listing_id,
+      listing_name,
+      ward: ward_display_name,
+      plan_name,
+    });
+    window.location.href = `tel:0${result.data.phone_number}`;
   };
 
   return (
@@ -147,11 +222,12 @@ export default function PropertyCardV1({ listing, onWardClick }) {
           </div>
 
           <div className={styles.metaRow}>
+            {/* Public ward: visible whether signed in or not */}
             <button
               type="button"
               className={styles.wardBtn}
               onClick={handleWardClick}
-              title={`View ${ward_display_name} on map`}>
+              title={`View ${ward_display_name || "ward"} on map`}>
               <svg
                 width="12"
                 height="12"
@@ -171,25 +247,50 @@ export default function PropertyCardV1({ listing, onWardClick }) {
                   strokeWidth="1.2"
                 />
               </svg>
-              {ward_display_name}
+              {ward_display_name || "Ward not specified"}
             </button>
 
-            {ward_location && (
-              <span className={styles.metaItem}>
+            {/* Exact location: separate from the public ward */}
+            {!isLoaded ? (
+              <span className={styles.locationHint}>Checking location…</span>
+            ) : !isSignedIn ? (
+              <Link href="/Auth" className={styles.locationHint}>
                 <svg
-                  width="14"
-                  height="14"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
                   aria-hidden="true">
-                  <path
-                    d="M3 11l19-9-9 19-2-8-8-2z"
+                  <rect
+                    x="5"
+                    y="10"
+                    width="14"
+                    height="11"
+                    rx="2"
                     stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinejoin="round"
+                    strokeWidth="1.8"
                   />
+                  <path
+                    d="M8 10V7a4 4 0 0 1 8 0v3"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="12" cy="15" r="1" fill="currentColor" />
                 </svg>
-                {ward_location}
+                <span>Sign in to view exact location</span>
+              </Link>
+            ) : contactStatus === "loading" ? (
+              <span className={styles.locationHint}>
+                Loading exact location…
+              </span>
+            ) : contactStatus === "ok" ? (
+              <span className={styles.locationHint}>
+                {ward_location || "Exact location not provided"}
+              </span>
+            ) : (
+              <span className={styles.locationHint}>
+                Couldn’t load location. Try again.
               </span>
             )}
 
@@ -226,60 +327,26 @@ export default function PropertyCardV1({ listing, onWardClick }) {
               View Details
             </Link>
 
-            {phone_number && (
-              <a
-                href={`tel:0${phone_number}`}
-                className={styles.callBtn}
-                aria-label="Call agent"
-                onClick={(event) => {
-                  event.preventDefault();
-
-                  let fingerprint = localStorage.getItem("cr_fingerprint");
-                  if (!fingerprint) {
-                    fingerprint = crypto.randomUUID();
-                    localStorage.setItem("cr_fingerprint", fingerprint);
-                  }
-
-                  const alreadyReviewed = localStorage.getItem(
-                    `reviewed:${listing_id}`,
-                  );
-
-                  if (!alreadyReviewed) {
-                    localStorage.setItem(
-                      "pending_review",
-                      JSON.stringify({
-                        listing_id,
-                        listing_name,
-                        timestamp: Date.now(),
-                      }),
-                    );
-                  }
-
-                  posthog.capture("property_call_clicked", {
-                    listing_id,
-                    listing_name,
-                    phone_number,
-                    ward: ward_display_name,
-                    plan_name,
-                  });
-                  window.location.href = `tel:0${phone_number}`;
-                }}>
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true">
-                  <path
-                    d="M6.6 10.8a15.4 15.4 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C9.61 21 3 14.39 3 6.5a1 1 0 0 1 1-1H7.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.24 1.02L6.6 10.8Z"
-                    stroke="currentColor"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </a>
-            )}
+            <a
+              href="#"
+              className={styles.callBtn}
+              aria-label="Call agent"
+              onClick={handleCall}>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true">
+                <path
+                  d="M6.6 10.8a15.4 15.4 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.58.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C9.61 21 3 14.39 3 6.5a1 1 0 0 1 1-1H7.5a1 1 0 0 1 1 1c0 1.25.2 2.46.57 3.58a1 1 0 0 1-.24 1.02L6.6 10.8Z"
+                  stroke="currentColor"
+                  strokeWidth="1.4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </a>
           </div>
         </div>
       </div>

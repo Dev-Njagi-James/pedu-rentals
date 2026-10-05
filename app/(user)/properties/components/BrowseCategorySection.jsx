@@ -8,32 +8,37 @@ const categories = [
   {
     id: "rental-apartments",
     label: "Rental Apartments",
-    category_id: 1,
-    image: "https://images.unsplash.com/photo-1629584603667-e8ad7c8feb0b?q=80&w=1174&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category_id: "Rentals",
+    image:
+      "https://images.unsplash.com/photo-1629584603667-e8ad7c8feb0b?q=80&w=1174&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: "airbnb",
     label: "Airbnb and Hostels",
-    category_id: 2,
-    image: "https://images.unsplash.com/photo-1553444836-bc6c8d340ba7?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category_id: "Airbnbs",
+    image:
+      "https://images.unsplash.com/photo-1553444836-bc6c8d340ba7?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: "commercial-spaces",
     label: "Commercial Spaces",
-    category_id: 3,
-    image: "https://images.unsplash.com/photo-1685009336777-3422a99d419b?q=80&w=2050&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category_id: "Commercial Apartments",
+    image:
+      "https://images.unsplash.com/photo-1685009336777-3422a99d419b?q=80&w=2050&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: "lodgings",
     label: "Lodgings",
-    category_id: 4,
-    image: "https://images.unsplash.com/photo-1610333684078-c89bd57f2e46?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    category_id: "Lodgings",
+    image:
+      "https://images.unsplash.com/photo-1610333684078-c89bd57f2e46?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
   {
     id: "private-houses",
-    category_id: 5,
+    category_id: "Private Houses and Homes",
     label: "Private Houses & Homes",
-    image: "https://plus.unsplash.com/premium_photo-1742418054084-5b6037976b3f?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+    image:
+      "https://plus.unsplash.com/premium_photo-1742418054084-5b6037976b3f?q=80&w=1172&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
   },
 ];
 
@@ -75,10 +80,9 @@ export default function BrowseByCategorySection() {
     trackRef.current.scrollBy({ left: CARD_WIDTH + CARD_GAP });
   };
 
-  const handleCategoryClick = (category_id) => {
-    if (!category_id) return
-    router.push(`/properties?category_id=${category_id}`)
-  }
+ const handleCategoryClick = (category) => {
+   router.push(`/properties?category=${encodeURIComponent(category)}`);
+ };
 
 
   return (

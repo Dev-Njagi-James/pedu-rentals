@@ -1,5 +1,5 @@
 import { paymentsSupabase } from '@/lib/supabase/paymentsClient';
-import { CATEGORY_ID_TO_V1_NAME, TYPE_ID_TO_V1_NAME, RENT_DURATION_TO_V1, FURNISHING_TO_V1, PRICE_BUCKET_RANGES } from '@/lib/categoryMapping';
+import { PRICE_BUCKET_RANGES } from "@/lib/categoryMapping";
 import { rankListings } from '@/lib/ranking/rankListings';
 import { NextResponse } from 'next/server';
 
@@ -21,87 +21,50 @@ export async function GET(request) {
   const offset = prefetch ? (page - 1) * PREFETCH_SIZE : (page - 1) * PAGE_SIZE;
 
   const ward_id = searchParams.get('ward_id') ? parseInt(searchParams.get('ward_id'), 10) : null;
-  const category_id = searchParams.get('category_id') ? parseInt(searchParams.get('category_id'), 10) : null;
-  const type_ids = searchParams.get('type_ids') ? searchParams.get('type_ids').split(',').map(Number) : null;
+
+  const category = searchParams.get('category') || null;
+  const types = searchParams.getAll('types').filter(Boolean);
   const price_range = searchParams.get('price_range') || null;
   const rent_duration = searchParams.get('rent_duration') || null;
-  const property_interior = searchParams.get('property_interior') || null;
+  const furnishing = searchParams.get('furnishing') || null;
   const isSearch = !!(searchParams.get('q')?.trim());
-
-  // V1-specific filter params (payments project listings_table columns).
-  // ward_id is reused as-is from the legacy parse above — same ID space.
-  const v1_category_name = searchParams.get('v1_category_name');
-  const v1_category_type_name = searchParams.get('v1_category_type_name');
-  const v1_price_bucket = searchParams.get('v1_price_bucket'); // e.g. "5000_8000"
-  const v1_rent_duration = searchParams.get('v1_rent_duration');
-  const v1_furnishing = searchParams.get('v1_furnishing');
-
-  // Resolve a bucket key to numeric bounds via the explicit map (handles the
-  // below_2000/above_20000 keys that string-split parsing can't).
-  function resolvePriceRange(bucket) {
-    return bucket ? PRICE_BUCKET_RANGES[bucket] ?? null : null;
-  }
-  const priceRange = resolvePriceRange(v1_price_bucket ?? price_range);
-
-  // Resolve legacy IDs to v1 names. null = no v1 match (unseeded type or bad id).
-  // If v1_category_name/v1_category_type_name were explicitly passed, they take
-  // precedence (manual override for direct testing); otherwise resolve from legacy IDs.
-  const resolvedCategoryName = v1_category_name
-    ?? (category_id ? CATEGORY_ID_TO_V1_NAME[category_id] ?? null : null);
-
-  const resolvedTypeName = v1_category_type_name
-    ?? (type_ids?.length ? TYPE_ID_TO_V1_NAME[type_ids[0]] ?? null : null);
-
-  // True only when a type filter was requested but has no v1 equivalent yet —
-  // v1 branch must return zero rows for that filter, not all rows.
-  const typeFilterUnresolvable = !!(type_ids?.length && !v1_category_type_name && resolvedTypeName === null);
-
-  const resolvedRentDuration = v1_rent_duration
-    ?? (rent_duration ? RENT_DURATION_TO_V1[rent_duration] ?? null : null);
-
-  const resolvedFurnishing = v1_furnishing
-    ?? (property_interior ? FURNISHING_TO_V1[property_interior] ?? null : null);
-
-
+  
+  // Price bucket key -> numeric bounds (min inclusive, max exclusive).
+  const priceRange = price_range ? PRICE_BUCKET_RANGES[price_range] ?? null : null;
+  
   // C. V1 QUERY — payments project, paid listings only.
   let v1Data = [];
   let v1Count = 0;
   try {
     let v1Query = paymentsSupabase
-      .from('listings_table')
+      .from("listings_table")
       .select(
         `listing_id, listing_name, listing_category, category_type, furnishing,
-         rent_duration, phone_number, price_kes, listing_ward, ward_display_name,
-         ward_location, location_url, listing_description, plan_name, created_at, updated_at,
+         rent_duration, price_kes, listing_ward, ward_display_name,
+         listing_description, plan_name, created_at, updated_at,
          images_table (images_url, video_url)`,
-        { count: 'exact' }
+        { count: "exact" },
       )
-      .eq('payment_status', 'paid');
+      .eq("payment_status", "paid");
+    if (ward_id) v1Query = v1Query.eq('listing_ward', ward_id);
+    if (category && category !== "all") {
+      v1Query = v1Query.eq("listing_category", category);
+    }
+    if (types.length) v1Query = v1Query.in('category_type', types);
+    if (rent_duration) v1Query = v1Query.eq('rent_duration', rent_duration);
+    if (furnishing) v1Query = v1Query.eq('furnishing', furnishing);
+    if (priceRange) {
+      if (priceRange.min !== null) v1Query = v1Query.gte('price_kes', priceRange.min);
+      if (priceRange.max !== null) v1Query = v1Query.lt('price_kes', priceRange.max);
+    }
 
-    // V1 filters — each conditional chains onto the same reference.
-    if (typeFilterUnresolvable) {
-      // Type filter requested but has no v1 equivalent yet → zero v1 rows, not all.
-      v1Data = [];
-      v1Count = 0;
+    const { data, error, count } = await v1Query;
+
+    if (error) {
+      console.error('V1 listings query failed:', error.message);
     } else {
-      if (ward_id) v1Query = v1Query.eq('listing_ward', ward_id);
-      if (resolvedCategoryName) v1Query = v1Query.eq('listing_category', resolvedCategoryName);
-      if (resolvedTypeName) v1Query = v1Query.eq('category_type', resolvedTypeName);
-      if (resolvedRentDuration) v1Query = v1Query.eq('rent_duration', resolvedRentDuration);
-      if (resolvedFurnishing) v1Query = v1Query.eq('furnishing', resolvedFurnishing);
-      if (priceRange) {
-        if (priceRange.min !== null) v1Query = v1Query.gte('price_kes', priceRange.min);
-        if (priceRange.max !== null) v1Query = v1Query.lte('price_kes', priceRange.max);
-      }
-
-      const { data, error, count } = await v1Query;
-
-      if (error) {
-        console.error('V1 listings query failed:', error.message);
-      } else {
-        v1Data = (data ?? []).map((row) => ({ _source: 'v1', ...row }));
-        v1Count = count ?? 0;
-      }
+      v1Data = (data ?? []).map((row) => ({ _source: 'v1', ...row }));
+      v1Count = count ?? 0;
     }
   } catch (err) {
     console.error('V1 listings query failed:', err?.message);

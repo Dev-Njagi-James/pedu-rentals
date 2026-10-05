@@ -213,6 +213,39 @@
   flex-shrink: 0;
 }
 
+.locationHint {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: #edf4ff;
+  color: #455a78;
+  font-family: var(--font-inter);
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.3;
+  text-decoration: none;
+}
+
+.locationHint svg {
+  flex: 0 0 auto;
+  color: #3d5f9a;
+}
+
+a.locationHint:hover {
+  background: #e4efff;
+  text-decoration: none;
+}
+
+.bodyContent {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+
 /* ── Actions ────────────────────────── */
 .actions {
   display: flex;

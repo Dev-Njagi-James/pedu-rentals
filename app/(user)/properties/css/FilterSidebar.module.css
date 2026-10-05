@@ -154,7 +154,7 @@
   border-radius: 6px;
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-image: url("data:image/svgxml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
@@ -164,6 +164,37 @@
 .selectInput:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+
+/* ── Category Badges ────────────────── */
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  
+}
+
+.badge {
+  padding: 4px 10px;
+  font-family: var(--font-inter);
+  font-size: 0.75rem;
+  font-weight: 550;
+  color: #1a1a2e;
+  background: rgba(255, 193, 7, 0.15);
+  /* fallback */
+  background: color-mix(in srgb, var(--secondary) 18%, transparent);
+  border: 1px solid var(--secondary);
+  border-radius: 5px;
+  cursor: pointer;
+  line-height: 1.4;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.badge:hover {
+  background: var(--secondary);
+  color: #1a1a2e;
+  transform: translateY(-1px);
 }
 
 /* ── Checkboxes ─────────────────────── */
