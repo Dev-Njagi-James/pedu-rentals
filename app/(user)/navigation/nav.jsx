@@ -14,6 +14,7 @@ import Image from "next/image";
 import { useNavVisibility } from "@/app/hooks/useNavVisibility";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 
 // ────────────────────────────────────────────────────────────────────────
 // Config — single source of truth for nav content. Desktop bar, mobile
@@ -66,7 +67,7 @@ const ACCOUNT_MENU_ITEMS = [
     showBadge: true,
     roles: STAFF_ROLES,
   },
-   {
+  {
     key: "profile",
     label: "Profile",
     href: "/profile",
@@ -301,6 +302,7 @@ export default function AppNav() {
   const searchParams = useSearchParams();
   const activeLisTab = searchParams.get("tab") ?? "listings";
   const [dashboardOpen, setDashboardOpen] = useState(false);
+  const [upgrading, setUpgrading] = useState(false);
 
   useEffect(() => {
     if (!isSignedIn) {
@@ -350,12 +352,12 @@ export default function AppNav() {
   const visibleUtilityItems = STANDALONE_UTILITY_ITEMS.filter(canSee);
   const showUnreadDot =
     hasUnread && visibleAccountItems.some((i) => i.key === "notifications");
+  const canUpgrade = isLoaded && isSignedIn && !STAFF_ROLES.includes(role);
 
   useEffect(() => {
     setDashboardOpen(pathname === "/Lister");
   }, [pathname]);
 
-  
   const displayName =
     profileUsername || user?.primaryEmailAddress?.emailAddress || "Account";
   const initial = (displayName || "?").charAt(0).toUpperCase();
@@ -435,6 +437,24 @@ export default function AppNav() {
 
   const closeMenu = () => setMenuOpen(false);
   const closeAccountMenu = () => setAccountMenuOpen(false);
+
+  const handleUpgrade = async () => {
+    if (upgrading) return;
+    setUpgrading(true);
+    try {
+      const res = await fetch("/api/v1/users/upgrade", { method: "POST" });
+      if (!res.ok) throw new Error("upgrade_failed");
+      await user.reload();
+      closeMenu();
+      closeAccountMenu();
+      router.push("/Lister");
+      router.refresh();
+    } catch {
+      toast.error("Could not upgrade your account. Try again.");
+    } finally {
+      setUpgrading(false);
+    }
+  };
 
   const handleSignOut = async () => {
     closeMenu();
@@ -517,6 +537,16 @@ export default function AppNav() {
                 LOG IN
               </Link>
             </>
+          )}
+
+          {canUpgrade && (
+            <button
+              type="button"
+              className={styles.ctaButtonSecondary}
+              onClick={handleUpgrade}
+              disabled={upgrading}>
+              {upgrading ? "UPGRADING…" : "UPGRADE TO LISTER"}
+            </button>
           )}
 
           {isLoaded && isSignedIn && (
@@ -733,6 +763,17 @@ export default function AppNav() {
               </Link>
             </>
           )}
+          
+          {canUpgrade && (
+            <button
+              type="button"
+              className={styles.ctaButtonSecondary}
+              onClick={handleUpgrade}
+              disabled={upgrading}>
+              {upgrading ? "UPGRADING…" : "UPGRADE TO LISTER"}
+            </button>
+          )}
+
           {isLoaded && isSignedIn && (
             <button
               type="button"

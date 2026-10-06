@@ -9,7 +9,7 @@ import { posthog } from "@/lib/analytics/posthog-client";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
-import { fetchContact } from "@/lib/contact/fetchContact";
+import { fetchContact, getCachedContact } from "@/lib/contact/fetchContact";
 
 const planClassMap = {
   Regular: styles.planRegular,
@@ -35,8 +35,12 @@ export default function PropertyCardV1({ listing, onWardClick }) {
     plan_name,
     images_table,
   } = listing;
-  const [contact, setContact] = useState(null);
-  const [contactStatus, setContactStatus] = useState("loading");
+  const [contact, setContact] = useState(
+    () => getCachedContact(listing_id)?.data ?? null,
+  );
+  const [contactStatus, setContactStatus] = useState(() =>
+    getCachedContact(listing_id) ? "ok" : "loading",
+  );
   const router = useRouter();
   const { isLoaded, isSignedIn } = useUser();
   const images = images_table?.images_url ?? [];
@@ -55,6 +59,12 @@ export default function PropertyCardV1({ listing, onWardClick }) {
     if (!isSignedIn) {
       setContact(null);
       setContactStatus("signed_out");
+      return;
+    }
+    const cached = getCachedContact(listing_id);
+    if (cached) {
+      setContact(cached.data);
+      setContactStatus("ok");
       return;
     }
     let cancelled = false;
@@ -287,6 +297,10 @@ export default function PropertyCardV1({ listing, onWardClick }) {
             ) : contactStatus === "ok" ? (
               <span className={styles.locationHint}>
                 {ward_location || "Exact location not provided"}
+              </span>
+            ) : contactStatus === "forbidden" ? (
+              <span className={styles.locationHint}>
+                Active subscription required to view location
               </span>
             ) : (
               <span className={styles.locationHint}>

@@ -9,9 +9,12 @@ import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
 import { useRealtimeChannel } from "@/lib/hooks/useRealtimeChannel";
 import { initPostHogClient, posthog } from "@/lib/analytics/posthog-client";
 import { useUser } from "@clerk/nextjs";
-import { fetchContact } from "@/lib/contact/fetchContact";
 import Link from "next/link";
-
+import {
+  fetchContact,
+  getCachedContact,
+  clearContactCache,
+} from "@/lib/contact/fetchContact";
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -72,6 +75,29 @@ function getFingerprint() {
   );
 }
 
+function useRevealOnScroll() {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.unobserve(el);
+        }
+      },
+      { threshold: 0.15 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, visible];
+}
+
 export default function PropertyDetails({ listing }) {
   const {
     property_name,
@@ -80,8 +106,8 @@ export default function PropertyDetails({ listing }) {
     rent_duration,
     category_name,
     type_name,
-    ward_name,    
-    listing_id,   
+    ward_name,
+    listing_id,
     avg_rating,
     review_count,
     description,
@@ -107,8 +133,14 @@ export default function PropertyDetails({ listing }) {
   const [submitting, setSubmitting] = useState(false);
   const [infoRef, infoVisible] = useRevealOnScroll();
   const { isLoaded, isSignedIn } = useUser();
-  const [contact, setContact] = useState(null);
-  const [contactStatus, setContactStatus] = useState("loading");
+
+  const [contact, setContact] = useState(
+    () => getCachedContact(listing_id)?.data ?? null,
+  );
+  const [contactStatus, setContactStatus] = useState(() =>
+    getCachedContact(listing_id) ? "ok" : "loading",
+  );
+
   const [overviewRef, overviewVisible] = useRevealOnScroll();
   const [locationRef, locationVisible] = useRevealOnScroll();
   const [reviewsRef, reviewsVisible] = useRevealOnScroll();
@@ -195,29 +227,30 @@ export default function PropertyDetails({ listing }) {
     isSignedIn,
   ]);
 
-    useEffect(() => {
-      if (!isLoaded || !listing_id) return;
-      if (!isSignedIn) {
-        setContact(null);
-        setContactStatus("signed_out");
-        return;
+  useEffect(() => {
+    if (!isLoaded || !listing_id) return;
+    if (!isSignedIn) {
+      clearContactCache();
+      setContact(null);
+      setContactStatus("signed_out");
+      return;
+    }
+    let cancelled = false;
+    if (!getCachedContact(listing_id)) setContactStatus("loading");
+    fetchContact(listing_id).then((result) => {
+      if (cancelled) return;
+      if (result.status === "ok") {
+        setContact(result.data);
+        setContactStatus("ok");
+      } else {
+        setContactStatus(result.status);
       }
-      let cancelled = false;
-      setContactStatus("loading");
-      fetchContact(listing_id).then((result) => {
-        if (cancelled) return;
-        if (result.status === "ok") {
-          setContact(result.data);
-          setContactStatus("ok");
-        } else {
-          setContactStatus(result.status);
-        }
-      });
-      return () => {
-        cancelled = true;
-      };
-    }, [isLoaded, isSignedIn, listing_id]);
-  
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoaded, isSignedIn, listing_id]);
+
   const refetchReviews = () => {
     if (!listing_id) return;
     const fingerprint = getFingerprint();
@@ -336,29 +369,6 @@ export default function PropertyDetails({ listing }) {
       .then(setAgentInfo)
       .catch(() => {});
   }, [listing_id]);
-
-  function useRevealOnScroll() {
-    const ref = useRef(null);
-    const [visible, setVisible] = useState(false);
-
-    useEffect(() => {
-      const el = ref.current;
-      if (!el) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) {
-            setVisible(true);
-            observer.unobserve(el);
-          }
-        },
-        { threshold: 0.15 },
-      );
-      observer.observe(el);
-      return () => observer.disconnect();
-    }, []);
-
-    return [ref, visible];
-  }
 
   return (
     <div className={styles.page}>
