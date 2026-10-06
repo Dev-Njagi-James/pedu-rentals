@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
 import { canViewContact } from "@/lib/auth/contactAccess";
+import { getCallerRole, hasActiveViewAccess } from "@/lib/auth/viewAccess";
 
 export const revalidate = 0;
 
@@ -48,9 +49,23 @@ export async function GET(request, { params }) {
     );
   }
 
-  if (!canViewContact({ userId: user.id }, data)) {
+  let role;
+  try {
+    role = await getCallerRole();
+  } catch {
     return NextResponse.json(
-      { error: "Forbidden" },
+      { error: "Could not verify account" },
+      { status: 503, headers: NO_STORE },
+    );
+  }
+  const hasAccess =
+    role === "lister" && data.lister_uuid !== user.id
+      ? await hasActiveViewAccess(user.id)
+      : false;
+
+  if (!canViewContact({ userId: user.id, role, hasAccess }, data)) {
+    return NextResponse.json(
+      { error: "Subscription required", code: "subscription_required" },
       { status: 403, headers: NO_STORE },
     );
   }
