@@ -22,6 +22,33 @@ const planDisplayLabelMap = {
   Premium: "VIP",
   Enterprise: "VVIP",
 };
+function LockIcon() {
+  return (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden="true">
+      <rect
+        x="5"
+        y="10"
+        width="14"
+        height="11"
+        rx="2"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      />
+      <path
+        d="M8 10V7a4 4 0 0 1 8 0v3"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="15" r="1" fill="currentColor" />
+    </svg>
+  );
+}
 
 export default function PropertyCardV1({ listing, onWardClick }) {
   const {
@@ -38,8 +65,8 @@ export default function PropertyCardV1({ listing, onWardClick }) {
   const [contact, setContact] = useState(
     () => getCachedContact(listing_id)?.data ?? null,
   );
-  const [contactStatus, setContactStatus] = useState(() =>
-    getCachedContact(listing_id) ? "ok" : "loading",
+  const [contactStatus, setContactStatus] = useState(
+    () => getCachedContact(listing_id)?.status ?? "loading",
   );
   const router = useRouter();
   const { isLoaded, isSignedIn } = useUser();
@@ -63,8 +90,8 @@ export default function PropertyCardV1({ listing, onWardClick }) {
     }
     const cached = getCachedContact(listing_id);
     if (cached) {
-      setContact(cached.data);
-      setContactStatus("ok");
+      setContact(cached.data ?? null);
+      setContactStatus(cached.status);
       return;
     }
     let cancelled = false;
@@ -92,6 +119,10 @@ export default function PropertyCardV1({ listing, onWardClick }) {
       return;
     }
     const result = await fetchContact(listing_id);
+    if (result.status === "forbidden") {
+      toast.info("Subscription required to view contact details");
+      return;
+    }
     if (result.status !== "ok") {
       toast.error("Could not load the location. Try again.");
       return;
@@ -109,6 +140,10 @@ export default function PropertyCardV1({ listing, onWardClick }) {
     }
 
     const result = await fetchContact(listing_id);
+    if (result.status === "forbidden") {
+      toast.info("Subscription required to view the location");
+      return;
+    }
     if (result.status !== "ok" || !result.data.phone_number) {
       toast.error("Could not load the contact number. Try again.");
       return;
@@ -300,7 +335,9 @@ export default function PropertyCardV1({ listing, onWardClick }) {
               </span>
             ) : contactStatus === "forbidden" ? (
               <span className={styles.locationHint}>
-                Active subscription required to view location
+                {" "}
+                <LockIcon />
+                <span>Subscription required</span>
               </span>
             ) : (
               <span className={styles.locationHint}>

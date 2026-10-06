@@ -15,6 +15,7 @@ import { useNavVisibility } from "@/app/hooks/useNavVisibility";
 import { useUser, useClerk } from "@clerk/nextjs";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
+import { clearContactCache } from "@/lib/contact/fetchContact";
 
 // ────────────────────────────────────────────────────────────────────────
 // Config — single source of truth for nav content. Desktop bar, mobile
@@ -445,6 +446,7 @@ export default function AppNav() {
       const res = await fetch("/api/v1/users/upgrade", { method: "POST" });
       if (!res.ok) throw new Error("upgrade_failed");
       await user.reload();
+      clearContactCache();
       closeMenu();
       closeAccountMenu();
       router.push("/Lister");
@@ -459,6 +461,7 @@ export default function AppNav() {
   const handleSignOut = async () => {
     closeMenu();
     closeAccountMenu();
+    clearContactCache();
     await signOut();
     router.push("/Auth");
   };
@@ -763,7 +766,7 @@ export default function AppNav() {
               </Link>
             </>
           )}
-          
+
           {canUpgrade && (
             <button
               type="button"

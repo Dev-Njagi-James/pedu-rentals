@@ -137,8 +137,8 @@ export default function PropertyDetails({ listing }) {
   const [contact, setContact] = useState(
     () => getCachedContact(listing_id)?.data ?? null,
   );
-  const [contactStatus, setContactStatus] = useState(() =>
-    getCachedContact(listing_id) ? "ok" : "loading",
+   const [contactStatus, setContactStatus] = useState(
+    () => getCachedContact(listing_id)?.status ?? "loading",
   );
 
   const [overviewRef, overviewVisible] = useRevealOnScroll();
@@ -407,6 +407,10 @@ export default function PropertyDetails({ listing }) {
             </svg>
             <span>Sign in to view exact location</span>
           </Link>
+        ) : contactStatus === "forbidden" ? (
+          <div className={styles.locationState}>
+            Active subscription required to view the location
+          </div>
         ) : contactStatus === "loading" ? (
           <div className={styles.locationState}>Loading exact location…</div>
         ) : contactStatus === "ok" && ward_location ? (
@@ -661,7 +665,9 @@ export default function PropertyDetails({ listing }) {
                 {" "}
                 {contactStatus === "signed_out"
                   ? "SIGN IN TO CONTACT"
-                  : "CONTACT"}{" "}
+                  : contactStatus === "forbidden"
+                    ? "SUBSCRIPTION REQUIRED"
+                    : "CONTACT"}
               </span>
               <span className={styles.contactIcon}>
                 <svg
@@ -788,6 +794,34 @@ export default function PropertyDetails({ listing }) {
                     />
                   </svg>
                   <span>Map location not provided</span>
+                </>
+               ) : contactStatus === "forbidden" ? (
+                <>
+                  <svg
+                    className={styles.mapEmptyIcon}
+                    width="40"
+                    height="40"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true">
+                    <rect
+                      x="5"
+                      y="10"
+                      width="14"
+                      height="11"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                    />
+                    <path
+                      d="M8 10V7a4 4 0 0 1 8 0v3"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                    <circle cx="12" cy="15" r="1" fill="currentColor" />
+                  </svg>
+                  <span>You need an active subscription to view the map</span>
                 </>
               ) : (
                 <>
