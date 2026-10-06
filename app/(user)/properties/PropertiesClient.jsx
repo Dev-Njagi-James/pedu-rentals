@@ -1,17 +1,19 @@
-'use client'
-import { useState, useEffect } from "react";
-import { useRouter, useSearchParams } from 'next/navigation'
-import { useQuery, keepPreviousData} from "@tanstack/react-query";
-import { useQueryClient } from '@tanstack/react-query'
-import FilterSidebar from './components/FilterSidebar'
-import PropertyCardV1 from './components/PropertyCardV1'
-import styles from './css/properties.module.css'
-import ReviewPrompt from './components/ReviewPrompt'
-import { useTrackVisit } from '@/app/hooks/useTrackVisit'
-import { useRealtimeChannel } from '@/lib/hooks/useRealtimeChannel'
-import SearchBar from './components/SearchBar'
+"use client";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useQuery, keepPreviousData } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import FilterSidebar from "./components/FilterSidebar";
+import PropertyCardV1 from "./components/PropertyCardV1";
+import styles from "./css/properties.module.css";
+import ReviewPrompt from "./components/ReviewPrompt";
+import { useTrackVisit } from "@/app/hooks/useTrackVisit";
+import { useRealtimeChannel } from "@/lib/hooks/useRealtimeChannel";
+import SearchBar from "./components/SearchBar";
+import { useUser } from "@clerk/nextjs";
+import { prefetchContacts } from "@/lib/contact/fetchContact";
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 const LEGACY_CATEGORY_NAMES = {
   1: "Rentals",
@@ -60,7 +62,6 @@ function filtersFromParams(params) {
   };
 }
 
-
 function filtersToParams(filters, page) {
   const params = new URLSearchParams();
 
@@ -77,35 +78,35 @@ function filtersToParams(filters, page) {
   return params;
 }
 
-
-
 async function fetchListings(filters, bufferPage) {
-  const params = filtersToParams(filters, bufferPage)
-  params.set('prefetch', 'true')
-    const res = await fetch(`/api/v1/listings/public?${params.toString()}`)
-  if (!res.ok) throw new Error('Failed to fetch listings')
-  return res.json()
+  const params = filtersToParams(filters, bufferPage);
+  params.set("prefetch", "true");
+  const res = await fetch(`/api/v1/listings/public?${params.toString()}`);
+  if (!res.ok) throw new Error("Failed to fetch listings");
+  return res.json();
 }
 
 export default function PropertiesClient() {
-  useTrackVisit()
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  useTrackVisit();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [filters, setFilters] = useState(() => filtersFromParams(searchParams));
-  const [ currentPage, setCurrentPage ] = useState(() => Number(searchParams.get('page') ?? 1))
-  const [ wardPopup, setWardPopup ] = useState(null)
-  const [ searchLabel, setSearchLabel ] = useState(null)
-  const [searchResults, setSearchResults] = useState(null)
+  const [currentPage, setCurrentPage] = useState(() =>
+    Number(searchParams.get("page") ?? 1),
+  );
+  const [wardPopup, setWardPopup] = useState(null);
+  const [searchLabel, setSearchLabel] = useState(null);
+  const [searchResults, setSearchResults] = useState(null);
   const [searchBarKey, setSearchBarKey] = useState(0);
 
-  const BUFFER_SIZE = 2  // pages per buffer block
+  const BUFFER_SIZE = 2; // pages per buffer block
 
   // which 40-block we're in (pages 1-2 = buffer 1, pages 3-4 = buffer 2, etc.)
-  const bufferPage = Math.ceil(currentPage / BUFFER_SIZE)
+  const bufferPage = Math.ceil(currentPage / BUFFER_SIZE);
 
   // position within the buffer (0 or 1)
-  const indexInBuffer = (currentPage - 1) % BUFFER_SIZE
+  const indexInBuffer = (currentPage - 1) % BUFFER_SIZE;
 
   const { data, isLoading, error, isFetching, failureCount } = useQuery({
     queryKey: ["listings", filters, bufferPage],
@@ -113,34 +114,47 @@ export default function PropertiesClient() {
     placeholderData: keepPreviousData,
   });
 
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
+  const { isLoaded, isSignedIn } = useUser();
 
-  useRealtimeChannel('listings:feed', (eventName) => {
-    if (eventName.startsWith('listing.')) {
-      queryClient.invalidateQueries({ queryKey: ['listings'] })
+  useRealtimeChannel("listings:feed", (eventName) => {
+    if (eventName.startsWith("listing.")) {
+      queryClient.invalidateQueries({ queryKey: ["listings"] });
     }
-  })
+  });
 
-  const allData = data?.data ?? []
-  const pagination = data?.pagination ?? null
-  const totalPages = pagination?.total_pages ?? 1
+  const allData = data?.data ?? [];
+  const pagination = data?.pagination ?? null;
+  const totalPages = pagination?.total_pages ?? 1;
 
   const listings = allData.slice(
     indexInBuffer * PAGE_SIZE,
-    indexInBuffer * PAGE_SIZE + PAGE_SIZE
-  )
-
-  const displayListings = searchResults !== null ? searchResults : listings
-  const isSearchActive = searchResults !== null
-
-  const hasActiveFilters = Boolean(
-    filters.ward_id ||
-    filters.category ||
-    filters.types?.length ||
-    filters.price_range ||
-    filters.rent_duration ||
-    filters.furnishing,
+    indexInBuffer * PAGE_SIZE + PAGE_SIZE,
   );
+
+  const displayListings = searchResults !== null ? searchResults : listings;
+  const isSearchActive = searchResults !== null;
+  const listingIdsKey = displayListings.map((l) => l.listing_id).join(",");
+
+  const prefetchedRef = useRef("");
+  const prefetchKey = `${isSignedIn ? "in" : "out"}:${listingIdsKey}`;
+  if (
+    isLoaded &&
+    isSignedIn &&
+    listingIdsKey &&
+    prefetchedRef.current !== prefetchKey
+  ) {
+    prefetchContacts(listingIdsKey.split(",").map(Number));
+  }
+
+   const hasActiveFilters = Boolean(
+     filters.ward_id ||
+     filters.category ||
+     filters.types?.length ||
+     filters.price_range ||
+     filters.rent_duration ||
+     filters.furnishing,
+   );
 
   const emptyStateKind =
     isSearchActive && hasActiveFilters
@@ -173,34 +187,36 @@ export default function PropertiesClient() {
     },
   };
 
-
   // sync URL
   const syncUrl = (f, p) => {
-    const params = filtersToParams(f, p)
-    const qs = params.toString()
-    router.replace(qs ? `?${qs}` : '?', { scroll: false })
-  }
+    const params = filtersToParams(f, p);
+    const qs = params.toString();
+    router.replace(qs ? `?${qs}` : "?", { scroll: false });
+  };
 
   // One-time rewrite of legacy URL params to the name-based contract.
   useEffect(() => {
-    if (searchParams.has('category_id') || searchParams.has('type_ids') || searchParams.has('property_interior')) {
-      syncUrl(filters, currentPage)
+    if (
+      searchParams.has("category_id") ||
+      searchParams.has("type_ids") ||
+      searchParams.has("property_interior")
+    ) {
+      syncUrl(filters, currentPage);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
+  }, []);
 
   const handleFilterChange = (updated) => {
-    setFilters(updated)
-    setCurrentPage(1)
-    syncUrl(updated, 1)
-  }
+    setFilters(updated);
+    setCurrentPage(1);
+    syncUrl(updated, 1);
+  };
 
   const handlePageChange = (page) => {
-    setCurrentPage(page)
-    syncUrl(filters, page)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    setCurrentPage(page);
+    syncUrl(filters, page);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleClearFilters = () => {
     const resetFilters = {
@@ -223,33 +239,32 @@ export default function PropertiesClient() {
     setSearchBarKey((key) => key + 1);
   };
 
-
   const handleSearchResults = (results, label) => {
-    setSearchResults(results)
-    setSearchLabel(label)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
+    setSearchResults(results);
+    setSearchLabel(label);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   const handleSearchClear = () => {
-    setSearchResults(null)
-    setSearchLabel(null)
-  }
+    setSearchResults(null);
+    setSearchLabel(null);
+  };
 
   const pageNumbers = () => {
-    const pages = []
+    const pages = [];
     if (totalPages <= 7) {
-      for (let i = 1; i <= totalPages; i++) pages.push(i)
-      return pages
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+      return pages;
     }
-    pages.push(1)
-    if (currentPage > 3) pages.push('...')
-    const start = Math.max(2, currentPage - 1)
-    const end = Math.min(totalPages - 1, currentPage + 1)
-    for (let i = start; i <= end; i++) pages.push(i)
-    if (currentPage < totalPages - 2) pages.push('...')
-    pages.push(totalPages)
-    return pages
-  }
+    pages.push(1);
+    if (currentPage > 3) pages.push("...");
+    const start = Math.max(2, currentPage - 1);
+    const end = Math.min(totalPages - 1, currentPage + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    if (currentPage < totalPages - 2) pages.push("...");
+    pages.push(totalPages);
+    return pages;
+  };
 
   return (
     <>
