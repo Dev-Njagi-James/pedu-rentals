@@ -15,6 +15,7 @@ import {
   getCachedContact,
   clearContactCache,
 } from "@/lib/contact/fetchContact";
+import { useContactAccess, activateWithToast } from "@/lib/contact/accessStore";
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -133,11 +134,12 @@ export default function PropertyDetails({ listing }) {
   const [submitting, setSubmitting] = useState(false);
   const [infoRef, infoVisible] = useRevealOnScroll();
   const { isLoaded, isSignedIn } = useUser();
+  const { version: accessVersion, activating } = useContactAccess();
 
   const [contact, setContact] = useState(
     () => getCachedContact(listing_id)?.data ?? null,
   );
-   const [contactStatus, setContactStatus] = useState(
+  const [contactStatus, setContactStatus] = useState(
     () => getCachedContact(listing_id)?.status ?? "loading",
   );
 
@@ -249,7 +251,7 @@ export default function PropertyDetails({ listing }) {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, listing_id]);
+  }, [isLoaded, isSignedIn, listing_id, accessVersion]);
 
   const refetchReviews = () => {
     if (!listing_id) return;
@@ -408,9 +410,15 @@ export default function PropertyDetails({ listing }) {
             <span>Sign in to view exact location</span>
           </Link>
         ) : contactStatus === "forbidden" ? (
-          <div className={styles.locationState}>
-            Active subscription required to view the location
-          </div>
+          <button
+            type="button"
+            className={styles.locationState}
+            disabled={activating}
+            onClick={activateWithToast}>
+            {activating
+              ? "Activating…"
+              : "Subscription required. Activate to view the location"}
+          </button>
         ) : contactStatus === "loading" ? (
           <div className={styles.locationState}>Loading exact location…</div>
         ) : contactStatus === "ok" && ward_location ? (
@@ -660,13 +668,21 @@ export default function PropertyDetails({ listing }) {
                     ? "/Auth"
                     : undefined
               }
-              className={styles.contactBtn}>
+              className={styles.contactBtn}
+              onClick={
+                contactStatus === "forbidden"
+                  ? (e) => {
+                      e.preventDefault();
+                      activateWithToast();
+                    }
+                  : undefined
+              }>
               <span className={styles.contactText}>
                 {" "}
                 {contactStatus === "signed_out"
                   ? "SIGN IN TO CONTACT"
                   : contactStatus === "forbidden"
-                    ? "SUBSCRIPTION REQUIRED"
+                    ? "ACTIVATE TO CONTACT"
                     : "CONTACT"}
               </span>
               <span className={styles.contactIcon}>
@@ -795,7 +811,7 @@ export default function PropertyDetails({ listing }) {
                   </svg>
                   <span>Map location not provided</span>
                 </>
-               ) : contactStatus === "forbidden" ? (
+              ) : contactStatus === "forbidden" ? (
                 <>
                   <svg
                     className={styles.mapEmptyIcon}
@@ -822,6 +838,13 @@ export default function PropertyDetails({ listing }) {
                     <circle cx="12" cy="15" r="1" fill="currentColor" />
                   </svg>
                   <span>You need an active subscription to view the map</span>
+                  <button
+                    type="button"
+                    className={styles.mapSignInLink}
+                    disabled={activating}
+                    onClick={activateWithToast}>
+                    {activating ? "Activating…" : "Activate"}
+                  </button>
                 </>
               ) : (
                 <>

@@ -12,6 +12,7 @@ import { useRealtimeChannel } from "@/lib/hooks/useRealtimeChannel";
 import SearchBar from "./components/SearchBar";
 import { useUser } from "@clerk/nextjs";
 import { prefetchContacts } from "@/lib/contact/fetchContact";
+import { useContactAccess } from "@/lib/contact/accessStore";
 
 const PAGE_SIZE = 20;
 
@@ -116,6 +117,7 @@ export default function PropertiesClient() {
 
   const queryClient = useQueryClient();
   const { isLoaded, isSignedIn } = useUser();
+  const { version: accessVersion } = useContactAccess();
 
   useRealtimeChannel("listings:feed", (eventName) => {
     if (eventName.startsWith("listing.")) {
@@ -137,7 +139,7 @@ export default function PropertiesClient() {
   const listingIdsKey = displayListings.map((l) => l.listing_id).join(",");
 
   const prefetchedRef = useRef("");
-  const prefetchKey = `${isSignedIn ? "in" : "out"}:${listingIdsKey}`;
+  const prefetchKey = `${isSignedIn ? "in" : "out"}:${accessVersion}:${listingIdsKey}`;
   if (
     isLoaded &&
     isSignedIn &&

@@ -16,6 +16,9 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { clearContactCache } from "@/lib/contact/fetchContact";
+import AccessButton from "./AccessButton";
+import { resetAccess } from "@/lib/contact/accessStore";
+import AccessBadge from "./AccessBadge";
 
 // ────────────────────────────────────────────────────────────────────────
 // Config — single source of truth for nav content. Desktop bar, mobile
@@ -56,14 +59,14 @@ const ACCOUNT_MENU_ITEMS = [
   {
     key: "insights",
     label: "Insights",
-    href: "/insights",
+    href: "/Lister?tab=help",
     icon: "insights",
     roles: STAFF_ROLES,
   },
   {
     key: "notifications",
     label: "Notifications",
-    href: "/notifications",
+    href: "/Lister?tab=account",
     icon: "bell",
     showBadge: true,
     roles: STAFF_ROLES,
@@ -71,21 +74,21 @@ const ACCOUNT_MENU_ITEMS = [
   {
     key: "profile",
     label: "Profile",
-    href: "/profile",
+    href: "/Lister?tab=account",
     icon: "user",
     roles: STAFF_ROLES,
   },
   {
     key: "settings",
     label: "Settings",
-    href: "/settings",
+    href: "/Lister?tab=account",
     icon: "settings",
     roles: STAFF_ROLES,
   },
   {
     key: "support",
     label: "Help & Support",
-    href: "/support",
+    href: "/Lister?tab=help",
     icon: "help",
     roles: STAFF_ROLES,
   },
@@ -354,6 +357,7 @@ export default function AppNav() {
   const showUnreadDot =
     hasUnread && visibleAccountItems.some((i) => i.key === "notifications");
   const canUpgrade = isLoaded && isSignedIn && !STAFF_ROLES.includes(role);
+  const canActivate = isLoaded && isSignedIn && role !== "admin";
 
   useEffect(() => {
     setDashboardOpen(pathname === "/Lister");
@@ -462,6 +466,7 @@ export default function AppNav() {
     closeMenu();
     closeAccountMenu();
     clearContactCache();
+    resetAccess();
     await signOut();
     router.push("/Auth");
   };
@@ -529,6 +534,7 @@ export default function AppNav() {
 
         {/* ── Right-hand actions ── */}
         <div className={styles.actions}>
+          {canActivate && <AccessBadge />}
           {!isSignedIn && (
             <>
               <Link
@@ -587,6 +593,14 @@ export default function AppNav() {
                       <AccountMenuList onItemClick={closeAccountMenu} />
                     </>
                   )}
+                  {canActivate && (
+                    <>
+                      <div className={styles.accountMenuDivider} />
+                      <div className={styles.accessRow}>
+                        <AccessButton onDone={closeAccountMenu} />
+                      </div>
+                    </>
+                  )}
 
                   <div className={styles.accountMenuDivider} />
                   <button
@@ -603,6 +617,7 @@ export default function AppNav() {
 
         {/* ── Mobile-only icon row: hamburger only ── */}
         <div className={styles.mobileHeaderRight}>
+          {canActivate && <AccessBadge />}
           <button
             type="button"
             className={styles.hamburger}
@@ -638,6 +653,11 @@ export default function AppNav() {
         </div>
 
         <div className={styles.drawerBody}>
+          {canActivate && role === "lister" && (
+            <div className={styles.accessRow}>
+              <AccessButton onDone={closeMenu} />
+            </div>
+          )}
           <ul className={styles.drawerLinks}>
             {visiblePrimaryItems.map((item) => {
               if (item.key === "dashboard" && role !== "admin") {
@@ -685,6 +705,12 @@ export default function AppNav() {
               );
             })}
           </ul>
+
+          {canActivate && role !== "lister" && (
+            <div className={styles.accessRow}>
+              <AccessButton onDone={closeMenu} />
+            </div>
+          )}
 
           {isSignedIn && (
             <>

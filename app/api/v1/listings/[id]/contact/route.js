@@ -59,7 +59,7 @@ export async function GET(request, { params }) {
     );
   }
   const hasAccess =
-    role === "lister" && data.lister_uuid !== user.id
+    role !== "admin" && data.lister_uuid !== user.id
       ? await hasActiveViewAccess(user.id)
       : false;
 

@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import { fetchContact, getCachedContact } from "@/lib/contact/fetchContact";
+import { useContactAccess, activateWithToast } from "@/lib/contact/accessStore";
 
 const planClassMap = {
   Regular: styles.planRegular,
@@ -70,6 +71,7 @@ export default function PropertyCardV1({ listing, onWardClick }) {
   );
   const router = useRouter();
   const { isLoaded, isSignedIn } = useUser();
+  const { version: accessVersion, activating } = useContactAccess();
   const images = images_table?.images_url ?? [];
 
   const coverImage = [...images].sort(
@@ -108,7 +110,7 @@ export default function PropertyCardV1({ listing, onWardClick }) {
     return () => {
       cancelled = true;
     };
-  }, [isLoaded, isSignedIn, listing_id]);
+  }, [isLoaded, isSignedIn, listing_id, accessVersion]);
 
   const handleWardClick = async (event) => {
     event.preventDefault();
@@ -120,7 +122,9 @@ export default function PropertyCardV1({ listing, onWardClick }) {
     }
     const result = await fetchContact(listing_id);
     if (result.status === "forbidden") {
-      toast.info("Subscription required to view contact details");
+      toast.info("Subscription required to view the location", {
+        action: { label: "Activate", onClick: () => activateWithToast() },
+      });
       return;
     }
     if (result.status !== "ok") {
@@ -334,11 +338,18 @@ export default function PropertyCardV1({ listing, onWardClick }) {
                 {ward_location || "Exact location not provided"}
               </span>
             ) : contactStatus === "forbidden" ? (
-              <span className={styles.locationHint}>
-                {" "}
+              <button
+                type="button"
+                className={styles.locationHint}
+                disabled={activating}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  activateWithToast();
+                }}>
                 <LockIcon />
-                <span>Subscription required</span>
-              </span>
+                <span>{activating ? "Activating…" : "Activate to view"}</span>
+              </button>
             ) : (
               <span className={styles.locationHint}>
                 Couldn’t load location. Try again.
