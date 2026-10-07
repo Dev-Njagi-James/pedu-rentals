@@ -60,7 +60,7 @@ export async function GET(request) {
 
   // One access lookup for the whole batch, only when a lister needs it.
   const needsGrant =
-    role === "lister" && rows.some((r) => r.lister_uuid !== user.id);
+    role !== "admin" && rows.some((r) => r.lister_uuid !== user.id);
   const hasAccess = needsGrant ? await hasActiveViewAccess(user.id) : false;
 
   const byId = new Map(rows.map((r) => [r.listing_id, r]));

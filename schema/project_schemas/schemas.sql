@@ -260,3 +260,50 @@ end;
 $$;
  
 commit;
+
+CREATE TABLE access_plans (
+  plan_id          BIGINT GENERATED ALWAYS AS IDENTITY UNIQUE,
+  plan_name        TEXT PRIMARY KEY NOT NULL,
+  duration_minutes INTEGER NOT NULL CHECK (duration_minutes > 0),
+  price_kes        INTEGER NOT NULL DEFAULT 0,
+  is_active        BOOLEAN NOT NULL DEFAULT false
+);
+CREATE UNIQUE INDEX one_active_access_plan ON access_plans (is_active) WHERE is_active;
+INSERT INTO access_plans (plan_name, duration_minutes, price_kes, is_active)
+VALUES ('Trial', 5, 0, true);
+
+CREATE TABLE contact_access_grants (
+  grant_id    BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  lister_uuid UUID NOT NULL REFERENCES users_table(lister_uuid),
+  plan_name   TEXT NOT NULL REFERENCES access_plans(plan_name),
+  starts_at   TIMESTAMPTZ NOT NULL,
+  expires_at  TIMESTAMPTZ NOT NULL,
+  source      TEXT NOT NULL DEFAULT 'free',
+  payment_id  BIGINT,
+  created_at  TIMESTAMPTZ DEFAULT now()
+);
+CREATE INDEX contact_access_grants_lookup
+  ON contact_access_grants (lister_uuid, expires_at DESC);
+
+CREATE OR REPLACE FUNCTION grant_contact_access(
+  p_lister UUID, p_plan TEXT, p_source TEXT DEFAULT 'free', p_payment_id BIGINT DEFAULT NULL
+) RETURNS TIMESTAMPTZ LANGUAGE plpgsql AS $$
+DECLARE v_minutes INT; v_start TIMESTAMPTZ; v_end TIMESTAMPTZ;
+BEGIN
+  SELECT duration_minutes INTO v_minutes
+    FROM access_plans WHERE plan_name = p_plan AND is_active;
+  IF v_minutes IS NULL THEN RAISE EXCEPTION 'plan_unavailable'; END IF;
+
+  PERFORM pg_advisory_xact_lock(hashtext(p_lister::text));
+
+  SELECT greatest(coalesce(max(expires_at), now()), now()) INTO v_start
+    FROM contact_access_grants WHERE lister_uuid = p_lister;
+
+  v_end := v_start + make_interval(mins => v_minutes);
+
+  INSERT INTO contact_access_grants
+    (lister_uuid, plan_name, starts_at, expires_at, source, payment_id)
+  VALUES (p_lister, p_plan, v_start, v_end, p_source, p_payment_id);
+
+  RETURN v_end;
+END $$;

@@ -393,6 +393,64 @@
 .drawer {
   display: none;
 }
+.accessRow {
+  padding: 4px;
+}
+
+.accessButton {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  font-family: var(--font-geist-mono);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: var(--primary);
+  color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: 0.2s ease all;
+}
+
+.accessButton:hover:not(:disabled) {
+  background: var(--secondary);
+}
+
+.accessButton:disabled {
+  cursor: default;
+}
+
+.accessActive {
+  background: #f5f5f7;
+  color: #1a1a2e;
+  border-color: #e8e8ed;
+  font-variant-numeric: tabular-nums;
+}
+.accessBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-family: var(--font-geist-mono);
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  background: #eaf8f1;
+  border: 1px solid #bfe8d3;
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.accessBadgeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #1cb84f;
+}
 
 @media (max-width: 740px) {
   .navbar {

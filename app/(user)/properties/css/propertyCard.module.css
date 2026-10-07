@@ -135,7 +135,7 @@
   line-height: 1.3;
   letter-spacing: 0.01em;
   display: -webkit-box;
-  
+
   -webkit-box-orient: vertical;
   overflow: hidden;
   min-height: 2.6em;
@@ -245,6 +245,40 @@ a.locationHint:hover {
   box-sizing: border-box;
 }
 
+button.locationHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 12px;
+  background: #edf4ff;
+  color: #455a78;
+  border: 0;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.locationHint:hover:not(:disabled) {
+  background: #e4efff;
+
+}
+
+button.locationHint:disabled {
+  cursor: default;
+  opacity: 0.7;
+
+}
+
+button.locationHint svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
 
 /* ── Actions ────────────────────────── */
 .actions {
