@@ -28,7 +28,7 @@ export const config = {
     "/Admin/(.*)",
     "/Lister",
     "/Lister/(.*)",
-    "/api/v1/((?!listings/public|listings/filters|payments/ipn).*)",
+    "/api/v1/((?!listings/public|listings/filters|payments/ipn|contact-access/ipn).*)",
     "/api/analytics/(.*)",
   ],
 };

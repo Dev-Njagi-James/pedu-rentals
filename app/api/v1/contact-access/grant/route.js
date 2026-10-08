@@ -2,14 +2,15 @@ import { NextResponse } from "next/server";
 import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
 import { getAccessExpiry } from "@/lib/auth/viewAccess";
+import { isFlagEnabled } from "@/lib/flags";
 
 export const revalidate = 0;
 const NO_STORE = { "Cache-Control": "private, no-store" };
 
 export async function POST() {
-  if (process.env.ALLOW_FREE_ACCESS_GRANT !== "true") {
+ if (await isFlagEnabled("contact_access_payment_required")) {
     return NextResponse.json(
-      { error: "Free activation is disabled", code: "free_grant_disabled" },
+      { error: "Payment required", code: "payment_required" },
       { status: 403, headers: NO_STORE },
     );
   }

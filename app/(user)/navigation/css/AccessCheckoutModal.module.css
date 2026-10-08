@@ -1,0 +1,69 @@
+.overlay {
+   position: fixed;
+   inset: 0;
+   z-index: 10000;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: 12px;
+   background: rgba(10, 10, 20, 0.6);
+}
+
+.modal {
+   position: relative;
+   width: min(480px, 100%);
+   height: min(720px, 100%);
+   background: #fff;
+   border-radius: 12px;
+   overflow: hidden;
+   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.frame {
+   width: 100%;
+   height: 100%;
+   border: 0;
+   display: block;
+}
+
+.close {
+   position: absolute;
+   top: 8px;
+   right: 8px;
+   z-index: 1;
+   width: 32px;
+   height: 32px;
+   border: 0;
+   border-radius: 50%;
+   background: rgba(0, 0, 0, 0.55);
+   color: #fff;
+   font-size: 20px;
+   line-height: 1;
+   cursor: pointer;
+}
+
+.verifying {
+   height: 100%;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   gap: 14px;
+   font-weight: 600;
+   color: #1a1a2e;
+}
+
+.spinner {
+   width: 28px;
+   height: 28px;
+   border: 3px solid #d8dbe2;
+   border-top-color: #1cb84f;
+   border-radius: 50%;
+   animation: accessSpin 0.8s linear infinite;
+}
+
+@keyframes accessSpin {
+   to {
+      transform: rotate(360deg);
+   }
+}
