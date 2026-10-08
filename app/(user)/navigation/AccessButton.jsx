@@ -54,12 +54,14 @@ export default function AccessButton({ onDone }) {
     <button
       type="button"
       className={styles.accessButton}
-      disabled={access.activating}
+      disabled={access.activating || Boolean(access.checkout)}
       onClick={async () => {
         const r = await activateWithToast();
         if (r.ok) onDone?.();
       }}>
-      {access.activating ? "ACTIVATING…" : "ACTIVATE SUBSCRIPTION"}
+      {access.activating || access.checkout
+        ? "PROCESSING…"
+        : "ACTIVATE SUBSCRIPTION"}
     </button>
   );
 }

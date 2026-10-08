@@ -307,3 +307,144 @@ BEGIN
 
   RETURN v_end;
 END $$;
+
+-- 1. Universal feature flags
+create table public.feature_flags (
+  key         text primary key,
+  enabled     boolean not null default false,
+  config      jsonb not null default '{}'::jsonb,
+  description text,
+  updated_at  timestamptz not null default now(),
+  updated_by  text
+);
+
+insert into public.feature_flags (key, enabled, description)
+values (
+  'contact_access_payment_required',
+  false,
+  'When true, contact access must be paid for via Pesapal. When false, free grant route is allowed.'
+)
+on conflict (key) do nothing;
+
+-- 2. Access payments (separate from payments_table)
+create table public.access_payments (
+  payment_id        bigint generated always as identity primary key,
+  lister_uuid       uuid not null references public.users_table(lister_uuid),
+  plan_name         text not null references public.access_plans(plan_name),
+  duration_minutes  integer not null check (duration_minutes > 0),
+  amount_kes        integer not null check (amount_kes > 0),
+  provider          text not null default 'pesapal',
+  merchant_reference text not null unique,
+  provider_ref      text unique,
+  provider_receipt  text,
+  payment_method    text,
+  status            text not null default 'pending'
+    check (status in ('pending','completed','failed','reversed','expired','needs_review')),
+  failure_reason    text,
+  raw_callback      jsonb,
+  grant_id          bigint,
+  created_at        timestamptz not null default now(),
+  updated_at        timestamptz,
+  settled_at        timestamptz
+);
+
+create index access_payments_lister_status_idx
+  on public.access_payments (lister_uuid, status);
+
+-- 3. Tie grants to payments, one grant per payment
+alter table public.contact_access_grants
+  add constraint contact_access_grants_payment_id_fkey
+  foreign key (payment_id) references public.access_payments(payment_id);
+
+create unique index contact_access_grants_payment_id_key
+  on public.contact_access_grants (payment_id)
+  where payment_id is not null;
+
+-- 4. Block anon-key access to the new tables. Service role bypasses RLS,
+--    so no code changes are needed.
+alter table public.feature_flags   enable row level security;
+alter table public.access_payments enable row level security;
+
+-- 5. Settlement RPC (single mutation point, mirrors settle_payment)
+create or replace function public.settle_access_payment(
+  p_payment_id       bigint,
+  p_status           text,
+  p_provider_receipt text  default null,
+  p_payment_method   text  default null,
+  p_failure_reason   text  default null,
+  p_raw              jsonb default null
+) returns text
+language plpgsql
+set search_path = public
+as $$
+declare
+  v_current  text;
+  v_lister   uuid;
+  v_plan     text;
+  v_minutes  integer;
+  v_start    timestamptz;
+  v_end      timestamptz;
+  v_grant_id bigint;
+begin
+  if p_status not in ('completed','failed','reversed','expired','needs_review') then
+    raise exception 'invalid terminal status %', p_status;
+  end if;
+
+  select status, lister_uuid, plan_name, duration_minutes
+    into v_current, v_lister, v_plan, v_minutes
+    from access_payments
+   where payment_id = p_payment_id
+     for update;
+
+  if not found then
+    raise exception 'access_payments row % not found', p_payment_id;
+  end if;
+
+  if not (
+       v_current = 'pending'
+    or (v_current = 'expired'   and p_status = 'completed')
+    or (v_current = 'completed' and p_status = 'reversed')
+  ) then
+    return 'already_settled';
+  end if;
+
+  update access_payments
+     set status           = p_status,
+         provider_receipt = coalesce(p_provider_receipt, provider_receipt),
+         payment_method   = coalesce(p_payment_method, payment_method),
+         failure_reason   = coalesce(p_failure_reason, failure_reason),
+         raw_callback     = coalesce(p_raw, raw_callback),
+         settled_at       = case when v_current = 'completed'
+                                 then settled_at else now() end,
+         updated_at       = now()
+   where payment_id = p_payment_id;
+
+  if p_status = 'completed' then
+    -- Grant from the snapshot on the payment row, not the live plan.
+    perform pg_advisory_xact_lock(hashtext(v_lister::text));
+
+    select greatest(coalesce(max(expires_at), now()), now())
+      into v_start
+      from contact_access_grants
+     where lister_uuid = v_lister;
+
+    v_end := v_start + make_interval(mins => v_minutes);
+
+    insert into contact_access_grants
+      (lister_uuid, plan_name, starts_at, expires_at, source, payment_id)
+    values
+      (v_lister, v_plan, v_start, v_end, 'pesapal', p_payment_id)
+    returning grant_id into v_grant_id;
+
+    update access_payments set grant_id = v_grant_id
+     where payment_id = p_payment_id;
+
+  elsif p_status = 'reversed' then
+    update contact_access_grants
+       set expires_at = least(expires_at, now())
+     where payment_id = p_payment_id;
+  end if;
+
+  return p_status;
+end;
+$$;

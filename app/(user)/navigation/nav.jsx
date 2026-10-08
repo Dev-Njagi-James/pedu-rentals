@@ -19,6 +19,7 @@ import { clearContactCache } from "@/lib/contact/fetchContact";
 import AccessButton from "./AccessButton";
 import { resetAccess } from "@/lib/contact/accessStore";
 import AccessBadge from "./AccessBadge";
+import AccessCheckoutModal from "./AccessCheckoutModal";
 
 // ────────────────────────────────────────────────────────────────────────
 // Config — single source of truth for nav content. Desktop bar, mobile
@@ -653,11 +654,6 @@ export default function AppNav() {
         </div>
 
         <div className={styles.drawerBody}>
-          {canActivate && role === "lister" && (
-            <div className={styles.accessRow}>
-              <AccessButton onDone={closeMenu} />
-            </div>
-          )}
           <ul className={styles.drawerLinks}>
             {visiblePrimaryItems.map((item) => {
               if (item.key === "dashboard" && role !== "admin") {
@@ -705,6 +701,12 @@ export default function AppNav() {
               );
             })}
           </ul>
+
+          {canActivate && role === "lister" && (
+            <div className={styles.accessRow}>
+              <AccessButton onDone={closeMenu} />
+            </div>
+          )}
 
           {canActivate && role !== "lister" && (
             <div className={styles.accessRow}>
@@ -813,6 +815,7 @@ export default function AppNav() {
           )}
         </div>
       </aside>
+      <AccessCheckoutModal />
     </>
   );
 }
