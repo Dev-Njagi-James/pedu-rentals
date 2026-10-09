@@ -1,0 +1,409 @@
+.backdrop {
+   position: fixed;
+   inset: 0;
+   z-index: 1000;
+   display: grid;
+   place-items: center;
+   padding: 24px;
+   background: rgb(17 24 39 / 54%);
+   backdrop-filter: blur(5px);
+}
+
+.dialog {
+   position: relative;
+   display: grid;
+   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+   width: min(900px, 100%);
+   max-height: min(660px, calc(100dvh - 48px));
+   min-height: 460px;
+   overflow: auto;
+   border: 1px solid rgb(15 23 42 / 5%);
+   border-radius: 10px;
+   background: #fff;
+   box-shadow: 0 28px 90px rgb(15 23 42 / 22%);
+   overflow-x: hidden;
+   overflow-y: auto;
+   scrollbar-width: thin;
+   scrollbar-color: rgb(102 112 133 / 48%) transparent;
+}
+
+.dialog::-webkit-scrollbar {
+   width: 4px;
+}
+
+.dialog::-webkit-scrollbar-track {
+   margin-block: 28px;
+   /* matches the desktop card's 28px radius */
+   border-radius: 28px;
+   background: transparent;
+}
+
+.dialog::-webkit-scrollbar-thumb {
+   min-height: 32px;
+   border: 1px solid transparent;
+   border-radius: 999px;
+   background: rgb(102 112 133 / 48%);
+   background-clip: content-box;
+}
+
+.dialog::-webkit-scrollbar-button {
+   display: none;
+   width: 0;
+   height: 0;
+}
+
+.copyPanel {
+   display: flex;
+   flex-direction: column;
+   align-items: flex-start;
+   justify-content: center;
+   padding: clamp(32px, 5vw, 72px);
+}
+
+.brand {
+   margin-bottom: clamp(14px, 4vw, 54px);
+   color: #1769e8;
+   font-size: 1rem;
+   font-family: var(--font-geist-sans);
+   font-weight: 750;
+   letter-spacing: -0.035em;
+}
+
+.title {
+   max-width: 13ch;
+   margin: 0;
+   color: #111827;
+   font-size: clamp(2.25rem, 4.4vw, 3.75rem);
+   font-family: var(--font-geist-sans);
+   font-weight: 760;
+   letter-spacing: -0.055em;
+   line-height: 1.04;
+}
+
+.description {
+   max-width: 42ch;
+   margin: 22px 0 0;
+   font-family: var(--font-inter);
+   color: #667085;
+   font-size: clamp(1rem, 1.4vw, 1.2rem);
+   line-height: 1.65;
+}
+
+.benefits {
+   display: grid;
+   gap: 14px;
+   width: 100%;
+   margin: 24px 0 0;
+   padding: 0;
+   color: #172033;
+   font-size: 0.8rem;
+   list-style: none;
+   font-family: var(--font-inter);
+}
+
+.benefits li {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+}
+
+.check {
+   display: grid;
+   flex: 0 0 26px;
+   width: 26px;
+   height: 26px;
+   place-items: center;
+   border-radius: 50%;
+   background: #e8f3ff;
+   color: #1769e8;
+   font-size: 0.9rem;
+   font-weight: 800;
+}
+
+.note {
+   width: 100%;
+   margin: 22px 0 0;
+   padding: 12px 14px;
+   border-radius: 12px;
+   background: #eff6ff;
+   color: #1457b8;
+   font-size: 0.94rem;
+   font-family: var(--font-inter);
+   line-height: 1.5;
+}
+
+.helper {
+   max-width: 44ch;
+   margin: 18px 0 0;
+   color: #667085;
+   font-size: 0.92rem;
+   line-height: 1.55;
+   font-family: var(--font-inter);
+}
+
+.progress {
+   display: flex;
+   gap: 9px;
+   align-items: center;
+   margin-top: 30px;
+}
+
+.progressDot {
+   width: 9px;
+   height: 9px;
+   border-radius: 50%;
+   background: #d8dee8;
+}
+
+.progressDotActive {
+   width: 11px;
+   height: 11px;
+   background: #1769e8;
+}
+
+.stepActions,
+.finalActions {
+   display: flex;
+   flex-direction: column;
+   align-items: stretch;
+   width: min(100%, 390px);
+   gap: 12px;
+   font-family: var(--font-geist-sans);
+   margin-top: 24px;
+}
+
+.primaryButton {
+   display: inline-flex;
+   min-height: 48px;
+   align-items: center;
+   justify-content: center;
+   padding: 8px 10px;
+   border: 0;
+   border-radius: 12px;
+   background: #1769e8;
+   color: #fff;
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.9rem;
+   font-weight: 700;
+   text-align: center;
+   text-decoration: none;
+   transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.primaryButton:hover {
+   transform: translateY(-1px);
+   background: #0f57c9;
+}
+
+.primaryButton:focus-visible,
+.textButton:focus-visible,
+.backButton:focus-visible,
+.accountLink:focus-visible,
+.closeButton:focus-visible {
+   outline: 3px solid #8bb9ff;
+   outline-offset: 3px;
+}
+
+.textButton,
+.accountLink,
+.backButton {
+   border: 0;
+   background: transparent;
+   color: #1769e8;
+   cursor: pointer;
+   font: inherit;
+   font-size: 0.94rem;
+   text-align: center;
+   text-decoration: none;
+}
+
+.textButton:hover,
+.accountLink:hover,
+.backButton:hover {
+   text-decoration: underline;
+}
+
+.backButton {
+   align-self: flex-start;
+   font-family:var(--font-geist-sans);
+   margin-top: 22px;
+   padding: 0;
+}
+
+.imagePanel {
+   position: relative;
+   min-height: 100%;
+   overflow: hidden;
+   margin: 12px;
+   border-radius: 14px;
+   background: #e8edf5;
+}
+
+.image {
+   object-fit: cover;
+}
+
+.closeButton {
+   position: absolute;
+   z-index: 2;
+   top: 22px;
+   right: 22px;
+   display: grid;
+   width: 40px;
+   height: 40px;
+   place-items: center;
+   border: 1px solid rgb(15 23 42 / 8%);
+   border-radius: 50%;
+   background: rgb(255 255 255 / 92%);
+   color: #344054;
+   cursor: pointer;
+   font-size: 1.5rem;
+   line-height: 1;
+}
+
+@media (max-width: 1100px) and (min-width: 721px) {
+   .backdrop {
+      padding: 28px;
+   }
+
+   .dialog {
+      width: min(940px, 100%);
+      min-height: 500px;
+      max-height: calc(100dvh - 56px);
+      border-radius: 24px;
+   }
+
+   .copyPanel {
+      padding: clamp(28px, 4vw, 48px);
+   }
+
+   .title {
+      font-size: clamp(2rem, 4vw, 3rem);
+   }
+
+   .imagePanel {
+      margin: 10px;
+      border-radius: 18px;
+   }
+}
+
+@media (max-width: 720px) {
+   .backdrop {
+      padding: 12px;
+      align-items: center;
+   }
+
+   .dialog {
+      display: flex;
+      flex-direction: column-reverse;
+      width: min(520px, 100%);
+      max-height: calc(100dvh - 24px);
+      min-height: 0;
+      border-radius: 22px;
+   }
+
+   .copyPanel {
+      padding: 24px 22px 22px;
+   }
+
+   .brand {
+      margin-bottom: 18px;
+      font-size: 1rem;
+   }
+
+   .title {
+      max-width: 18ch;
+      font-size: clamp(1.8rem, 8vw, 2.4rem);
+   }
+
+   .description {
+      margin-top: 13px;
+      font-size: 0.97rem;
+      line-height: 1.55;
+   }
+
+   .benefits {
+      gap: 11px;
+      margin-top: 18px;
+      font-size: 0.94rem;
+   }
+
+   .note {
+      margin-top: 16px;
+      font-size: 0.9rem;
+   }
+
+   .helper {
+      margin-top: 14px;
+      font-size: 0.88rem;
+   }
+
+   .progress {
+      margin-top: 20px;
+   }
+
+   .stepActions,
+   .finalActions {
+      width: 100%;
+      gap: 10px;
+      margin-top: 18px;
+   }
+
+   .primaryButton {
+      min-height: 50px;
+   }
+
+   .backButton {
+      margin-top: 18px;
+   }
+
+   .imagePanel {
+      flex: 0 0 auto;
+      height: clamp(150px, 27vh, 220px);
+      min-height: 0;
+      margin: 10px 10px 0;
+      border-radius: 16px;
+   }
+
+   .closeButton {
+      top: 20px;
+      right: 20px;
+      width: 36px;
+      height: 36px;
+   }
+}
+
+@media (max-height: 700px) and (max-width: 720px) {
+   .dialog {
+      overflow-y: auto;
+   }
+
+   .imagePanel {
+      height: 135px;
+   }
+
+   .copyPanel {
+      padding-top: 18px;
+      padding-bottom: 18px;
+   }
+
+   .brand {
+      margin-bottom: 12px;
+   }
+
+   .progress {
+      margin-top: 14px;
+   }
+
+   .stepActions,
+   .finalActions {
+      margin-top: 12px;
+   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+   .primaryButton {
+      transition: none;
+   }
+}

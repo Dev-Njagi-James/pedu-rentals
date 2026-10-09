@@ -7,6 +7,7 @@ import Script from 'next/script';
 import { ClerkProvider, GoogleOneTap } from "@clerk/nextjs";
 import { PostHogProvider } from '@/lib/analytics/PostHogProvider';
 import Providers from './providers';
+import OnboardingGate from "./OnboardingGate";
 import FeedbackBanner from './FeedbackBanner';
 
 const geistSans = Geist({
@@ -61,7 +62,10 @@ export default function RootLayout({ children }) {
             <Toaster position="top-right" duration={4000} richColors />
 
             <main>
-              <Providers>{children}</Providers>
+              <Providers>
+                {children}
+                <OnboardingGate />
+              </Providers>
             </main>
 
             <Script
