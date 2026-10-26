@@ -15,7 +15,7 @@ export const proxy = clerkMiddleware(async (auth, request) => {
   await auth.protect();
 
   const { sessionClaims } = await auth();
-  const role = normalizeRole(sessionClaims?.publicMetadata?.role);
+  const role = normalizeRole(sessionClaims?.metadata?.role);
 
   if (isAdminPage && role !== "admin") {
     return NextResponse.redirect(new URL(homeForRole(role), request.url));
