@@ -1,0 +1,552 @@
+.container {
+   padding: 5px 1px;
+   min-height: 100vh;
+   color: #0f172a;
+}
+
+.header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 24px;
+}
+
+.title {
+   font-size: 24px;
+   font-weight: 700;
+   letter-spacing: -0.02em;
+   font-family: var(--font-geist-sans);
+}
+
+.timeFilter {
+   display: flex;
+   background: var(--darkBackground);
+   border: 1px solid var(--background);
+   border-radius: 8px;
+   padding: 4px;
+   gap: 4px;
+}
+
+.filterBtn {
+   background: transparent;
+   border: none;
+   padding: 6px 14px;
+   font-size: 13px;
+   font-weight: 500;
+   color: #64748b;
+   border-radius: 6px;
+   cursor: pointer;
+   transition: all 0.2s ease;
+   font-family: var(--font-geist-sans);
+}
+
+.filterBtn:hover {
+   background: var(--secondary);
+   color: black;
+}
+
+.activeFilter {
+   background: var(--primary);
+   color: #ffffff;
+}
+
+/* Row 1 Grid */
+.topGrid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 16px;
+   margin-bottom: 24px;
+}
+
+.metricCard {
+   background: var(--sidebar);
+   border: 1px solid #e2e8f0;
+   border-radius: 12px;
+   padding: 10px 20px;
+}
+
+.cardHeader {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-bottom: 12px;
+}
+
+.cardLabel {
+   font-size: 13px;
+   color: #64748b;
+   font-weight: 500;
+   font-family: var(--font-geist-sans);
+}
+
+.iconBox {
+   width: 32px;
+   height: 32px;
+   border-radius: 8px;
+   background: #f1f5f9;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   font-size: 14px;
+}
+
+.iconOrange {
+   background: #fef3c7;
+   color: #d97706;
+}
+
+.metricRow {
+   display: flex;
+   align-items: baseline;
+   gap: 8px;
+   margin-bottom: 16px;
+   font-family: var(--font-inter);
+}
+
+.primaryMetric {
+   font-size: 32px;
+   font-weight: 800;
+   letter-spacing: -0.03em;
+}
+
+.metricUnit {
+   font-size: 13px;
+   color: #94a3b8;
+}
+
+.cardFooter {
+   display: flex;
+   display: none;
+   align-items: center;
+   gap: 10px;
+   font-size: 12px;
+   font-family: var(--font-geist-sans);
+}
+
+.badge {
+   padding: 3px 8px;
+   border-radius: 6px;
+   font-size: 11px;
+   font-weight: 600;
+}
+
+.badgeGreen {
+   background: #dcfce7;
+   color: #15803d;
+}
+
+.subtext {
+   color: #94a3b8;
+}
+
+/* Section Divider */
+.sectionDivider {
+   display: flex;
+   justify-content: space-between;
+   font-size: 11px;
+   font-family: var(--font-geist-mono);
+   font-weight: 700;
+   letter-spacing: 0.08em;
+   color: #94a3b8;
+   margin-bottom: 12px;
+}
+
+.metaInfo {
+   font-weight: 400;
+   letter-spacing: normal;
+}
+
+/* Row 2 Grid */
+.visitorCardsGrid {
+   display: grid;
+   grid-template-columns: repeat(2, 1fr);
+   gap: 16px;
+   margin-bottom: 24px;
+}
+
+.visitorCard {
+   background: var(--sidebar);
+   border: 1px solid var(--background);
+   border-radius: 12px;
+   padding: 20px;
+}
+
+.visitorValueRow {
+   display: flex;
+   align-items: center;
+   gap: 12px;
+   margin: 8px 0;
+}
+
+.visitorValue {
+   font-size: 28px;
+   font-weight: 800;
+   font-family: var(--font-inter);
+}
+
+.visitorUnit {
+   font-size: 13px;
+   font-family: var(--font-inter);
+   color: #94a3b8;
+}
+
+.visitorNote {
+   font-size: 12px;
+   font-family: var(--font-geist-mono);
+   color: #64748b;
+   margin: 0;
+}
+
+/* Chart Sections (Row 3 & 4) */
+.chartSection {
+   background: var(--sidebar);
+   border: 1px solid var(--background);
+   border-radius: 12px;
+   padding: 24px;
+   margin-bottom: 24px;
+}
+
+.chartHeader {
+   display: flex;
+   justify-content: space-between;
+   align-items: flex-start;
+   margin-bottom: 20px;
+}
+
+.chartTitle {
+   font-size: 16px;
+   font-weight: 700;
+   font-family: var(--font-geist-sans);
+   margin: 0 0 4px 0;
+   display: flex;
+   align-items: center;
+   gap: 8px;
+}
+
+.pillTag {
+   background: #f1f5f9;
+   color: #475569;
+   font-size: 11px;
+   padding: 2px 8px;
+   border-radius: 4px;
+   font-weight: 600;
+}
+
+.chartSub {
+   font-size: 13px;
+   color: #64748b;
+   margin: 0;
+}
+
+.chartLegend {
+   display: flex;
+   gap: 16px;
+   font-family: var(--font-inter);
+   font-size: 13px;
+   font-weight: 500;
+}
+
+.legendItem {
+   display: flex;
+   align-items: center;
+   gap: 6px;
+}
+
+.dot {
+   width: 8px;
+   height: 8px;
+   border-radius: 50%;
+}
+
+.dotBlue {
+   background: #2563eb;
+}
+
+.dotOrange {
+   background: #f59e0b;
+}
+
+.svgContainer {
+   width: 100%;
+   height: 180px;
+   margin-bottom: 20px;
+}
+
+.chartSvg {
+   width: 100%;
+   height: 100%;
+   overflow: visible;
+}
+
+.chartFooterGrid {
+   display: grid;
+   grid-template-columns: repeat(4, 1fr);
+   gap: 16px;
+   padding-top: 16px;
+   border-top: 1px solid #f1f5f9;
+}
+
+.footerLabel {
+   font-size: 12px;
+   color: #64748b;
+   font-family: var(--font-inter);
+   display: block;
+   margin-bottom: 4px;
+}
+
+.footerValue {
+   font-size: 16px;
+   font-family: var(--font-geist-sans);
+   font-weight: 700;
+   margin: 0;
+}
+
+.meanBadge {
+   font-size: 12px;
+   color: #64748b;
+   font-family: var(--font-geist-mono);
+   background: #f8fafc;
+   padding: 4px 10px;
+   border-radius: 6px;
+   border: 1px solid #e2e8f0;
+}
+
+/* Bar Chart Section */
+.barChartContainer {
+   display: flex;
+   align-items: flex-end;
+   justify-content: space-between;
+   height: 180px;
+   padding: 24px 0 0 0;
+   gap: 3px;
+   /* Tight gaps between bars like the reference image */
+   position: relative;
+   width: 100%;
+}
+
+.barColumn {
+   flex: 1;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   height: 100%;
+   justify-content: flex-end;
+   position: relative;
+}
+
+.bar {
+   width: 100%;
+   /* Spans full width of column minus gap */
+   border-radius: 2px 2px 0 0;
+   /* Tight rounded corners like the target design */
+   transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+   cursor: pointer;
+}
+
+.bar:hover {
+   opacity: 1 !important;
+   background-color: #0f172a !important;
+}
+
+/* Axis Line & Flat Labels */
+.xAxisLine {
+   width: 100%;
+   height: 1px;
+   background-color: #e2e8f0;
+   margin-top: 4px;
+}
+
+.barLabelArea {
+   display: flex;
+   justify-content: space-between;
+   width: 100%;
+   padding-top: 8px;
+}
+
+.axisLabel {
+   font-family: var(--font-geist-mono);
+   font-size: 11px;
+   color: #64748b;
+   white-space: nowrap;
+}
+
+.interactiveChartWrapper {
+   position: relative;
+   width: 100%;
+}
+
+.chartTooltip {
+   position: absolute;
+   top: -12px;
+   right: 0;
+   background: #0f172a;
+   color: #ffffff;
+   padding: 10px 14px;
+   border-radius: 8px;
+   font-size: 12px;
+   box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+   pointer-events: none;
+   z-index: 20;
+   line-height: 1.5;
+}
+
+.tooltipTotal {
+   color: #93c5fd;
+}
+
+.tooltipNew {
+   color: #fcd34d;
+}
+
+.hotspotDot {
+   fill: #ffffff;
+   stroke: #2563eb;
+   stroke-width: 2.5;
+   cursor: pointer;
+   transition: r 0.2s ease, fill 0.2s ease;
+}
+
+.hotspotDot:hover {
+   r: 8;
+   fill: #2563eb;
+}
+
+/* Bottom Grid (Row 5) */
+.bottomGrid {
+   display: grid;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 16px;
+}
+
+.growthCard {
+   position: relative;
+   /* Crucial: Keeps the absolute tooltip locked inside the card */
+   background: var(--sidebar);
+   border: 1px solid #e2e8f0;
+   border-radius: 12px;
+   padding: 20px;
+   display: flex;
+   flex-direction: column;
+   justify-content: space-between;
+   overflow: hidden;
+   /* Ensures absolute elements don't spill out */
+}
+
+.growthTooltip {
+   position: absolute;
+   top: 16px;
+   right: 20px;
+   background: #0f172a;
+   color: #ffffff;
+   padding: 6px 12px;
+   border-radius: 6px;
+   font-size: 11px;
+   font-family: var(--font-geist-sans);
+   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+   pointer-events: none;
+   z-index: 30;
+   text-align: right;
+   animation: fadeIn 0.15s ease-in-out;
+}
+
+.tooltipDate {
+   color: #94a3b8;
+   font-size: 10px;
+   display: block;
+}
+
+@keyframes fadeIn {
+   from {
+      opacity: 0;
+      transform: translateY(-3px);
+   }
+
+   to {
+      opacity: 1;
+      transform: translateY(0);
+   }
+}
+
+.growthHeader {
+   display: flex;
+   justify-content: space-between;
+   align-items: flex-start;
+   margin-bottom: 12px;
+}
+
+.growthTitle {
+   font-size: 14px;
+   font-family: var(--font-geist-sans);
+   font-weight: 700;
+   margin: 0 0 2px 0;
+}
+
+.growthSub {
+   font-size: 11px;
+   color: #64748b;
+   font-family: var(--font-inter);
+   margin: 0;
+}
+
+.areaContainer {
+   width: 100%;
+   height: 80px;
+   /* Must have an explicit height! */
+   margin-bottom: 12px;
+   position: relative;
+}
+
+.areaSvg {
+   width: 100%;
+   height: 100%;
+   display: block;
+}
+
+.growthFooter {
+   display: flex;
+   justify-content: space-between;
+   font-family: var(--font-geist-sans);
+   font-size: 12px;
+   color: #64748b;
+   padding-top: 8px;
+   border-top: 1px solid #f1f5f9;
+}
+
+.boldText {
+   font-weight: 700;
+   color: #0f172a;
+   font-family: var(--font-geist-mono);
+}
+
+.badge {
+   font-family: var(--font-geist-sans);
+}
+
+/* Mobile & Tablet Responsiveness */
+@media (max-width: 1024px) {
+
+   .topGrid,
+   .bottomGrid {
+      grid-template-columns: 1fr;
+   }
+
+   .visitorCardsGrid {
+      grid-template-columns: 1fr;
+   }
+
+   .chartFooterGrid {
+      grid-template-columns: repeat(2, 1fr);
+   }
+}
+
+@media (max-width: 640px) {
+   .header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+   }
+
+   .chartFooterGrid {
+      grid-template-columns: 1fr;
+   }
+}

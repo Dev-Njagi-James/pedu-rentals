@@ -14,6 +14,7 @@ export default function AuthComplete() {
   const router = useRouter();
   const { isLoaded, isSignedIn, user } = useUser();
   const started = useRef(false);
+  const { getToken } = useAuth();
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -49,7 +50,7 @@ export default function AuthComplete() {
         } catch {}
         invalidateAnalyticsCache();
         invalidateMyListingsCache();
-        await user?.reload();
+        await getToken({ skipCache: true });
         router.replace(homeForRole(data?.role));
       })
 

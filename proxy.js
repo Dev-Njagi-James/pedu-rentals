@@ -1,5 +1,6 @@
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { normalizeRole, homeForRole } from "@/lib/auth/routes";
 
 const matchesPath = (pathname, base) =>
   pathname === base || pathname.startsWith(`${base}/`);
@@ -9,15 +10,19 @@ export const proxy = clerkMiddleware(async (auth, request) => {
   const isAdminPage = matchesPath(pathname, "/Admin");
   const isListerPage = matchesPath(pathname, "/Lister");
 
-  if (isAdminPage || isListerPage) {
-    await auth.protect();
+  if (!isAdminPage && !isListerPage) return;
+
+  await auth.protect();
+
+  const { sessionClaims } = await auth();
+  const role = normalizeRole(sessionClaims?.publicMetadata?.role);
+
+  if (isAdminPage && role !== "admin") {
+    return NextResponse.redirect(new URL(homeForRole(role), request.url));
   }
 
-  if (isAdminPage) {
-    const { sessionClaims } = await auth();
-    if (sessionClaims?.metadata?.role !== "admin") {
-      return NextResponse.redirect(new URL("/Lister", request.url));
-    }
+  if (isListerPage && role !== "lister") {
+    return NextResponse.redirect(new URL(homeForRole(role), request.url));
   }
 });
 

@@ -3,7 +3,6 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useSignUp, useSignIn } from "@clerk/nextjs/legacy";
-import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
 import "./css/AuthForm.css";
 import "./css/AuthForm.v2.css";
@@ -11,6 +10,7 @@ import { createBrowserSupabaseClient } from "@/lib/supabase/client";
 import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
 import { invalidateAnalyticsCache } from "@/lib/cache/analyticsCache";
 import { homeForRole } from "@/lib/auth/routes";
+import { useUser, useAuth } from "@clerk/nextjs";
 
 const supabase = createBrowserSupabaseClient();
 
@@ -301,6 +301,8 @@ export default function AuthForm() {
   const [lockedOut, setLockedOut] = useState(false);
   const [lockoutRemaining, setLockoutRemaining] = useState(0);
 
+  const { getToken } = useAuth();
+
   useEffect(() => {
     if (resendCooldown <= 0) return;
     const timer = setInterval(() => {
@@ -531,11 +533,13 @@ export default function AuthForm() {
       }
 
       const syncData = await syncResponse.json().catch(() => null);
+      console.log("SYNC ROLE:", syncData?.role);
 
       invalidateAnalyticsCache();
       invalidateMyListingsCache();
-      await user?.reload();
-      router.push(homeForRole(syncData?.role));
+
+      await getToken({ skipCache: true });
+      router.replace(homeForRole(syncData?.role));
     } catch (err) {
       const nextAttempts = failedAttempts + 1;
       setFailedAttempts(nextAttempts);

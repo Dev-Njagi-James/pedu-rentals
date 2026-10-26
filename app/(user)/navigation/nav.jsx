@@ -20,6 +20,12 @@ import AccessButton from "./AccessButton";
 import { resetAccess } from "@/lib/contact/accessStore";
 import AccessBadge from "./AccessBadge";
 import AccessCheckoutModal from "./AccessCheckoutModal";
+import {
+  STAFF_ROLES,
+  ROLE_DASHBOARDS,
+  resolveAccountItems,
+  resolveUtilityItems,
+} from "./navConfig";
 
 // ────────────────────────────────────────────────────────────────────────
 // Config — single source of truth for nav content. Desktop bar, mobile
@@ -28,10 +34,9 @@ import AccessCheckoutModal from "./AccessCheckoutModal";
 // ────────────────────────────────────────────────────────────────────────
 
 const NAV_BREAKPOINT = 1024; // matches CSS module — keep both in sync
-const STAFF_ROLES = ["lister", "admin"];
 
 function getPrimaryNavItems(role) {
-  const dashboardHref = role === "admin" ? "/Admin" : "/Lister";
+  const dashboardHref = ROLE_DASHBOARDS[role]?.base ?? "/";
   return [
     { key: "properties", label: "Properties", href: "/" },
     {
@@ -44,67 +49,6 @@ function getPrimaryNavItems(role) {
     { key: "about", label: "About", href: "/about" },
   ];
 }
-const DASHBOARD_SUBLINKS = [
-  { id: "listings", label: "Listings" },
-  { id: "add", label: "Add Listing" },
-  { id: "analytics", label: "Analytics" },
-  { id: "account", label: "Account" },
-  { id: "pricing", label: "Pricing" },
-  { id: "help", label: "Help" },
-];
-
-// Insights and Notifications used to be their own top-bar icons. They now
-// live here instead, alongside the account-management links — one list
-// feeds both the desktop dropdown and the mobile drawer's account section.
-const ACCOUNT_MENU_ITEMS = [
-  {
-    key: "insights",
-    label: "Insights",
-    href: "/Lister?tab=help",
-    icon: "insights",
-    roles: STAFF_ROLES,
-  },
-  {
-    key: "notifications",
-    label: "Notifications",
-    href: "/Lister?tab=account",
-    icon: "bell",
-    showBadge: true,
-    roles: STAFF_ROLES,
-  },
-  {
-    key: "profile",
-    label: "Profile",
-    href: "/Lister?tab=account",
-    icon: "user",
-    roles: STAFF_ROLES,
-  },
-  {
-    key: "settings",
-    label: "Settings",
-    href: "/Lister?tab=account",
-    icon: "settings",
-    roles: STAFF_ROLES,
-  },
-  {
-    key: "support",
-    label: "Help & Support",
-    href: "/Lister?tab=help",
-    icon: "help",
-    roles: STAFF_ROLES,
-  },
-];
-
-// Anything signed-in-only that ISN'T an account concern stays a plain nav item.
-const STANDALONE_UTILITY_ITEMS = [
-  {
-    key: "boards",
-    label: "Boards",
-    href: "/boards",
-    icon: "boards",
-    roles: STAFF_ROLES,
-  },
-];
 
 // ────────────────────────────────────────────────────────────────────────
 // Tiny inline icon set — outline style, no external icon dependency.
@@ -305,7 +249,6 @@ export default function AppNav() {
   const [profileOrgName, setProfileOrgName] = useState(null);
 
   const searchParams = useSearchParams();
-  const activeLisTab = searchParams.get("tab") ?? "listings";
   const [dashboardOpen, setDashboardOpen] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
 
@@ -316,7 +259,7 @@ export default function AppNav() {
       return;
     }
     let cancelled = false;
-    const MAX_RETRIES = 2;
+    const MAX_RETRIES = user?.publicMetadata?.role === "admin" ? 0 : 2;
     const RETRY_DELAY_MS = 1500;
     (async () => {
       try {
@@ -341,7 +284,7 @@ export default function AppNav() {
     return () => {
       cancelled = true;
     };
-  }, [isSignedIn]);
+  }, [isSignedIn, user?.publicMetadata?.role]);
 
   const pathname = usePathname();
   const router = useRouter();
@@ -349,20 +292,28 @@ export default function AppNav() {
   const isMobile = useIsMobile();
 
   const role = user?.publicMetadata?.role;
+  const dashboard = ROLE_DASHBOARDS[role];
+  const activeTab = searchParams.get("tab") ?? dashboard?.defaultTab;
   const primaryNavItems = useMemo(() => getPrimaryNavItems(role), [role]);
   const canSee = (item) =>
     !item.roles || (isLoaded && isSignedIn && item.roles.includes(role));
   const visiblePrimaryItems = primaryNavItems.filter(canSee);
-  const visibleAccountItems = ACCOUNT_MENU_ITEMS.filter(canSee);
-  const visibleUtilityItems = STANDALONE_UTILITY_ITEMS.filter(canSee);
+  const visibleAccountItems = useMemo(
+    () => resolveAccountItems(isLoaded && isSignedIn ? role : undefined),
+    [isLoaded, isSignedIn, role],
+  );
+  const visibleUtilityItems = useMemo(
+    () => resolveUtilityItems(isLoaded && isSignedIn ? role : undefined),
+    [isLoaded, isSignedIn, role],
+  );
   const showUnreadDot =
     hasUnread && visibleAccountItems.some((i) => i.key === "notifications");
   const canUpgrade = isLoaded && isSignedIn && !STAFF_ROLES.includes(role);
   const canActivate = isLoaded && isSignedIn && role !== "admin";
 
   useEffect(() => {
-    setDashboardOpen(pathname === "/Lister");
-  }, [pathname]);
+     setDashboardOpen(!!dashboard && pathname === dashboard.base);
+  }, [pathname, dashboard]);
 
   const displayName =
     profileUsername || user?.primaryEmailAddress?.emailAddress || "Account";
@@ -568,7 +519,7 @@ export default function AppNav() {
                 aria-haspopup="menu"
                 aria-expanded={accountMenuOpen}
                 aria-label="Account menu">
-                <Avatar showDot={hasUnread} />
+                <Avatar showDot={showUnreadDot} />
                 <Icon.chevronDown />
               </button>
 
@@ -656,8 +607,8 @@ export default function AppNav() {
         <div className={styles.drawerBody}>
           <ul className={styles.drawerLinks}>
             {visiblePrimaryItems.map((item) => {
-              if (item.key === "dashboard" && role !== "admin") {
-                const dashboardActive = pathname === "/Lister";
+              if (item.key === "dashboard" && dashboard) {
+                const dashboardActive = pathname === dashboard.base;
                 return (
                   <li key={item.key}>
                     <button
@@ -674,11 +625,11 @@ export default function AppNav() {
                     </button>
                     {dashboardOpen && (
                       <ul className={styles.drawerSublinks}>
-                        {DASHBOARD_SUBLINKS.map((sub) => (
+                        {dashboard.sublinks.map((sub) => (
                           <li key={sub.id}>
                             <Link
-                              href={`/Lister?tab=${sub.id}`}
-                              className={`${styles.drawerLink} ${dashboardActive && activeLisTab === sub.id ? styles.drawerLinkActive : ""}`}
+                              href={`${dashboard.base}?tab=${sub.id}`}
+                              className={`${styles.drawerLink} ${dashboardActive && activeTab === sub.id ? styles.drawerLinkActive : ""}`}
                               onClick={closeMenu}>
                               {sub.label}
                             </Link>
@@ -702,13 +653,7 @@ export default function AppNav() {
             })}
           </ul>
 
-          {canActivate && role === "lister" && (
-            <div className={styles.accessRow}>
-              <AccessButton onDone={closeMenu} />
-            </div>
-          )}
-
-          {canActivate && role !== "lister" && (
+          {canActivate && (
             <div className={styles.accessRow}>
               <AccessButton onDone={closeMenu} />
             </div>
