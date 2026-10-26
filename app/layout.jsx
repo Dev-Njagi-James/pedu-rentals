@@ -9,6 +9,7 @@ import { PostHogProvider } from '@/lib/analytics/PostHogProvider';
 import Providers from './providers';
 import OnboardingGate from "./OnboardingGate";
 import FeedbackBanner from './FeedbackBanner';
+import SafeGoogleTap from './safeGoogleTap'
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -56,7 +57,7 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}>
         <PostHogProvider>
           <ClerkProvider>
-            <GoogleOneTap />
+            <SafeGoogleTap/>
             <Analytics />
             <SpeedInsights />
             <Toaster position="top-right" duration={4000} richColors />
