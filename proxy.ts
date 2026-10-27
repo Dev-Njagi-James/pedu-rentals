@@ -1,8 +1,9 @@
+// proxy.ts
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { normalizeRole, homeForRole } from "@/lib/auth/routes";
 
-const matchesPath = (pathname, base) =>
+const matchesPath = (pathname: string, base: string) =>
   pathname === base || pathname.startsWith(`${base}/`);
 
 export const proxy = clerkMiddleware(async (auth, request) => {
@@ -15,15 +16,26 @@ export const proxy = clerkMiddleware(async (auth, request) => {
   await auth.protect();
 
   const { sessionClaims } = await auth();
-  const role = normalizeRole(sessionClaims?.metadata?.role);
+  const rawRole = (sessionClaims?.metadata as { role?: string } | undefined)?.role;
 
-  if (isAdminPage && role !== "admin") {
-    return NextResponse.redirect(new URL(homeForRole(role), request.url));
+  // Claim absent from token: do not guess. Server-side requireRole/requireAdmin decides.
+  if (rawRole === undefined) return;
+
+  const role = normalizeRole(rawRole);
+
+  if (
+    (isAdminPage && role === "admin") ||
+    (isListerPage && role === "lister")
+  ) {
+    return;
   }
 
-  if (isListerPage && role !== "lister") {
-    return NextResponse.redirect(new URL(homeForRole(role), request.url));
-  }
+  const target = homeForRole(role);
+
+  // Loop guard: never redirect to the path already being served.
+  if (matchesPath(pathname, target)) return;
+
+  return NextResponse.redirect(new URL(target, request.url));
 });
 
 export const config = {
