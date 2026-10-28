@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import AdminNav from "./AdminNav";
 import ExecutiveOverview from "./components/overview";
 import TransactionsDashboard from './components/transactions'
-
+import AdminPropertiesDirectory from './components/listings'
 
 function AdminPanelContent() {
   const searchParams = useSearchParams();
@@ -20,7 +20,8 @@ function AdminPanelContent() {
       onTabChange={(id) => router.push(`/Admin?tab=${id}`, { scroll: false })}
       panels={{
         overview: <ExecutiveOverview />,
-        transactions: <TransactionsDashboard/>
+        transactions: <TransactionsDashboard />,
+        listings: <AdminPropertiesDirectory/>
       }}
     />
   );

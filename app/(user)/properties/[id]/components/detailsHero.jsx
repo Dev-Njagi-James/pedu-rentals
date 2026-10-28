@@ -133,7 +133,7 @@ export default function PropertyDetails({ listing }) {
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [infoRef, infoVisible] = useRevealOnScroll();
-  const { isLoaded, isSignedIn } = useUser();
+  const { isLoaded, isAdmin } = useIsAdmin();
   const { version: accessVersion, activating } = useContactAccess();
 
   const [contact, setContact] = useState(
@@ -208,8 +208,8 @@ export default function PropertyDetails({ listing }) {
     // (e.g. by role/publicMetadata, the same field AppNav uses for
     // role === "admin") rather than excluding all signed-in traffic.
 
-    if (!isLoaded) return; // wait for Clerk to resolve before deciding
-    if (isSignedIn) return;
+    if (!isLoaded) return; // wait for Clerk before deciding
+    if (isAdmin) return; // was: if (isSignedIn) return;
 
     initPostHogClient();
     posthog.capture("property_view", {

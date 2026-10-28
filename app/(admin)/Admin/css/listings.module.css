@@ -1,0 +1,313 @@
+.root {
+   min-height: 100vh;
+   font-family: var(--font-inter, sans-serif);
+   color: #0F172A;
+}
+
+.headerSection {
+   border-radius: 12px;
+   margin-bottom: 2rem;
+}
+
+.mainTitle {
+   font-size: 1.2rem;
+   font-weight: 700;
+   color: #0F172A;
+   margin-bottom: 1rem;
+   font-family: var(--font-geist-sans, sans-serif);
+}
+
+.filterToolbar {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 0.75rem;
+   align-items: center;
+   justify-content: space-between;
+}
+
+.searchBox {
+   position: relative;
+   flex: 1;
+   min-width: 260px;
+}
+
+.searchIcon {
+   position: absolute;
+   left: 12px;
+   top: 50%;
+   transform: translateY(-50%);
+   width: 16px;
+   height: 16px;
+   color: #94A3B8;
+}
+
+.searchInput {
+   width: 100%;
+   padding: 0.625rem 0.75rem 0.625rem 2.25rem;
+   background: var(--sidebar);
+   border: 1px solid #CBD5E1;
+   border-radius: 8px;
+   font-size: 0.875rem;
+   color: #0F172A;
+   outline: none;
+}
+
+.searchInput:focus {
+   border-color: #2563EB;
+   background: #ffffff;
+}
+
+.dropdownFilters {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 0.5rem;
+}
+
+.selectDropdown,
+.sortDropdown {
+   padding: 0.625rem 1rem;
+   background: var(--sidebar);
+   border: 1px solid #CBD5E1;
+   border-radius: 8px;
+   font-size: 0.875rem;
+   color: #334155;
+   cursor: pointer;
+   outline: none;
+}
+
+.sortDropdown {
+   background: var(--sidebar);
+   border-color: #BFDBFE;
+   color: #1D4ED8;
+   font-weight: 600;
+}
+
+/* ── Responsive Grid ── */
+.grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+   gap: 18px;
+}
+
+.grid>* {
+   min-width: 0;
+}
+
+
+/* ── Card & Actions Wrapper ── */
+.cardWrapper {
+   background: var(--sidebar);
+   border: 1px solid #E2E8F0;
+   border-radius: 12px;
+   overflow: hidden;
+   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+   display: flex;
+   flex-direction: column;
+   transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cardWrapper:hover {
+   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardActionsContainer {
+   display: flex;
+   gap: 0.5rem;
+   padding: 0.75rem;
+   background: #F8FAFC;
+   border-top: 1px solid #F1F5F9;
+}
+
+.viewDetailsBtn {
+   flex: 1;
+   background: #2563EB;
+   color: #ffffff;
+   font-weight: 600;
+   font-size: 0.8125rem;
+   padding: 0.5rem;
+   border-radius: 6px;
+   border: none;
+   cursor: pointer;
+   text-align: center;
+   transition: background 0.15s;
+}
+
+.viewDetailsBtn:hover {
+   background: #1D4ED8;
+}
+
+.callQuickBtn {
+   background: #10B981;
+   color: #ffffff;
+   padding: 0.5rem 0.75rem;
+   border-radius: 6px;
+   border: none;
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   transition: background 0.15s;
+}
+
+.callQuickBtn:hover {
+   background: #059669;
+}
+
+.actionsDropdownBtn {
+   background: #EF4444;
+   color: #ffffff;
+   font-weight: 600;
+   font-size: 0.8125rem;
+   padding: 0.5rem 0.75rem;
+   border-radius: 6px;
+   border: none;
+   cursor: pointer;
+   transition: background 0.15s;
+}
+
+.actionsDropdownBtn:hover {
+   background: #DC2626;
+}
+
+/* ── Pagination Footer ── */
+.paginationFooter {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   margin-top: 2rem;
+   padding: 1rem 0;
+   font-size: 0.875rem;
+   color: #64748B;
+}
+
+.paginationButtons {
+   display: flex;
+   gap: 0.375rem;
+}
+
+.pageArrowBtn,
+.pageNumberBtn {
+   background: #ffffff;
+   border: 1px solid #CBD5E1;
+   color: #334155;
+   padding: 0.375rem 0.75rem;
+   border-radius: 6px;
+   font-size: 0.875rem;
+   cursor: pointer;
+}
+
+.pageNumberBtn:hover,
+.pageArrowBtn:hover {
+   background: #F1F5F9;
+}
+
+.activePage {
+   background: #0F172A;
+   color: #ffffff;
+   border-color: #0F172A;
+   font-weight: 600;
+}
+
+.errorState,
+.emptyState {
+   text-align: center;
+   padding: 4rem;
+   color: #64748B;
+   background: #ffffff;
+   border-radius: 12px;
+   border: 1px solid #E2E8F0;
+}
+
+/*New css look for duplicates*/
+.filterToolbar {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 0.75rem;
+   align-items: center;
+}
+
+.searchBox {
+   position: relative;
+   flex: 0 1 24rem;
+   min-width: 0;
+   width: 100%;
+}
+
+.searchInput {
+   box-sizing: border-box;
+   width: 100%;
+}
+
+.dropdownFilters {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 0.5rem;
+   flex: 1 1 auto;
+   min-width: 0;
+}
+
+.sortDropdown {
+   margin-left: auto;
+}
+
+@media (max-width: 640px) {
+   .sortDropdown {
+      margin-left: 0;
+   }
+
+   .selectDropdown,
+   .sortDropdown {
+      flex: 1 1 8rem;
+   }
+}
+
+.grid>* {
+   min-width: 0;
+}
+
+.cardActionsContainer {
+   display: flex;
+   flex-direction: column;
+   gap: 0.5rem;
+   padding: 0.75rem;
+   background: #F8FAFC;
+   border-top: 1px solid #F1F5F9;
+}
+
+.listerRow {
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   gap: 0.5rem;
+   font-size: 0.75rem;
+   color: #475569;
+}
+
+.listerName {
+   overflow: hidden;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   font-weight: 500;
+}
+
+.statusPill {
+   padding: 0.125rem 0.5rem;
+   border-radius: 9999px;
+   font-size: 0.6875rem;
+   font-weight: 600;
+   white-space: nowrap;
+}
+
+.statusActive {
+   background: #ECFDF5;
+   color: #047857;
+}
+
+.statusPending {
+   background: #FEF3C7;
+   color: #B45309;
+}
+
+.actionsDropdownBtn {
+   width: 100%;
+}
