@@ -23,12 +23,14 @@
    gap: 0.75rem;
    align-items: center;
    justify-content: space-between;
+   font-family: var(--font-inter);
 }
 
 .searchBox {
    position: relative;
    flex: 1;
    min-width: 260px;
+   font-family: var(--font-inter);
 }
 
 .searchIcon {
@@ -47,6 +49,7 @@
    background: var(--sidebar);
    border: 1px solid #CBD5E1;
    border-radius: 8px;
+   font-family:var(--font-inter);
    font-size: 0.875rem;
    color: #0F172A;
    outline: none;
@@ -68,6 +71,7 @@
    padding: 0.625rem 1rem;
    background: var(--sidebar);
    border: 1px solid #CBD5E1;
+   font-family: var(--font-inter);
    border-radius: 8px;
    font-size: 0.875rem;
    color: #334155;
@@ -81,13 +85,20 @@
    color: #1D4ED8;
    font-weight: 600;
 }
+
 /* Responsive Grid */
 .grid {
    display: grid;
-   grid-template-columns: repeat(2, 1fr);
+   grid-template-columns: repeat(1, 1fr);
    /* mobile default */
    gap: 18px;
    margin-top: 0;
+}
+
+@media (min-width: 480px) {
+   .grid {
+      grid-template-columns: repeat(2, 1fr);
+   }
 }
 
 @media (min-width: 640px) {
@@ -107,6 +118,7 @@
       grid-template-columns: repeat(5, 1fr);
    }
 }
+
 /* ── Card & Actions Wrapper ── */
 .cardWrapper {
    background: var(--sidebar);
@@ -231,6 +243,20 @@
    border: 1px solid #E2E8F0;
 }
 
+@media (max-width: 640px) {
+   .paginationFooter {
+      flex-direction: column;
+      justify-content: center;
+      gap: 0.75rem;
+      text-align: center;
+   }
+
+   .paginationButtons {
+      justify-content: center;
+      flex-wrap: wrap;
+   }
+}
+
 /*New css look for duplicates*/
 .filterToolbar {
    display: flex;
@@ -324,6 +350,3 @@
 .actionsDropdownBtn {
    width: 100%;
 }
-
-
-
