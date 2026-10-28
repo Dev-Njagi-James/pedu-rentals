@@ -2,51 +2,80 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import styles from "../css/transaction.module.css";
+import {
+  getAdminCache,
+  setAdminCache,
+  isAdminCacheFresh,
+} from "@/lib/cache/adminCache";
+
+const CACHE_KEY = "transactions";
+const TX_TTL_MS = 60 * 1000;
 
 export default function TransactionsDashboard() {
-  const [summary, setSummary] = useState(null);
-  const [series, setSeries] = useState([]);
-  const [projection, setProjection] = useState(0);
-  const [transactions, setTransactions] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const cachedTx = getAdminCache(CACHE_KEY)?.data;
+  const [summary, setSummary] = useState(cachedTx?.summary ?? null);
+  const [series, setSeries] = useState(cachedTx?.series ?? []);
+  const [projection, setProjection] = useState(cachedTx?.projection ?? 0);
+  const [transactions, setTransactions] = useState(
+    cachedTx?.transactions ?? [],
+  );
+  const [mtd, setMtd] = useState(cachedTx?.mtd ?? null);
+  const [loading, setLoading] = useState(!cachedTx);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [rangeStart, setRangeStart] = useState(null);
   const [rangeEnd, setRangeEnd] = useState(null);
-  const [mtd, setMtd] = useState(null);
   const [activeBar, setActiveBar] = useState(null);
 
   useEffect(() => {
-    async function loadDashboardData() {
+    let cancelled = false;
+
+    const apply = (d) => {
+      setSummary(d.summary);
+      setSeries(d.series);
+      setProjection(d.projection);
+      setTransactions(d.transactions);
+      setMtd(d.mtd);
+    };
+
+    const entry = getAdminCache(CACHE_KEY);
+    if (entry && isAdminCacheFresh(entry, TX_TTL_MS)) return;
+    const silent = !!entry;
+
+    (async () => {
+      if (!silent) setLoading(true);
       try {
-        setLoading(true);
         const [summaryRes, monthlyRes] = await Promise.all([
           fetch("/api/v1/admin/transactions/summary"),
           fetch("/api/v1/admin/transactions/monthly"),
         ]);
+        if (!summaryRes.ok || !monthlyRes.ok) throw new Error("Fetch failed");
+        const [s, m] = await Promise.all([
+          summaryRes.json(),
+          monthlyRes.json(),
+        ]);
 
-        if (summaryRes.ok) {
-          const sData = await summaryRes.json();
-          setSummary(sData);
-        }
-
-        if (monthlyRes.ok) {
-          const mData = await monthlyRes.json();
-          setSeries(mData.series || []);
-          setProjection(mData.nextMonthProjection || 0);
-          setTransactions(mData.transactions || []);
-          setMtd(mData.monthToDate || null);
-        }
+        const next = {
+          summary: s,
+          series: m.series || [],
+          projection: m.nextMonthProjection || 0,
+          transactions: m.transactions || [],
+          mtd: m.monthToDate || null,
+        };
+        setAdminCache(CACHE_KEY, next);
+        if (!cancelled) apply(next);
       } catch (err) {
         console.error("Failed loading transaction dashboard data:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled && !silent) setLoading(false);
       }
-    }
+    })();
 
-    loadDashboardData();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {

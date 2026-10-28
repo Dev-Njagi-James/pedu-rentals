@@ -3,6 +3,13 @@
 import React, { useState, useEffect } from "react";
 import styles from "../css/listings.module.css";
 import PropertyCardV1 from "@/app/(user)/properties/components/PropertyCardV1";
+import {
+  getAdminCache,
+  setAdminCache,
+  isAdminCacheFresh,
+} from "@/lib/cache/adminCache";
+
+const DEFAULT_KEY = "listings:page=1&sort=newest";
 
 const PRICE_BANDS = {
   all: {},
@@ -12,11 +19,14 @@ const PRICE_BANDS = {
 };
 
 export default function AdminPropertiesDirectory() {
-  const [items, setItems] = useState([]);
-  const [facets, setFacets] = useState({ categories: [], wards: [] });
-  const [totalItems, setTotalItems] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+  const initial = getAdminCache(DEFAULT_KEY)?.data;
+  const [items, setItems] = useState(initial?.items ?? []);
+  const [facets, setFacets] = useState(
+    initial?.facets ?? { categories: [], wards: [] },
+  );
+  const [totalItems, setTotalItems] = useState(initial?.totalItems ?? 0);
+  const [totalPages, setTotalPages] = useState(initial?.totalPages ?? 1);
+  const [loading, setLoading] = useState(!initial);
   const [error, setError] = useState(null);
 
   const [page, setPage] = useState(1);
@@ -38,34 +48,53 @@ export default function AdminPropertiesDirectory() {
 
   useEffect(() => {
     let cancelled = false;
-    async function load() {
+
+    const p = new URLSearchParams({ page: String(page), sort });
+    if (debouncedQ) p.set("q", debouncedQ);
+    if (status) p.set("status", status);
+    if (category) p.set("category", category);
+    if (ward) p.set("ward", ward);
+    Object.entries(PRICE_BANDS[price]).forEach(([k, v]) => p.set(k, String(v)));
+    const key = `listings:${p.toString()}`;
+
+    const apply = (d) => {
+      setItems(d.items);
+      setTotalItems(d.totalItems);
+      setTotalPages(d.totalPages);
+      if (d.facets) setFacets(d.facets);
+    };
+
+    const entry = getAdminCache(key);
+    if (entry) {
+      apply(entry.data);
+      setLoading(false);
+      setError(null);
+      if (isAdminCacheFresh(entry)) return;
+    } else {
       setLoading(true);
       setError(null);
-      try {
-        const p = new URLSearchParams({ page: String(page), sort });
-        if (debouncedQ) p.set("q", debouncedQ);
-        if (status) p.set("status", status);
-        if (category) p.set("category", category);
-        if (ward) p.set("ward", ward);
-        Object.entries(PRICE_BANDS[price]).forEach(([k, v]) =>
-          p.set(k, String(v)),
-        );
+    }
 
+    (async () => {
+      try {
         const res = await fetch(`/api/v1/admin/listings?${p}`);
         if (!res.ok) throw new Error(`Failed to load listings (${res.status})`);
         const json = await res.json();
-        if (cancelled) return;
-        setItems(json.items ?? []);
-        setTotalItems(json.totalItems ?? 0);
-        setTotalPages(json.totalPages ?? 1);
-        if (json.facets) setFacets(json.facets);
+        const next = {
+          items: json.items ?? [],
+          totalItems: json.totalItems ?? 0,
+          totalPages: json.totalPages ?? 1,
+          facets: json.facets ?? null,
+        };
+        setAdminCache(key, next);
+        if (!cancelled) apply(next);
       } catch (e) {
-        if (!cancelled) setError(e.message);
+        if (!cancelled && !entry) setError(e.message);
       } finally {
         if (!cancelled) setLoading(false);
       }
-    }
-    load();
+    })();
+
     return () => {
       cancelled = true;
     };
