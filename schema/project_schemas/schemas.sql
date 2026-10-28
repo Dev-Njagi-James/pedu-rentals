@@ -448,3 +448,37 @@ begin
   return p_status;
 end;
 $$;
+
+create or replace function admin_growth_daily(p_from date, p_to date)
+returns table (day date, listings bigint, users bigint, listers bigint)
+language sql stable security definer set search_path = public as $$
+  with days as (
+    select generate_series(p_from, p_to, interval '1 day')::date as day
+  ),
+  l as (
+    select (created_at at time zone 'Africa/Nairobi')::date as d, count(*) as c
+    from listings_table
+    where payment_status = 'paid'
+      and (created_at at time zone 'Africa/Nairobi')::date between p_from and p_to
+    group by 1
+  ),
+  u as (
+    select (created_at at time zone 'Africa/Nairobi')::date as d,
+           count(*) filter (where lower(account_type) = 'user')   as users,
+           count(*) filter (where lower(account_type) = 'lister') as listers
+    from users_table
+    where (created_at at time zone 'Africa/Nairobi')::date between p_from and p_to
+    group by 1
+  )
+  select days.day,
+         coalesce(l.c, 0),
+         coalesce(u.users, 0),
+         coalesce(u.listers, 0)
+  from days
+  left join l on l.d = days.day
+  left join u on u.d = days.day
+  order by days.day;
+$$;
+
+revoke all on function admin_growth_daily(date, date) from public, anon, authenticated;
+grant execute on function admin_growth_daily(date, date) to service_role;

@@ -16,6 +16,7 @@ import {
   clearContactCache,
 } from "@/lib/contact/fetchContact";
 import { useContactAccess, activateWithToast } from "@/lib/contact/accessStore";
+import { useIsAdmin } from "@/lib/auth/useIsAdmin";
 
 function convertToEmbedUrl(url) {
   if (!url) return null;
@@ -133,7 +134,8 @@ export default function PropertyDetails({ listing }) {
   const [rating, setRating] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [infoRef, infoVisible] = useRevealOnScroll();
-  const { isLoaded, isAdmin } = useIsAdmin();
+  const { isLoaded, isSignedIn } = useUser();
+  const { isAdmin } = useIsAdmin();
   const { version: accessVersion, activating } = useContactAccess();
 
   const [contact, setContact] = useState(
@@ -226,7 +228,7 @@ export default function PropertyDetails({ listing }) {
     listing.ward_name,
     listing.category_name,
     isLoaded,
-    isSignedIn,
+    isAdmin,
   ]);
 
   useEffect(() => {

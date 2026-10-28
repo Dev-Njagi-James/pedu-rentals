@@ -2,15 +2,21 @@
 
 import { useState, useEffect } from "react";
 import styles from "../css/ExecutiveOverview.module.css";
+import {
+  getAdminCache,
+  setAdminCache,
+  isAdminCacheFresh,
+} from "@/lib/cache/adminCache";
 
 export default function ExecutiveOverview() {
-  const [days, setDays] = useState(30);
-  const [loading, setLoading] = useState(true);
+ const [days, setDays] = useState(30);
+ const initial = getAdminCache(`overview:${days}`)?.data;
+ const [loading, setLoading] = useState(!initial);
 
   // Data states from our created API endpoints
-  const [platformData, setPlatformData] = useState(null);
-  const [visitorData, setVisitorData] = useState(null);
-  const [growthData, setGrowthData] = useState(null);
+  const [platformData, setPlatformData] = useState(initial?.platform ?? null);
+  const [visitorData, setVisitorData] = useState(initial?.visitors ?? null);
+  const [growthData, setGrowthData] = useState(initial?.growth ?? null);
   const [hoveredPoint, setHoveredPoint] = useState(null);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [hoveredGrowth, setHoveredGrowth] = useState({
@@ -18,40 +24,53 @@ export default function ExecutiveOverview() {
     point: null,
   });
 
-  useEffect(() => {
-    let isMounted = true;
+useEffect(() => {
+  let cancelled = false;
+  const key = `overview:${days}`;
+
+  const apply = (d) => {
+    setPlatformData(d.platform);
+    setVisitorData(d.visitors);
+    setGrowthData(d.growth);
+  };
+
+  const entry = getAdminCache(key);
+  if (entry) {
+    apply(entry.data);
+    setLoading(false);
+    if (isAdminCacheFresh(entry)) return;
+  } else {
     setLoading(true);
+  }
 
-    async function fetchDashboardData() {
-      try {
-        const [platRes, visRes, growthRes] = await Promise.all([
-          fetch(`/api/v1/admin/overview/platform?days=${days}`),
-          fetch(`/api/v1/admin/overview/visitors?days=${days}`),
-          fetch(`/api/v1/admin/overview/growth?days=${days}`),
-        ]);
-
-        const platJson = platRes.ok ? await platRes.json() : null;
-        const visJson = visRes.ok ? await visRes.json() : null;
-        const growthJson = growthRes.ok ? await growthRes.json() : null;
-
-        if (isMounted) {
-          setPlatformData(platJson);
-          setVisitorData(visJson);
-          setGrowthData(growthJson);
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Failed loading executive dashboard data:", err);
-        if (isMounted) setLoading(false);
+  (async () => {
+    try {
+      const [platRes, visRes, growthRes] = await Promise.all([
+        fetch(`/api/v1/admin/overview/platform?days=${days}`),
+        fetch(`/api/v1/admin/overview/visitors?days=${days}`),
+        fetch(`/api/v1/admin/overview/growth?days=${days}`),
+      ]);
+      if (!platRes.ok || !visRes.ok || !growthRes.ok) {
+        throw new Error("Fetch failed");
       }
+      const next = {
+        platform: await platRes.json(),
+        visitors: await visRes.json(),
+        growth: await growthRes.json(),
+      };
+      setAdminCache(key, next);
+      if (!cancelled) apply(next);
+    } catch (err) {
+      console.error("Failed loading executive dashboard data:", err);
+    } finally {
+      if (!cancelled) setLoading(false);
     }
+  })();
 
-    fetchDashboardData();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [days]);
+  return () => {
+    cancelled = true;
+  };
+}, [days]);
 
   // Derived metrics
   const totalVisitors = visitorData?.totalVisitors || 0;
