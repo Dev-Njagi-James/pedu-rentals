@@ -848,3 +848,43 @@
       padding: 0.25rem 0.4rem;
    }
 }
+
+.searchBox,
+.searchInput,
+.selectInput,
+.filterGroup {
+   box-sizing: border-box;
+   min-width: 0;
+}
+
+.toolbar {
+   align-items: stretch;
+}
+
+@media (min-width: 640px) {
+   .toolbar {
+      align-items: center;
+   }
+}
+
+.searchBox {
+   max-width: 100%;
+}
+
+.searchInput {
+   text-overflow: ellipsis;
+}
+
+.filterGroup {
+   flex-wrap: wrap;
+}
+
+.selectInput {
+   flex: 1 1 8rem;
+}
+
+@media (min-width: 640px) {
+   .selectInput {
+      flex: 0 0 auto;
+   }
+}
