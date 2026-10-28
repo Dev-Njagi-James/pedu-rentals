@@ -79,6 +79,11 @@
    font-family: var(--font-geist-sans);
 }
 
+.cardSecondary{
+   font-family:var(--font-inter);
+   display:none;
+}
+
 .iconBox {
    width: 32px;
    height: 32px;
