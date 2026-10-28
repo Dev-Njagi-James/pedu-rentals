@@ -44,14 +44,30 @@
 /* ── Grid — mirrors PropertyCard grid ── */
 .grid {
   display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 18px;
-  padding: 0 1.25rem;
+  grid-template-columns: repeat(2, 1fr);
+  /* mobile default */
+  gap: 18px;
+  margin-top: 0;
 }
 
-.grid>* {
-  min-width: 0;
+@media (min-width: 640px) {
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
+
+@media (min-width: 980px) {
+  .grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 1400px) {
+  .grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
 /* ── Card wrapper — positions delete strip below the card ── */
 .cardWrapper {
   display: flex;
