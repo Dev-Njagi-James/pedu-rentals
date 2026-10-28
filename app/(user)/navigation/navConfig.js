@@ -20,8 +20,8 @@ export const ROLE_DASHBOARDS = {
     defaultTab: "overview",
     sublinks: [
       { id: "overview", label: "Overview" },
-      { id: "listings", label: "Listings" },
       { id: "transactions", label: "Transactions" },
+      { id: "listings", label: "Listings" },
       { id: "Account", label: "Account" },
       { id: "Pricing", label: "Pricing" },
     ],
