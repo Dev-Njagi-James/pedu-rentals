@@ -44,12 +44,17 @@
 /* ── Grid — mirrors PropertyCard grid ── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(1, 1fr);
   /* mobile default */
   gap: 18px;
   margin-top: 0;
+  padding:0 1.25rem;
 }
-
+@media (min-width: 480px){
+  .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+}
 @media (min-width: 640px) {
   .grid {
     grid-template-columns: repeat(3, 1fr);
