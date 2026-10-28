@@ -29,6 +29,6 @@
     "**/*.mts",
     "**/*.ts",
     "**/*.tsx"
-  ],
+, "app/(admin)/Admin/components/transactions.jsx"  ],
   "exclude": ["node_modules"]
 }

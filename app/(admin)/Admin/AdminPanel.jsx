@@ -4,9 +4,8 @@ import { Suspense, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import AdminNav from "./AdminNav";
 import ExecutiveOverview from "./components/overview";
-import Analytics from "./components/Analytics";
-import VerificationList from "./components/VerificationList";
-import VerificationDetail from "./components/VerificationDetail";
+import TransactionsDashboard from './components/transactions'
+
 
 function AdminPanelContent() {
   const searchParams = useSearchParams();
@@ -21,15 +20,7 @@ function AdminPanelContent() {
       onTabChange={(id) => router.push(`/Admin?tab=${id}`, { scroll: false })}
       panels={{
         overview: <ExecutiveOverview />,
-        visitors: <Analytics />,
-        listers: verificationId ? (
-          <VerificationDetail
-            id={verificationId}
-            onBack={() => setVerificationId(null)}
-          />
-        ) : (
-          <VerificationList onSelect={setVerificationId} />
-        ),
+        transactions: <TransactionsDashboard/>
       }}
     />
   );
