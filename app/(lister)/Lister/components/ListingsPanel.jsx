@@ -236,69 +236,73 @@ export default function ListingsPanel({ onUploadStateChange }) {
             const isPending = listing.payment_status === "pending";
             const prevPending = i > 0 && listings[i - 1].payment_status === "pending";
             return (
-            <Fragment key={listing.listing_id}>
-              {isPending && i === 0 && (
-                <h3 className={styles.sectionHeading}>Pending listings</h3>
-              )}
-              {!isPending && prevPending && (
-                <h3 className={styles.sectionHeading}>Published listings</h3>
-              )}
-            <div className={styles.cardWrapper}>
-              <PropertyCard
-                listing={listing}
-                onWardClick={(ward_id, ward_name, property_location) =>
-                  setWardPopup({ ward_id, ward_name, property_location })
-                }
-              />
+              <Fragment key={listing.listing_id}>
+                {isPending && i === 0 && (
+                  <h3 className={styles.sectionHeading}>Pending listings</h3>
+                )}
+                {!isPending && prevPending && (
+                  <h3 className={styles.sectionHeading}>Published listings</h3>
+                )}
+                <div className={styles.cardWrapper}>
+                  <PropertyCard
+                    listing={listing}
+                    trackCalls={false}
+                    onWardClick={(ward_id, ward_name, property_location) =>
+                      setWardPopup({ ward_id, ward_name, property_location })
+                    }
+                  />
 
-              <div className={styles.cardActions}>
-                {confirmId === listing.listing_id ? (
-                  <div className={styles.confirmRow}>
-                    <span className={styles.confirmText}>
-                      Delete this listing?
-                    </span>
+                  <div className={styles.cardActions}>
+                    {confirmId === listing.listing_id ? (
+                      <div className={styles.confirmRow}>
+                        <span className={styles.confirmText}>
+                          Delete this listing?
+                        </span>
+                        <button
+                          className={styles.confirmYes}
+                          onClick={() =>
+                            handleDeleteClick(
+                              listing.listing_id,
+                              listing._source,
+                            )
+                          }
+                          disabled={deletingId === listing.listing_id}>
+                          {deletingId === listing.listing_id
+                            ? "Deleting…"
+                            : "Yes, delete"}
+                        </button>
+                        <button
+                          className={styles.confirmNo}
+                          onClick={cancelConfirm}
+                          disabled={deletingId === listing.listing_id}>
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className={styles.deleteBtn}
+                        onClick={() =>
+                          handleDeleteClick(listing.listing_id, listing._source)
+                        }
+                        disabled={deletingId === listing.listing_id}
+                        aria-label={`Delete ${listing.property_name}`}>
+                        <i className="hgi hgi-stroke hgi-rounded hgi-delete-02"></i>
+                      </button>
+                    )}
                     <button
-                      className={styles.confirmYes}
-                      onClick={() =>
-                        handleDeleteClick(listing.listing_id, listing._source)
-                      }
-                      disabled={deletingId === listing.listing_id}>
-                      {deletingId === listing.listing_id
-                        ? "Deleting…"
-                        : "Yes, delete"}
-                    </button>
-                    <button
-                      className={styles.confirmNo}
-                      onClick={cancelConfirm}
-                      disabled={deletingId === listing.listing_id}>
-                      Cancel
+                      className={styles.editBtn}
+                      onClick={() => setEditingListing(listing)}
+                      disabled={!canEdit(listing.created_at)}
+                      title={
+                        !canEdit(listing.created_at)
+                          ? "Edit window has expired"
+                          : "Edit listing"
+                      }>
+                      <i className="hgi hgi-stroke hgi-rounded hgi-edit-02"></i>
                     </button>
                   </div>
-                ) : (
-                  <button
-                    className={styles.deleteBtn}
-                    onClick={() =>
-                      handleDeleteClick(listing.listing_id, listing._source)
-                    }
-                    disabled={deletingId === listing.listing_id}
-                    aria-label={`Delete ${listing.property_name}`}>
-                    <i className="hgi hgi-stroke hgi-rounded hgi-delete-02"></i>
-                  </button>
-                )}
-                <button
-                  className={styles.editBtn}
-                  onClick={() => setEditingListing(listing)}
-                  disabled={!canEdit(listing.created_at)}
-                  title={
-                    !canEdit(listing.created_at)
-                      ? "Edit window has expired"
-                      : "Edit listing"
-                  }>
-                  <i className="hgi hgi-stroke hgi-rounded hgi-edit-02"></i>
-                </button>
-              </div>
-            </div>
-          </Fragment>
+                </div>
+              </Fragment>
             );
           })}
         </div>

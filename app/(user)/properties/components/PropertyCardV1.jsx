@@ -9,6 +9,7 @@ import { posthog } from "@/lib/analytics/posthog-client";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 import { toast } from "sonner";
+import { useIsAdmin } from "@/lib/auth/useIsAdmin";
 import { fetchContact, getCachedContact } from "@/lib/contact/fetchContact";
 import { useContactAccess, activateWithToast } from "@/lib/contact/accessStore";
 
@@ -51,7 +52,11 @@ function LockIcon() {
   );
 }
 
-export default function PropertyCardV1({ listing, onWardClick }) {
+export default function PropertyCardV1({
+  listing,
+  onWardClick,
+  trackCalls = true,
+}) {
   const {
     listing_id,
     listing_name,
@@ -82,6 +87,7 @@ export default function PropertyCardV1({ listing, onWardClick }) {
 
   const planClassName = planClassMap[plan_name] ?? "";
   const ward_location = contact?.ward_location ?? null;
+  const { isAdmin } = useIsAdmin();
 
   useEffect(() => {
     if (!isLoaded || !listing_id) return;
@@ -159,19 +165,23 @@ export default function PropertyCardV1({ listing, onWardClick }) {
       localStorage.setItem("cr_fingerprint", fingerprint);
     }
 
-    if (!localStorage.getItem(`reviewed:${listing_id}`)) {
-      localStorage.setItem(
-        "pending_review",
-        JSON.stringify({ listing_id, listing_name, timestamp: Date.now() }),
-      );
-    }
+    const shouldTrack = trackCalls && !isAdmin;
 
-    posthog.capture("property_call_clicked", {
-      listing_id,
-      listing_name,
-      ward: ward_display_name,
-      plan_name,
-    });
+    if (shouldTrack) {
+      if (!localStorage.getItem(`reviewed:${listing_id}`)) {
+        localStorage.setItem(
+          "pending_review",
+          JSON.stringify({ listing_id, listing_name, timestamp: Date.now() }),
+        );
+      }
+
+      posthog.capture("property_call_clicked", {
+        listing_id,
+        listing_name,
+        ward: ward_display_name,
+        plan_name,
+      });
+    }
     window.location.href = `tel:0${result.data.phone_number}`;
   };
 

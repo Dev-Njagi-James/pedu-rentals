@@ -100,18 +100,20 @@
    align-items: baseline;
    gap: 8px;
    margin-bottom: 16px;
-   font-family: var(--font-inter);
+   font-family: var(--font-geist-mono);
 }
 
 .primaryMetric {
    font-size: 32px;
    font-weight: 800;
    letter-spacing: -0.03em;
+   font-family: var(--font-geist-mono);
 }
 
 .metricUnit {
    font-size: 13px;
    color: #94a3b8;
+   font-family: var(--font-inter);
 }
 
 .cardFooter {
@@ -181,7 +183,7 @@
 .visitorValue {
    font-size: 28px;
    font-weight: 800;
-   font-family: var(--font-inter);
+   font-family: var(--font-geist-mono);
 }
 
 .visitorUnit {
@@ -296,7 +298,7 @@
 
 .footerValue {
    font-size: 16px;
-   font-family: var(--font-geist-sans);
+   font-family: var(--font-geist-mono);
    font-weight: 700;
    margin: 0;
 }
