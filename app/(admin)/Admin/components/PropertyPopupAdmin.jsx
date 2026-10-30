@@ -120,6 +120,7 @@ function PlayIcon() {
 
 // Single place that maps DB columns to view fields.
 function toView(l) {
+  const unpublishedAt = l.admin_unpublished_at ?? null;
   const media = Array.isArray(l.images_table)
     ? l.images_table[0]
     : l.images_table;
@@ -133,7 +134,14 @@ function toView(l) {
   return {
     id: l.listing_id,
     title: l.listing_name,
-    active: l.payment_status === "paid",
+    paid: l.payment_status === "paid",
+    adminUnpublished: unpublishedAt != null,
+    unpublishedOn: unpublishedAt
+      ? new Date(unpublishedAt).toLocaleDateString("en-KE", {
+          dateStyle: "medium",
+        })
+      : null,
+    active: l.payment_status === "paid" && unpublishedAt == null,
     ward: l.ward_display_name,
     rent:
       l.price_kes != null
@@ -165,6 +173,7 @@ export default function PropertyAdminPopup({
   onMessageAgent = () => {},
   onTagChange = () => {},
   onUnpublish = () => {},
+  onRepublish = () => {},
   onDelete = () => {},
 }) {
   const id = seed.listing_id;
@@ -177,8 +186,22 @@ export default function PropertyAdminPopup({
   const [attempt, setAttempt] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState(null);
 
-  const view = useMemo(() => toView({ ...seed, ...detail }), [seed, detail]);
+  const run = async (fn) => {
+    setBusy(true);
+    setActionError(null);
+    try {
+      await fn();
+    } catch (e) {
+      setActionError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+   const view = useMemo(() => toView({ ...detail, ...seed }), [seed, detail]);
   const [tag, setTag] = useState(view.reviewTag);
 
   const STAT_CARDS = [
@@ -314,9 +337,11 @@ export default function PropertyAdminPopup({
     const prev = tag;
     setTag(e.target.value);
     // Handler should return a promise that rejects on failure so we can roll back.
-    Promise.resolve(onTagChange(e.target.value, view)).catch(() =>
-      setTag(prev),
-    );
+    setActionError(null);
+    Promise.resolve(onTagChange(e.target.value, view)).catch((err) => {
+      setTag(prev);
+      setActionError(err.message);
+    });
   };
 
   return createPortal(
@@ -340,7 +365,11 @@ export default function PropertyAdminPopup({
               <span
                 className={`pap-status ${view.active ? "" : "pap-status-pending"}`}>
                 <span className="pap-status-dot" />
-                {view.active ? "Active" : "Pending"}
+                {view.adminUnpublished
+                  ? "Unpublished by admin"
+                  : view.paid
+                    ? "Active"
+                    : "Pending"}
               </span>
             </div>
             <p className="pap-location">
@@ -370,6 +399,9 @@ export default function PropertyAdminPopup({
           <div className="pap-heading-meta">
             <span>Listing #{view.id}</span>
             {view.created && <span>Added {view.created}</span>}
+            {view.unpublishedOn && (
+              <span>Unpublished {view.unpublishedOn}</span>
+            )}
           </div>
           <button
             className="pap-close"
@@ -591,7 +623,7 @@ export default function PropertyAdminPopup({
                 className="pap-select"
                 value={tag}
                 onChange={handleTag}
-                disabled={detailLoading}>
+                disabled={detailLoading || busy}>
                 <option value="">No tag</option>
                 {REVIEW_TAGS.map((t) => (
                   <option key={t} value={t}>
@@ -600,23 +632,39 @@ export default function PropertyAdminPopup({
                 ))}
               </select>
               <button
-                className="pap-button pap-button-warning"
+                className={`pap-button ${view.adminUnpublished ? "pap-button-primary" : "pap-button-warning"}`}
                 type="button"
-                onClick={() => onUnpublish(view)}>
-                <Icon name="eyeOff" />
-                <span>Unpublish listing</span>
+                disabled={busy}
+                onClick={() =>
+                  run(() =>
+                    view.adminUnpublished
+                      ? onRepublish(view)
+                      : onUnpublish(view),
+                  )
+                }>
+                <Icon name={view.adminUnpublished ? "eye" : "eyeOff"} />
+                <span>
+                  {view.adminUnpublished
+                    ? "Republish listing"
+                    : "Unpublish listing"}
+                </span>
               </button>
               <p className="pap-help">
-                This hides the listing from the public site but preserves the
-                record.
+                {view.adminUnpublished
+                  ? "This makes the listing visible on the public site again, if payment is active."
+                  : "This hides the listing from the public site but preserves the record."}
               </p>
               <div className="pap-action-divider pap-action-divider-spaced" />
               <button
                 className={`pap-button pap-button-danger ${confirmDelete ? "pap-button-danger-armed" : ""}`}
                 type="button"
+                disabled={busy}
                 onClick={() =>
-                  confirmDelete ? onDelete(view) : setConfirmDelete(true)
+                  confirmDelete
+                    ? run(() => onDelete(view))
+                    : setConfirmDelete(true)
                 }>
+                {actionError && <p className="pap-error">{actionError}</p>}
                 <Icon name="trash" />
                 <span>
                   {confirmDelete ? "Click again to confirm" : "Delete property"}

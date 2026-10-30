@@ -27,7 +27,8 @@ export async function GET(request) {
     let query = paymentsSupabase.from("listings_table").select(
       `listing_id, listing_name, listing_category, category_type, furnishing,
        rent_duration, price_kes, listing_ward, ward_display_name, plan_name,
-       payment_status, created_at, updated_at, lister_uuid,
+       payment_status, admin_unpublished_at, review_tag,
+       created_at, updated_at, lister_uuid,
        images_table (images_url, video_url),
        users_table!inner (lister_uuid, username, lister_email, phone_number, account_type)`,
       { count: "exact" },
@@ -41,7 +42,16 @@ export async function GET(request) {
     }
     if (category) query = query.eq("listing_category", category);
     if (type) query = query.eq("category_type", type);
-    if (status) query = query.eq("payment_status", status);
+    if (status === "paid")
+      query = query
+        .eq("payment_status", "paid")
+        .is("admin_unpublished_at", null);
+    else if (status === "pending")
+      query = query
+        .eq("payment_status", "pending")
+        .is("admin_unpublished_at", null);
+    else if (status === "unpublished")
+      query = query.not("admin_unpublished_at", "is", null);
     if (plan) query = query.eq("plan_name", plan);
     if (ward) query = query.eq("listing_ward", ward);
     if (minPrice) query = query.gte("price_kes", Number(minPrice));

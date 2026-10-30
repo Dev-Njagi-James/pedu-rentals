@@ -7,6 +7,7 @@ import {
   getAdminCache,
   setAdminCache,
   isAdminCacheFresh,
+  invalidateAdminCache,
 } from "@/lib/cache/adminCache";
 import PropertyAdminPopup from "./PropertyPopupAdmin";
 
@@ -40,6 +41,45 @@ export default function AdminPropertiesDirectory() {
   const [sort, setSort] = useState("newest");
   const [selected, setSelected] = useState(null);
 
+  const patchListing = (id, patch) => {
+  setItems((prev) =>
+    prev.map((i) => (i.listing_id === id ? { ...i, ...patch } : i)),
+  );
+  setSelected((prev) =>
+    prev && prev.listing_id === id ? { ...prev, ...patch } : prev,
+  );
+  invalidateAdminCache();
+};
+
+const callAdmin = async (view, method, body) => {
+  const res = await fetch(`/api/v1/admin/listings/${view.id}`, {
+    method,
+    headers: { "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || `Action failed (${res.status})`);
+  return json;
+};
+
+const handleUnpublish = async (view) =>
+  patchListing(view.id, await callAdmin(view, "PATCH", { action: "unpublish" }));
+
+const handleRepublish = async (view) =>
+  patchListing(view.id, await callAdmin(view, "PATCH", { action: "republish" }));
+
+// Must reject on failure so the popup rolls the select back.
+const handleTagChange = async (tag, view) =>
+  patchListing(view.id, await callAdmin(view, "PATCH", { action: "tag", tag }));
+
+const handleDelete = async (view) => {
+  await callAdmin(view, "DELETE");
+  setSelected(null);
+  setItems((prev) => prev.filter((i) => i.listing_id !== view.id));
+  setTotalItems((n) => Math.max(0, n - 1));
+  invalidateAdminCache();
+  };
+  
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedQ(search);
@@ -147,6 +187,7 @@ export default function AdminPropertiesDirectory() {
               <option value="">All Statuses</option>
               <option value="paid">Active</option>
               <option value="pending">Pending</option>
+              <option value="unpublished">Unpublished</option>
             </select>
 
             <select
@@ -223,14 +264,20 @@ export default function AdminPropertiesDirectory() {
                     <span className={styles.listerName}>
                       {listing.lister.username}
                     </span>
-                    <span
-                      className={`${styles.statusPill} ${
-                        listing.payment_status === "paid"
-                          ? styles.statusActive
-                          : styles.statusPending
-                      }`}>
-                      {listing.payment_status === "paid" ? "Active" : "Pending"}
-                    </span>
+                   {(() => {
+                      const s = listing.admin_unpublished_at
+                        ? "unpublished"
+                        : listing.payment_status === "paid"
+                          ? "active"
+                          : "pending";
+                      const cls = {
+                        active: styles.statusActive,
+                        pending: styles.statusPending,
+                        unpublished: styles.statusUnpublished,
+                      }[s];
+                      const label = { active: "Active", pending: "Pending", unpublished: "Unpublished" }[s];
+                      return <span className={`${styles.statusPill} ${cls}`}>{label}</span>;
+                    })()}
                   </div>
                   <button
                     className={styles.actionsDropdownBtn}
@@ -279,9 +326,12 @@ export default function AdminPropertiesDirectory() {
           key={selected.listing_id}
           seed={selected}
           onClose={() => setSelected(null)}
+          onUnpublish={handleUnpublish}
+          onRepublish={handleRepublish}
+          onTagChange={handleTagChange}
+          onDelete={handleDelete}
         />
       )}
-
     </div>
   );
 }
