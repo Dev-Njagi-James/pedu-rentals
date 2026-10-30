@@ -16,7 +16,7 @@ import styles from "../css/transaction.module.css"; // use your original path an
 
 const CACHE_KEY = "transactions";
 const TX_TTL_MS = 60 * 1000;
-
+const EAT_MS = 3 * 3600 * 1000;
 
 export default function TransactionsDashboard() {
   const cachedTx = getAdminCache(CACHE_KEY)?.data;
@@ -37,12 +37,12 @@ export default function TransactionsDashboard() {
   const [activeBar, setActiveBar] = useState(null);
   const [exporting, setExporting] = useState(false);
 
-  
   const [exportRange, setExportRange] = useState({
     start: currentMonthKey(),
     end: currentMonthKey(),
   });
   const exportMonths = useMemo(() => monthList(), []);
+  const [tableRange, setTableRange] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +103,19 @@ export default function TransactionsDashboard() {
   }, [activeBar]);
 
   const filteredTransactions = useMemo(() => {
+    const r = tableRange
+      ? monthsToRange(tableRange.start, tableRange.end)
+      : null;
+
     return transactions.filter((tx) => {
+      if (r) {
+        if (!tx.date) return false;
+        const day = new Date(new Date(tx.date).getTime() + EAT_MS)
+          .toISOString()
+          .slice(0, 10);
+        if (day < r.from || day > r.to) return false;
+      }
+
       const matchesSearch =
         tx.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
         tx.customerLister.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -118,7 +130,7 @@ export default function TransactionsDashboard() {
 
       return matchesSearch && matchesCategory && matchesStatus;
     });
-  }, [transactions, searchQuery, categoryFilter, statusFilter]);
+  }, [transactions, searchQuery, categoryFilter, statusFilter, tableRange]);
 
   const currentKey = new Date(Date.now() + 3 * 3600 * 1000)
     .toISOString()
@@ -187,34 +199,35 @@ export default function TransactionsDashboard() {
         ? `${Math.round(v / 1e3)}K`
         : `${Math.round(v)}`;
 
- const handleExport = async () => {
-   const { from, to } = monthsToRange(exportRange.start, exportRange.end);
-   const p = new URLSearchParams({ from, to });
-   setExporting(true);
-   try {
-     const res = await fetch(`/api/v1/admin/transactions/export?${p}`);
-     if (!res.ok) {
-       const { error } = await res.json().catch(() => ({}));
-       throw new Error(error || `Export failed (${res.status})`);
-     }
-     const name =
-       res.headers.get("Content-Disposition")?.match(/filename="(.+?)"/)?.[1] ||
-       "transactions.xlsx";
-     const url = URL.createObjectURL(await res.blob());
-     const a = document.createElement("a");
-     a.href = url;
-     a.download = name;
-     document.body.appendChild(a);
-     a.click();
-     a.remove();
-     URL.revokeObjectURL(url);
-   } catch (err) {
-     console.error(err);
-     alert(err.message);
-   } finally {
-     setExporting(false);
-   }
- };
+  const handleExport = async () => {
+    const { from, to } = monthsToRange(exportRange.start, exportRange.end);
+    const p = new URLSearchParams({ from, to });
+    setExporting(true);
+    try {
+      const res = await fetch(`/api/v1/admin/transactions/export?${p}`);
+      if (!res.ok) {
+        const { error } = await res.json().catch(() => ({}));
+        throw new Error(error || `Export failed (${res.status})`);
+      }
+      const name =
+        res.headers
+          .get("Content-Disposition")
+          ?.match(/filename="(.+?)"/)?.[1] || "transactions.xlsx";
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const formatKES = (val) =>
     `KES ${(val || 0).toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
@@ -577,6 +590,22 @@ export default function TransactionsDashboard() {
               className={styles.searchInput}
             />
           </div>
+
+          <MonthRangePicker
+            label="Period"
+            months={exportMonths}
+            value={
+              tableRange ?? { start: currentMonthKey(), end: currentMonthKey() }
+            }
+            onChange={setTableRange}
+          />
+          {tableRange && (
+            <button
+              className={styles.exportBtn}
+              onClick={() => setTableRange(null)}>
+              All time
+            </button>
+          )}
 
           <div className={styles.filterGroup}>
             <select

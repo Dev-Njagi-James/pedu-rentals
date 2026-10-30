@@ -56,6 +56,7 @@
    color: #ffffff;
    font-weight: 500;
    font-size: 0.875rem;
+   font-family:var(--font-geist-sans);
    padding: 0.525rem 0.8rem;
    border-radius: 0.4rem;
    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -464,7 +465,7 @@
 }
 
 .tableContainer {
-   background-color: #ffffff;
+   background-color: var(--sidebar);
    border-radius: 1rem;
    border: 1px solid rgba(226, 232, 240, 0.8);
    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
@@ -709,9 +710,9 @@
 
 .selectInput {
    padding: 0.5rem 0.75rem;
-   background-color: #f8fafc;
+   background-color: var(--background);
    border: 1px solid #e2e8f0;
-   border-radius: 0.75rem;
+   border-radius: 0.45rem;
    font-size: 0.75rem;
    font-weight: 500;
    color: #334155;
@@ -733,7 +734,7 @@
 }
 
 .thead {
-   background-color: #f8fafc;
+   background-color: var(--background);
    border-bottom: 1px solid #f1f5f9;
    font-weight: 600;
    color: #64748b;
