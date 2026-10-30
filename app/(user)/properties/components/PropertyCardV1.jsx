@@ -122,13 +122,13 @@ export default function PropertyCardV1({
     event.preventDefault();
     event.stopPropagation();
     if (!isSignedIn) {
-      toast.info("Sign in to view the location");
+      toast.info("Sign in to view the location and the Contact Details");
       router.push("/Auth");
       return;
     }
     const result = await fetchContact(listing_id);
     if (result.status === "forbidden") {
-      toast.info("Subscription required to view the location", {
+      toast.info("Subscription required to view the Location and Contact details", {
         action: { label: "Activate", onClick: () => activateWithToast() },
       });
       return;
@@ -144,14 +144,14 @@ export default function PropertyCardV1({
     event.preventDefault();
 
     if (!isSignedIn) {
-      toast.info("Sign in to view contact details");
+      toast.info("Sign in to view contact details and location");
       router.push("/Auth");
       return;
     }
 
     const result = await fetchContact(listing_id);
     if (result.status === "forbidden") {
-      toast.info("Subscription required to view the location");
+      toast.info("Subscription required to view the location and Contact details");
       return;
     }
     if (result.status !== "ok" || !result.data.phone_number) {
