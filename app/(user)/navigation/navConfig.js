@@ -22,8 +22,8 @@ export const ROLE_DASHBOARDS = {
       { id: "overview", label: "Overview" },
       { id: "transactions", label: "Transactions" },
       { id: "listings", label: "Listings" },
-      { id: "Account", label: "Account" },
-      { id: "Pricing", label: "Pricing" },
+      { id: "account", label: "Account" },
+      { id: "pricing", label: "Pricing" },
     ],
   },
 };
