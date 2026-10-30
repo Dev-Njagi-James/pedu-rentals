@@ -14,6 +14,9 @@ import {
   setAdminCache,
   isAdminCacheFresh,
 } from "@/lib/cache/adminCache";
+import Image from "next/image";
+import { buildCdnImageUrl } from "@/lib/utils/cdnImage";
+import DescriptionRenderer from "@/app/(user)/properties/[id]/components/DescriptionRenderer";
 
 const REVIEW_TAGS = [
   "Needs verification",
@@ -39,6 +42,25 @@ function Icon({ name, size = 18 }) {
     focusable: false,
   };
 
+  const fontIcons = {
+    message: "hgi hgi-stroke hgi-rounded hgi-message-add-01",
+    eye: "hgi hgi-stroke hgi-rounded hgi-eye",
+    star: "hgi hgi-stroke hgi-rounded hgi-stack-star",
+    call: "hgi hgi-stroke hgi-rounded hgi-call-add",
+    phone: "hgi hgi-stroke hgi-rounded hgi-call-add",
+    mail: "hgi hgi-stroke hgi-rounded hgi-mail-edit-01",
+  };
+
+  if (fontIcons[name]) {
+    return (
+      <i
+        className={fontIcons[name]}
+        aria-hidden="true"
+        style={{ fontSize: size, lineHeight: 1 }}
+      />
+    );
+  }
+
   const paths = {
     close: <path d="m6 6 12 12M18 6 6 18" />,
     pin: (
@@ -62,12 +84,6 @@ function Icon({ name, size = 18 }) {
         <path d="M16 3v4M8 3v4M3 10h18" />
       </>
     ),
-    message: (
-      <>
-        <path d="M21 11.5a7.5 7.5 0 0 1-7.5 7.5H5l-3 2v-9.5A7.5 7.5 0 0 1 9.5 4h4A7.5 7.5 0 0 1 21 11.5Z" />
-        <path d="M8 12h.01M12 12h.01M16 12h.01" />
-      </>
-    ),
     eyeOff: (
       <>
         <path d="m3 3 18 18M10.6 10.6a2 2 0 0 0 2.8 2.8" />
@@ -84,21 +100,22 @@ function Icon({ name, size = 18 }) {
     chair: (
       <path d="M7 11V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6M5 12h14a2 2 0 0 1 2 2v3H3v-3a2 2 0 0 1 2-2ZM6 17v4M18 17v4" />
     ),
-    phone: (
-      <>
-        <path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
-        <path d="M10 18h4" />
-      </>
-    ),
-    mail: (
-      <>
-        <rect x="3" y="5" width="18" height="14" rx="2" />
-        <path d="m3 7 9 6 9-6" />
-      </>
-    ),
   };
 
   return <svg {...common}>{paths[name] || paths.home}</svg>;
+}
+
+function PlayIcon() {
+  return (
+    <svg
+      className="pap-play"
+      viewBox="0 0 48 48"
+      fill="none"
+      aria-hidden="true">
+      <circle cx="24" cy="24" r="24" fill="rgba(0,0,0,0.45)" />
+      <polygon points="19,14 38,24 19,34" fill="white" />
+    </svg>
+  );
 }
 
 // Single place that maps DB columns to view fields.
@@ -112,7 +129,6 @@ function toView(l) {
       src: im.publicUrl,
       alt: `${l.listing_name} photo ${i + 1}`,
     }));
-  const hasCoords = l.latitude != null && l.longitude != null;
 
   return {
     id: l.listing_id,
@@ -132,10 +148,10 @@ function toView(l) {
           dateStyle: "medium",
         })
       : null,
-    overview: l.description ?? null,
-    coords: hasCoords
-      ? { lat: Number(l.latitude), lng: Number(l.longitude) }
-      : null,
+    overview: l.listing_description ?? null,
+    mapUrl: l.location_url ?? null,
+    exactLocation: l.ward_location ?? null,
+    listingPhone: l.phone_number ?? null,
     reviewTag: l.review_tag ?? "",
     video: media?.video_url ?? null,
     images,
@@ -159,11 +175,18 @@ export default function PropertyAdminPopup({
   );
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
-  const [imgIdx, setImgIdx] = useState(0);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const view = useMemo(() => toView({ ...seed, ...detail }), [seed, detail]);
   const [tag, setTag] = useState(view.reviewTag);
+
+  const STAT_CARDS = [
+    { key: "views", label: "Total Views", icon: "eye", tone: "blue" },
+    { key: "calls", label: "Total Calls", icon: "call", tone: "amber" },
+    { key: "reviews", label: "Total Reviews", icon: "message", tone: "teal" },
+    { key: "rating", label: "Rating", icon: "star", tone: "purple" },
+  ];
   useEffect(() => setTag(view.reviewTag), [view.reviewTag]);
 
   useEffect(() => {
@@ -171,6 +194,35 @@ export default function PropertyAdminPopup({
     const t = setTimeout(() => setConfirmDelete(false), 4000);
     return () => clearTimeout(t);
   }, [confirmDelete]);
+  const statsKey = `listing-stats:${id}`;
+  const [stats, setStats] = useState(
+    () => getAdminCache(statsKey)?.data ?? null,
+  );
+  const [statsError, setStatsError] = useState(null);
+  const [statsAttempt, setStatsAttempt] = useState(0);
+
+  useEffect(() => {
+    const entry = getAdminCache(statsKey);
+    if (entry) setStats(entry.data);
+    if (isAdminCacheFresh(entry)) return;
+
+    const ctrl = new AbortController();
+    setStatsError(null);
+    (async () => {
+      try {
+        const res = await fetch(`/api/v1/admin/listings/${id}/analytics`, {
+          signal: ctrl.signal,
+        });
+        if (!res.ok) throw new Error(`Failed to load stats (${res.status})`);
+        const json = await res.json();
+        setAdminCache(statsKey, json);
+        setStats(json);
+      } catch (e) {
+        if (e.name !== "AbortError" && !entry) setStatsError(e.message);
+      }
+    })();
+    return () => ctrl.abort();
+  }, [id, statsKey, statsAttempt]);
 
   const detailLoading = !detail && !error;
 
@@ -184,7 +236,7 @@ export default function PropertyAdminPopup({
     setError(null);
     (async () => {
       try {
-        const res = await fetch(`/api/v1/admin/listing/${id}`, {
+        const res = await fetch(`/api/v1/admin/listings/${id}`, {
           signal: ctrl.signal,
         });
         if (!res.ok) throw new Error(`Failed to load listing (${res.status})`);
@@ -240,16 +292,23 @@ export default function PropertyAdminPopup({
     };
   }, [handleKeyDown]);
 
-  const img = view.images[Math.min(imgIdx, view.images.length - 1)];
+  // Video first, then images by position (view.images is already sorted).
+  const mediaItems = useMemo(
+    () => [
+      ...(view.video ? [{ video_url: view.video, image_url: null }] : []),
+      ...view.images.map((im) => ({ image_url: im.src, video_url: null })),
+    ],
+    [view.video, view.images],
+  );
+  const active =
+    mediaItems[Math.min(activeIndex, mediaItems.length - 1)] ?? null;
   const { lister } = view;
   const initials = (lister.username || "?")
     .split(" ")
     .map((p) => p[0])
     .slice(0, 2)
     .join("");
-  const mapQuery = view.coords
-    ? `${view.coords.lat},${view.coords.lng}`
-    : `${view.ward}, Kenya`;
+  const mapQuery = `${view.exactLocation || view.ward}, Kenya`;
 
   const handleTag = (e) => {
     const prev = tag;
@@ -289,6 +348,25 @@ export default function PropertyAdminPopup({
               {view.ward}
             </p>
           </div>
+          <div className="pap-facts" aria-label="Key property details">
+            {" "}
+            <div className="pap-fact">
+              <Icon name="money" />
+              <span>{view.rent}</span>
+            </div>{" "}
+            <div className="pap-fact">
+              <Icon name="bed" />
+              <span>{view.type}</span>
+            </div>{" "}
+            <div className="pap-fact">
+              <Icon name="chair" />
+              <span>{view.furnishing}</span>
+            </div>{" "}
+            <div className="pap-fact">
+              <Icon name="calendar" />
+              <span>{view.term}</span>
+            </div>{" "}
+          </div>
           <div className="pap-heading-meta">
             <span>Listing #{view.id}</span>
             {view.created && <span>Added {view.created}</span>}
@@ -302,145 +380,190 @@ export default function PropertyAdminPopup({
           </button>
         </div>
 
-        <div className="pap-facts" aria-label="Key property details">
-          <div className="pap-fact">
-            <Icon name="money" />
-            <span>{view.rent}</span>
+        <section className="pap-card pap-stats" aria-label="Performance">
+          <div className="pap-section-heading">
+            <h2>Performance</h2>
           </div>
-          <div className="pap-fact">
-            <Icon name="bed" />
-            <span>{view.type}</span>
+          <div className="pap-stat-grid">
+            {statsError && !stats ? (
+              <p className="pap-error pap-stat-error">
+                {statsError}{" "}
+                <button
+                  type="button"
+                  className="pap-link"
+                  onClick={() => setStatsAttempt((n) => n + 1)}>
+                  Retry
+                </button>
+              </p>
+            ) : (
+              STAT_CARDS.map(({ key, label, icon, tone }) => {
+                const v = stats?.[key];
+
+                return (
+                  <div className="pap-stat" key={key}>
+                    <span className={`pap-stat-icon pap-tone-${tone}`}>
+                      <Icon name={icon} size={18} />
+                    </span>
+                    <div className="pap-stat-body">
+                      <span className="pap-stat-label">{label}</span>
+                      {!stats ? (
+                        <span className="pap-skeleton pap-stat-skel" />
+                      ) : (
+                        <strong className="pap-stat-value">
+                          {v == null
+                            ? "—"
+                            : key === "rating"
+                              ? v.toFixed(1)
+                              : kes.format(v)}
+                        </strong>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            <section className="pap-card pap-agent">
+              <h2>Lister</h2>
+              <div className="pap-agent-row">
+                <div className="pap-avatar" aria-hidden="true">
+                  {initials}
+                </div>
+                <div className="pap-agent-copy">
+                  <strong>{lister.username}</strong>
+                  <span>{lister.email || "No email"}</span>
+                </div>
+                {view.listingPhone || lister.phone ? (
+                  <a
+                    className="pap-icon-button"
+                    href={`tel:${view.listingPhone || lister.phone}`}
+                    aria-label={`Call ${lister.username}`}>
+                    <Icon name="phone" />
+                  </a>
+                ) : (
+                  <button
+                    className="pap-icon-button"
+                    type="button"
+                    disabled
+                    aria-label="No phone number">
+                    <Icon name="phone" />
+                  </button>
+                )}
+                {lister.email ? (
+                  <a
+                    className="pap-icon-button"
+                    href={`mailto:${lister.email}`}
+                    aria-label={`Email ${lister.username}`}>
+                    <Icon name="mail" />
+                  </a>
+                ) : (
+                  <button
+                    className="pap-icon-button"
+                    type="button"
+                    disabled
+                    aria-label="No email">
+                    <Icon name="mail" />
+                  </button>
+                )}
+              </div>
+              <div className="pap-agency">
+                <span>Plan</span>
+                <strong>{view.plan}</strong>
+              </div>
+            </section>
           </div>
-          <div className="pap-fact">
-            <Icon name="chair" />
-            <span>{view.furnishing}</span>
-          </div>
-          <div className="pap-fact">
-            <Icon name="calendar" />
-            <span>{view.term}</span>
-          </div>
-        </div>
+        </section>
 
         <div className="pap-layout">
           <main className="pap-main">
-            <section
-              className={`pap-gallery ${view.images.length < 2 ? "pap-gallery-single" : ""}`}
-              aria-label="Property photos">
-              {img ? (
-                <img
-                  className="pap-gallery-feature"
-                  src={img.src}
-                  alt={img.alt}
-                />
-              ) : (
-                <div className="pap-gallery-feature pap-empty">No photos</div>
-              )}
-              {view.images.length > 1 && (
-                <div className="pap-gallery-thumbs">
-                  {view.images.map((im, i) => (
+            <section className="pap-gallery" aria-label="Property media">
+              <div className="pap-viewer">
+                {active ? (
+                  active.video_url ? (
+                    <video
+                      key={active.video_url}
+                      className="pap-media"
+                      src={active.video_url}
+                      controls
+                      playsInline
+                    />
+                  ) : (
+                    (() => {
+                      const { src, isTransformed } = buildCdnImageUrl(
+                        active.image_url,
+                        { width: 1200, fit: "contain" },
+                      );
+                      return (
+                        <Image
+                          key={active.image_url}
+                          src={src}
+                          alt={view.title}
+                          fill
+                          unoptimized={isTransformed}
+                          sizes="(max-width: 1050px) 100vw, 900px"
+                          className="pap-media-img"
+                        />
+                      );
+                    })()
+                  )
+                ) : (
+                  <div className="pap-placeholder">
+                    <span>No media available</span>
+                  </div>
+                )}
+              </div>
+
+              {mediaItems.length > 1 && (
+                <div className="pap-strip">
+                  {mediaItems.map((item, i) => (
                     <button
-                      className={`pap-thumb ${i === imgIdx ? "pap-thumb-active" : ""}`}
+                      key={`${item.video_url ?? item.image_url}-${i}`}
                       type="button"
-                      key={`${im.src}-${i}`}
-                      onClick={() => setImgIdx(i)}
-                      aria-label={`Show photo ${i + 1}`}
-                      aria-pressed={i === imgIdx}>
-                      <img src={im.src} alt="" loading="lazy" />
+                      className={`pap-thumb ${i === activeIndex ? "pap-thumb-active" : ""}`}
+                      onClick={() => setActiveIndex(i)}
+                      aria-label={`View media ${i + 1}`}
+                      aria-pressed={i === activeIndex}>
+                      {item.image_url ? (
+                        (() => {
+                          const { src, isTransformed } = buildCdnImageUrl(
+                            item.image_url,
+                            { width: 200 },
+                          );
+                          return (
+                            <Image
+                              src={src}
+                              alt=""
+                              fill
+                              unoptimized={isTransformed}
+                              sizes="120px"
+                              className="pap-thumb-image"
+                            />
+                          );
+                        })()
+                      ) : (
+                        <div className="pap-thumb-video" />
+                      )}
+                      {item.video_url && <PlayIcon />}
                     </button>
                   ))}
                 </div>
               )}
-              {view.video && (
-                <video
-                  className="pap-video"
-                  src={view.video}
-                  controls
-                  preload="metadata"
-                />
-              )}
             </section>
-
-            <div className="pap-detail-cards">
-              <section className="pap-card pap-overview">
-                <h2>Overview</h2>
-                {detailLoading ? (
-                  <div className="pap-skeleton pap-skeleton-text" />
-                ) : error ? (
-                  <p className="pap-error">
-                    {error}{" "}
-                    <button
-                      type="button"
-                      className="pap-link"
-                      onClick={() => setAttempt((n) => n + 1)}>
-                      Retry
-                    </button>
-                  </p>
-                ) : (
-                  <p>{view.overview || "No description provided."}</p>
-                )}
-              </section>
-
-              <section className="pap-card pap-agent">
-                <h2>Lister</h2>
-                <div className="pap-agent-row">
-                  <div className="pap-avatar" aria-hidden="true">
-                    {initials}
-                  </div>
-                  <div className="pap-agent-copy">
-                    <strong>{lister.username}</strong>
-                    <span>{lister.email || "No email"}</span>
-                  </div>
-                  {lister.phone ? (
-                    <a
-                      className="pap-icon-button"
-                      href={`tel:${lister.phone}`}
-                      aria-label={`Call ${lister.username}`}>
-                      <Icon name="phone" />
-                    </a>
-                  ) : (
-                    <button
-                      className="pap-icon-button"
-                      type="button"
-                      disabled
-                      aria-label="No phone number">
-                      <Icon name="phone" />
-                    </button>
-                  )}
-                  {lister.email ? (
-                    <a
-                      className="pap-icon-button"
-                      href={`mailto:${lister.email}`}
-                      aria-label={`Email ${lister.username}`}>
-                      <Icon name="mail" />
-                    </a>
-                  ) : (
-                    <button
-                      className="pap-icon-button"
-                      type="button"
-                      disabled
-                      aria-label="No email">
-                      <Icon name="mail" />
-                    </button>
-                  )}
-                </div>
-                <div className="pap-agency">
-                  <span>Plan</span>
-                  <strong>{view.plan}</strong>
-                </div>
-              </section>
-            </div>
 
             <section className="pap-card pap-location-card">
               <div className="pap-section-heading">
                 <h2>Property location</h2>
-                <span>{view.coords ? "Exact pin" : "Approximate area"}</span>
+                <span>{view.mapUrl ? "Exact pin" : "Approximate area"}</span>
               </div>
               {detailLoading ? (
                 <div className="pap-skeleton pap-map-frame" />
               ) : (
                 <iframe
                   className="pap-map-frame"
-                  src={`https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=${view.coords ? 16 : 14}&output=embed`}
+                  src={
+                    view.mapUrl ??
+                    `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=14&output=embed`
+                  }
+                  allowFullScreen
                   title={`Map showing ${view.ward}`}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
@@ -504,6 +627,28 @@ export default function PropertyAdminPopup({
               </p>
             </section>
           </aside>
+        </div>
+
+        <div className="pap-detail-cards">
+          <section className="pap-card pap-overview">
+            {detailLoading ? (
+              <div className="pap-skeleton pap-skeleton-text" />
+            ) : error ? (
+              <p className="pap-error">
+                {error}{" "}
+                <button
+                  type="button"
+                  className="pap-link"
+                  onClick={() => setAttempt((n) => n + 1)}>
+                  Retry
+                </button>
+              </p>
+            ) : view.overview ? (
+              <DescriptionRenderer description={view.overview} />
+            ) : (
+              <p>No description provided.</p>
+            )}
+          </section>
         </div>
       </section>
     </div>,
