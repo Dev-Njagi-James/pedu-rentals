@@ -95,6 +95,29 @@
    margin-top: 0;
 }
 
+.toast {
+   position: fixed;
+   bottom: 24px;
+   left: 50%;
+   transform: translateX(-50%);
+   padding: 10px 16px;
+   font-family:var(--font-inter);
+   border-radius: 10px;
+   font-size: 14px;
+   color: #fff;
+   background: #111827;
+   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+   z-index: 1100;
+}
+
+.toastSuccess {
+   background: #15803d;
+}
+
+.toastError {
+   background: #b91c1c;
+}
+
 @media (min-width: 480px) {
    .grid {
       grid-template-columns: repeat(2, 1fr);
@@ -189,9 +212,10 @@
 }
 
 .actionsDropdownBtn {
-   background: #EF4444;
-   color: #ffffff;
+   background: var(--secondary);
+   color: black;
    font-weight: 600;
+   font-family:var(--font-geist-sans);
    font-size: 0.8125rem;
    padding: 0.5rem 0.75rem;
    border-radius: 6px;
@@ -202,6 +226,23 @@
 
 .actionsDropdownBtn:hover {
    background: #DC2626;
+   color:white;
+   transition:all 0.2s ease;
+}
+
+.statusActive {
+   background: var(--primary);
+   color: var(--background);
+}
+
+.statusPending {
+   background: #FEF3C7;
+   color: #B45309;
+}
+
+.statusUnpublished {
+   background: var(--secondary);
+   color: black;
 }
 
 /* ── Pagination Footer ── */
@@ -343,18 +384,9 @@
    padding: 0.125rem 0.5rem;
    border-radius: 9999px;
    font-size: 0.6875rem;
+   font-family:var(--font-geist-sans);
    font-weight: 600;
    white-space: nowrap;
-}
-
-.statusActive {
-   background: #ECFDF5;
-   color: #047857;
-}
-
-.statusPending {
-   background: #FEF3C7;
-   color: #B45309;
 }
 
 .actionsDropdownBtn {

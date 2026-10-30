@@ -1,15 +1,22 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
-import styles from "../css/transaction.module.css";
+import { useEffect, useMemo, useState } from "react";
+import MonthRangePicker from "./MonthRangePicker"; // adjust path to where it actually lives
 import {
   getAdminCache,
   setAdminCache,
   isAdminCacheFresh,
 } from "@/lib/cache/adminCache";
+import {
+  monthList,
+  currentMonthKey,
+  monthsToRange,
+} from "@/lib/admin/monthRange";
+import styles from "../css/transaction.module.css"; // use your original path and filename
 
 const CACHE_KEY = "transactions";
 const TX_TTL_MS = 60 * 1000;
+
 
 export default function TransactionsDashboard() {
   const cachedTx = getAdminCache(CACHE_KEY)?.data;
@@ -28,6 +35,14 @@ export default function TransactionsDashboard() {
   const [rangeStart, setRangeStart] = useState(null);
   const [rangeEnd, setRangeEnd] = useState(null);
   const [activeBar, setActiveBar] = useState(null);
+  const [exporting, setExporting] = useState(false);
+
+  
+  const [exportRange, setExportRange] = useState({
+    start: currentMonthKey(),
+    end: currentMonthKey(),
+  });
+  const exportMonths = useMemo(() => monthList(), []);
 
   useEffect(() => {
     let cancelled = false;
@@ -172,9 +187,34 @@ export default function TransactionsDashboard() {
         ? `${Math.round(v / 1e3)}K`
         : `${Math.round(v)}`;
 
-  const handleExportCSV = () => {
-    window.open("/api/v1/admin/transactions/export", "_blank");
-  };
+ const handleExport = async () => {
+   const { from, to } = monthsToRange(exportRange.start, exportRange.end);
+   const p = new URLSearchParams({ from, to });
+   setExporting(true);
+   try {
+     const res = await fetch(`/api/v1/admin/transactions/export?${p}`);
+     if (!res.ok) {
+       const { error } = await res.json().catch(() => ({}));
+       throw new Error(error || `Export failed (${res.status})`);
+     }
+     const name =
+       res.headers.get("Content-Disposition")?.match(/filename="(.+?)"/)?.[1] ||
+       "transactions.xlsx";
+     const url = URL.createObjectURL(await res.blob());
+     const a = document.createElement("a");
+     a.href = url;
+     a.download = name;
+     document.body.appendChild(a);
+     a.click();
+     a.remove();
+     URL.revokeObjectURL(url);
+   } catch (err) {
+     console.error(err);
+     alert(err.message);
+   } finally {
+     setExporting(false);
+   }
+ };
 
   const formatKES = (val) =>
     `KES ${(val || 0).toLocaleString("en-KE", { minimumFractionDigits: 0 })}`;
@@ -195,23 +235,37 @@ export default function TransactionsDashboard() {
             payments.
           </p>
         </div>
-        <button onClick={handleExportCSV} className={styles.exportBtn}>
-          <svg
-            className={styles.mono}
-            width="16"
-            height="16"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            viewBox="0 0 24 24">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
-            />
-          </svg>
-          Export CSV
-        </button>
+        <div
+          style={{
+            display: "flex",
+            gap: "0.75rem",
+            alignItems: "center",
+            flexWrap: "wrap",
+          }}>
+          <MonthRangePicker
+            label="Export"
+            months={exportMonths}
+            value={exportRange}
+            onChange={setExportRange}
+          />
+          <button onClick={handleExport} className={styles.exportBtn}>
+            <svg
+              className={styles.mono}
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"
+              />
+            </svg>
+            {exporting ? "Exporting..." : "Export"}
+          </button>
+        </div>
       </div>
 
       {/* 1. TOP METRIC CARDS */}

@@ -40,6 +40,16 @@ export default function AdminPropertiesDirectory() {
   const [price, setPrice] = useState("all");
   const [sort, setSort] = useState("newest");
   const [selected, setSelected] = useState(null);
+  const [deleting, setDeleting] = useState([]); // listing ids with a delete in flight
+  const [toast, setToast] = useState(null); // { kind: "info" | "success" | "error", text }
+
+  useEffect(() => {
+    if (!toast || toast.kind === "info") return;
+    const t = setTimeout(() => setToast(null), 4000);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const visibleItems = items.filter((i) => !deleting.includes(i.listing_id));
 
   const patchListing = (id, patch) => {
   setItems((prev) =>
@@ -72,14 +82,26 @@ const handleRepublish = async (view) =>
 const handleTagChange = async (tag, view) =>
   patchListing(view.id, await callAdmin(view, "PATCH", { action: "tag", tag }));
 
-const handleDelete = async (view) => {
-  await callAdmin(view, "DELETE");
+const handleDelete = (view) => {
+  if (deleting.includes(view.id)) return;
+  setDeleting((d) => [...d, view.id]);
   setSelected(null);
-  setItems((prev) => prev.filter((i) => i.listing_id !== view.id));
-  setTotalItems((n) => Math.max(0, n - 1));
-  invalidateAdminCache();
-  };
-  
+  setToast({ kind: "info", text: `Deleting "${view.title}"…` });
+
+  (async () => {
+    try {
+      await callAdmin(view, "DELETE");
+      setItems((prev) => prev.filter((i) => i.listing_id !== view.id));
+      setTotalItems((n) => Math.max(0, n - 1));
+      invalidateAdminCache();
+      setToast({ kind: "success", text: "Listing deleted" });
+    } catch (e) {
+      setToast({ kind: "error", text: `Delete failed: ${e.message}` });
+    } finally {
+      setDeleting((d) => d.filter((x) => x !== view.id));
+    }
+  })();
+};
   useEffect(() => {
     const t = setTimeout(() => {
       setDebouncedQ(search);
@@ -245,17 +267,17 @@ const handleDelete = async (view) => {
         </div>
       )}
 
-      {!loading && !error && items.length === 0 && (
+      {!loading && !error && visibleItems.length === 0 && (
         <div className={styles.emptyState}>
           <p>No properties found matching your criteria.</p>
         </div>
       )}
 
-      {items.length > 0 && (
+      {visibleItems.length > 0 && (
         <div
           className={`${styles.gridWrap} ${loading ? styles.gridLoading : ""}`}>
           <div className={styles.grid}>
-            {items.map((listing) => (
+            {visibleItems.map((listing) => (
               <div key={listing.listing_id} className={styles.cardWrapper}>
                 <PropertyCardV1 listing={listing} />
 
@@ -264,7 +286,7 @@ const handleDelete = async (view) => {
                     <span className={styles.listerName}>
                       {listing.lister.username}
                     </span>
-                   {(() => {
+                    {(() => {
                       const s = listing.admin_unpublished_at
                         ? "unpublished"
                         : listing.payment_status === "paid"
@@ -275,8 +297,16 @@ const handleDelete = async (view) => {
                         pending: styles.statusPending,
                         unpublished: styles.statusUnpublished,
                       }[s];
-                      const label = { active: "Active", pending: "Pending", unpublished: "Unpublished" }[s];
-                      return <span className={`${styles.statusPill} ${cls}`}>{label}</span>;
+                      const label = {
+                        active: "Active",
+                        pending: "Pending",
+                        unpublished: "Unpublished",
+                      }[s];
+                      return (
+                        <span className={`${styles.statusPill} ${cls}`}>
+                          {label}
+                        </span>
+                      );
                     })()}
                   </div>
                   <button
@@ -332,6 +362,21 @@ const handleDelete = async (view) => {
           onDelete={handleDelete}
         />
       )}
+
+      {toast && (
+        <div
+          role="status"
+          className={`${styles.toast} ${
+            toast.kind === "error"
+              ? styles.toastError
+              : toast.kind === "success"
+                ? styles.toastSuccess
+                : ""
+          }`}>
+          {toast.text}
+        </div>
+      )}
+      
     </div>
   );
 }
