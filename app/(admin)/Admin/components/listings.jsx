@@ -8,6 +8,7 @@ import {
   setAdminCache,
   isAdminCacheFresh,
 } from "@/lib/cache/adminCache";
+import PropertyAdminPopup from "./PropertyPopupAdmin";
 
 const DEFAULT_KEY = "listings:page=1&sort=newest";
 
@@ -37,6 +38,7 @@ export default function AdminPropertiesDirectory() {
   const [ward, setWard] = useState("");
   const [price, setPrice] = useState("all");
   const [sort, setSort] = useState("newest");
+  const [selected, setSelected] = useState(null);
 
   useEffect(() => {
     const t = setTimeout(() => {
@@ -194,7 +196,7 @@ export default function AdminPropertiesDirectory() {
 
       {error && <div className={styles.errorState}>{error}</div>}
 
-      {loading && (
+      {loading && items.length === 0 && (
         <div className={styles.grid}>
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className={styles.skeletonCard} />
@@ -208,40 +210,41 @@ export default function AdminPropertiesDirectory() {
         </div>
       )}
 
-      {!loading && items.length > 0 && (
-        <div className={styles.grid}>
-          {items.map((listing) => (
-            <div key={listing.listing_id} className={styles.cardWrapper}>
-              <PropertyCardV1 listing={listing} />
+      {items.length > 0 && (
+        <div
+          className={`${styles.gridWrap} ${loading ? styles.gridLoading : ""}`}>
+          <div className={styles.grid}>
+            {items.map((listing) => (
+              <div key={listing.listing_id} className={styles.cardWrapper}>
+                <PropertyCardV1 listing={listing} />
 
-              <div className={styles.cardActionsContainer}>
-                <div className={styles.listerRow}>
-                  <span className={styles.listerName}>
-                    {listing.lister.username}
-                  </span>
-                  <span
-                    className={`${styles.statusPill} ${
-                      listing.payment_status === "paid"
-                        ? styles.statusActive
-                        : styles.statusPending
-                    }`}>
-                    {listing.payment_status === "paid" ? "Active" : "Pending"}
-                  </span>
+                <div className={styles.cardActionsContainer}>
+                  <div className={styles.listerRow}>
+                    <span className={styles.listerName}>
+                      {listing.lister.username}
+                    </span>
+                    <span
+                      className={`${styles.statusPill} ${
+                        listing.payment_status === "paid"
+                          ? styles.statusActive
+                          : styles.statusPending
+                      }`}>
+                      {listing.payment_status === "paid" ? "Active" : "Pending"}
+                    </span>
+                  </div>
+                  <button
+                    className={styles.actionsDropdownBtn}
+                    onClick={() => setSelected(listing)}>
+                    Actions
+                  </button>
                 </div>
-                <button
-                  className={styles.actionsDropdownBtn}
-                  onClick={() =>
-                    alert(`Options for listing ${listing.listing_id}`)
-                  }>
-                  Actions
-                </button>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
-      {!loading && totalPages > 1 && (
+      {totalPages > 1 && (
         <div className={styles.paginationFooter}>
           <span className={styles.paginationInfo}>
             Showing {first}-{last} of {totalItems} properties
@@ -270,6 +273,15 @@ export default function AdminPropertiesDirectory() {
           </div>
         </div>
       )}
+
+      {selected && (
+        <PropertyAdminPopup
+          key={selected.listing_id}
+          seed={selected}
+          onClose={() => setSelected(null)}
+        />
+      )}
+
     </div>
   );
 }
