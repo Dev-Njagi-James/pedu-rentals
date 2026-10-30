@@ -186,10 +186,12 @@ export default function PropertyAdminPopup({
   const [attempt, setAttempt] = useState(0);
   const [activeIndex, setActiveIndex] = useState(0);
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState(null); // "unpublish" | "republish" | null
+  const busy = pending !== null;
   const [actionError, setActionError] = useState(null);
 
-  const run = async (fn) => {
+  const run = async (kind, fn) => {
+    setPending(kind);
     setBusy(true);
     setActionError(null);
     try {
@@ -197,11 +199,11 @@ export default function PropertyAdminPopup({
     } catch (e) {
       setActionError(e.message);
     } finally {
-      setBusy(false);
+      setPending(null);
     }
   };
 
-   const view = useMemo(() => toView({ ...detail, ...seed }), [seed, detail]);
+  const view = useMemo(() => toView({ ...detail, ...seed }), [seed, detail]);
   const [tag, setTag] = useState(view.reviewTag);
 
   const STAT_CARDS = [
@@ -273,10 +275,14 @@ export default function PropertyAdminPopup({
     return () => ctrl.abort();
   }, [id, cacheKey, attempt]);
 
+  const requestClose = () => {
+    if (!busy) onClose();
+  };
+
   // Latest onClose without re-running the effects below.
   const closeRef = useRef(onClose);
   useEffect(() => {
-    closeRef.current = onClose;
+    closeRef.current = requestClose;
   });
 
   const dialogRef = useRef(null);
@@ -349,7 +355,7 @@ export default function PropertyAdminPopup({
       className="pap-backdrop"
       role="presentation"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) requestClose();
       }}>
       <section
         ref={dialogRef}
@@ -406,7 +412,7 @@ export default function PropertyAdminPopup({
           <button
             className="pap-close"
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Close property details">
             <Icon name="close" size={20} />
           </button>
@@ -636,17 +642,19 @@ export default function PropertyAdminPopup({
                 type="button"
                 disabled={busy}
                 onClick={() =>
-                  run(() =>
-                    view.adminUnpublished
-                      ? onRepublish(view)
-                      : onUnpublish(view),
-                  )
+                  view.adminUnpublished
+                    ? run("republish", () => onRepublish(view))
+                    : run("unpublish", () => onUnpublish(view))
                 }>
                 <Icon name={view.adminUnpublished ? "eye" : "eyeOff"} />
                 <span>
-                  {view.adminUnpublished
-                    ? "Republish listing"
-                    : "Unpublish listing"}
+                  {pending === "unpublish"
+                    ? "Unpublishing…"
+                    : pending === "republish"
+                      ? "Republishing…"
+                      : view.adminUnpublished
+                        ? "Republish listing"
+                        : "Unpublish listing"}
                 </span>
               </button>
               <p className="pap-help">
@@ -660,9 +668,7 @@ export default function PropertyAdminPopup({
                 type="button"
                 disabled={busy}
                 onClick={() =>
-                  confirmDelete
-                    ? run(() => onDelete(view))
-                    : setConfirmDelete(true)
+                  confirmDelete ? onDelete(view) : setConfirmDelete(true)
                 }>
                 {actionError && <p className="pap-error">{actionError}</p>}
                 <Icon name="trash" />
