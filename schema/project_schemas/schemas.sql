@@ -482,3 +482,18 @@ $$;
 
 revoke all on function admin_growth_daily(date, date) from public, anon, authenticated;
 grant execute on function admin_growth_daily(date, date) to service_role;
+
+create table public.admin_actions (
+  action_id   bigint generated always as identity primary key,
+  listing_id  bigint not null,  -- intentionally no FK; survives deletes
+  lister_uuid uuid   not null references users_table (lister_uuid),
+  admin_uuid  uuid   not null,
+  action      text   not null
+    check (action in ('tag','untag','unpublish','republish','delete')),
+  tag         text   null,
+  note        text   null,
+  created_at  timestamptz not null default now()
+);
+
+create index on public.admin_actions (listing_id, created_at desc);
+create index on public.admin_actions (lister_uuid);
