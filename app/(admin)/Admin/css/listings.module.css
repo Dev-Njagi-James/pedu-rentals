@@ -119,6 +119,16 @@
    }
 }
 
+.gridWrap {
+   position: relative;
+   transition: opacity 0.2s ease;
+}
+
+.gridLoading {
+   opacity: 0.75;
+   pointer-events: none;
+}
+
 /* ── Card & Actions Wrapper ── */
 .cardWrapper {
    background: var(--sidebar);

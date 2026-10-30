@@ -6,12 +6,13 @@ import AdminNav from "./AdminNav";
 import ExecutiveOverview from "./components/overview";
 import TransactionsDashboard from './components/transactions'
 import AdminPropertiesDirectory from './components/listings'
+import AccountSecurityDashboard from './components/account'
 
 function AdminPanelContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const activeTab = searchParams.get("tab") ?? "overview";
-  const [verificationId, setVerificationId] = useState(null);
+
 
   return (
     <AdminNav
@@ -21,7 +22,8 @@ function AdminPanelContent() {
       panels={{
         overview: <ExecutiveOverview />,
         transactions: <TransactionsDashboard />,
-        listings: <AdminPropertiesDirectory/>
+        listings: <AdminPropertiesDirectory />,
+        account: <AccountSecurityDashboard/>
       }}
     />
   );
