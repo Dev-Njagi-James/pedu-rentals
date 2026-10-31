@@ -338,7 +338,7 @@ export default function ExecutiveOverview() {
       {/* Row 2: footfall cards (cards range) */}
       <section className={styles.visitorCardsGrid}>
         <div className={styles.visitorCard}>
-          <span className={styles.cardLabel}>Total Unique Visitors</span>
+          <span className={styles.cardLabel}>Total Visitors</span>
           <div className={styles.visitorValueRow}>
             <span className={styles.visitorValue}>
               {footfall
@@ -347,15 +347,11 @@ export default function ExecutiveOverview() {
                   ? "..."
                   : "0"}
             </span>
-            <span className={styles.visitorUnit}>visitors</span>
           </div>
-          <p className={styles.visitorNote}>
-            Distinct people in range, across web portal, Android APK, and PWA
-          </p>
         </div>
 
         <div className={styles.visitorCard}>
-          <span className={styles.cardLabel}>New Visitors (Range)</span>
+          <span className={styles.cardLabel}>New Visitors</span>
           <div className={styles.visitorValueRow}>
             <span className={styles.visitorValue}>
               {footfall
@@ -364,7 +360,19 @@ export default function ExecutiveOverview() {
                   ? "..."
                   : "0"}
             </span>
-            <span className={styles.visitorUnit}>first seen in range</span>
+          </div>
+        </div>
+
+        <div className={styles.visitorCard}>
+          <span className={styles.cardLabel}>Returning Visitors</span>
+          <div className={styles.visitorValueRow}>
+            <span className={styles.visitorValue}>
+              {footfall
+                ? fmt(footfall.returningVisitors)
+                : cards.loading
+                  ? "..."
+                  : "0"}
+            </span>
           </div>
         </div>
       </section>

@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono, Inter } from 'next/font/google';
 import './globals.css';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import VercelAnalytics from "@/lib/analytics/VercelAnalytics";
 import { Toaster } from 'sonner';
 import Script from 'next/script';
 import { ClerkProvider, GoogleOneTap } from "@clerk/nextjs";
@@ -10,6 +9,7 @@ import Providers from './providers';
 import OnboardingGate from "./OnboardingGate";
 import FeedbackBanner from './FeedbackBanner';
 import SafeGoogleTap from './safeGoogleTap'
+import PostHogIdentify from "@/lib/analytics/PostHogIdentify";
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -57,11 +57,10 @@ export default function RootLayout({ children }) {
         className={`${geistSans.variable} ${geistMono.variable} ${inter.variable} antialiased`}>
         <PostHogProvider>
           <ClerkProvider>
-            <SafeGoogleTap/>
-            <Analytics />
-            <SpeedInsights />
+            <SafeGoogleTap />
+            <VercelAnalytics />
+            <PostHogIdentify />
             <Toaster position="top-right" duration={4000} richColors />
-
             <main>
               <Providers>
                 {children}
