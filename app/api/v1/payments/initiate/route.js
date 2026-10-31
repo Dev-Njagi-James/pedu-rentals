@@ -3,7 +3,7 @@ import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
 import { randomUUID } from "crypto";
 import { initiatePayment } from "@/lib/payments";
-
+import { MIN_LISTING_IMAGES } from "@/lib/constants";
 
 export async function POST(request) {
   let payment_id = null;
@@ -45,8 +45,9 @@ export async function POST(request) {
           { status: 404 },
         );
       }
+      //console.error("[payments/initiate] listing lookup", listingErr);
       return NextResponse.json(
-        { success: false, error: listingErr.message },
+        { success: false, error: "Could not load listing." },
         { status: 500 },
       );
     }
@@ -60,6 +61,21 @@ export async function POST(request) {
     if (listingRow.payment_status === "paid") {
       return NextResponse.json(
         { success: false, error: "Listing is already published." },
+        { status: 409 },
+      );
+    }
+
+    const { data: media } = await paymentsSupabase
+      .from("images_table")
+      .select("images_url")
+      .eq("listing_id", listing_id)
+      .maybeSingle();
+    if (
+      !Array.isArray(media?.images_url) ||
+      media.images_url.length < MIN_LISTING_IMAGES
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Upload listing images before payment." },
         { status: 409 },
       );
     }
@@ -93,7 +109,7 @@ export async function POST(request) {
       return NextResponse.json({ success: true, free_pass: true });
     }
 
-        const { data: plan, error: planErr } = await paymentsSupabase
+    const { data: plan, error: planErr } = await paymentsSupabase
       .from("plan_category_pricing")
       .select("price_kes")
       .eq("plan_name", plan_name)
@@ -103,11 +119,17 @@ export async function POST(request) {
     if (planErr) {
       if (planErr.code === "PGRST116") {
         return NextResponse.json(
-          { success: false, error: "No pricing found for this plan and category." },
+          {
+            success: false,
+            error: "No pricing found for this plan and category.",
+          },
           { status: 400 },
         );
       }
-      return NextResponse.json({ success: false, error: planErr.message }, { status: 500 });
+      return NextResponse.json(
+        { success: false, error: planErr.message },
+        { status: 500 },
+      );
     }
 
     const amount_kes = plan.price_kes;
@@ -125,7 +147,10 @@ export async function POST(request) {
     };
     if (!billing.email && !billing.phone) {
       return NextResponse.json(
-        { success: false, error: "Add an email or phone number to your account first." },
+        {
+          success: false,
+          error: "Add an email or phone number to your account first.",
+        },
         { status: 400 },
       );
     }
@@ -148,7 +173,8 @@ export async function POST(request) {
       .single();
 
     if (insertErr) {
-      return NextResponse.json({ success: false, error: insertErr.message }, { status: 500 });
+      //console.error("[payments/initiate] payment insert", insertErr);
+      return NextResponse.json({ success: false, error: "Could not start payment." }, { status: 500 });
     }
     payment_id = paymentRecord.payment_id;
 
@@ -166,7 +192,10 @@ export async function POST(request) {
     for (let attempt = 0; attempt < 3 && !saved; attempt++) {
       const { error: updateErr } = await paymentsSupabase
         .from("payments_table")
-        .update({ provider_ref: providerRef, updated_at: new Date().toISOString() })
+        .update({
+          provider_ref: providerRef,
+          updated_at: new Date().toISOString(),
+        })
         .eq("payment_id", payment_id);
       if (!updateErr) saved = true;
       else await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
@@ -182,7 +211,11 @@ export async function POST(request) {
         })
         .eq("payment_id", payment_id);
       return NextResponse.json(
-        { success: false, error: "Could not start payment. Contact support.", payment_id },
+        {
+          success: false,
+          error: "Could not start payment. Contact support.",
+          payment_id,
+        },
         { status: 500 },
       );
     }

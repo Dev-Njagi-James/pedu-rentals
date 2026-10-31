@@ -10,8 +10,30 @@ import {
   ServerError,
   TimeoutError,
 } from "@stravon/scale-sdk";
+import { EDIT_WINDOW_DAYS, MIN_LISTING_IMAGES } from "@/lib/constants";
 
 const scale = new ScaleClient({ apiKey: process.env.SCALE_API_KEY });
+// Verify this equals what scale.storage.create returns as publicUrl.
+const CDN = "https://cdn.stravontechlabs.com/";
+const validUploads = (uploads) => {
+  const imagePositions = new Set();
+  for (const u of uploads) {
+    if (
+      typeof u?.key !== "string" ||
+      u.publicUrl !== `${CDN}${u.key}` ||
+      !["image", "video"].includes(u.type) ||
+      !Number.isInteger(u.position) ||
+      u.position < 0
+    )
+      return false;
+    if (u.type === "image") {
+      if (u.position > 3) return false;
+      if (imagePositions.has(u.position)) return false;
+      imagePositions.add(u.position);
+    }
+  }
+  return true;
+};
 
 export async function POST(request) {
   // 1. Auth check — resolve the active legacy identity from the Clerk session.
@@ -40,6 +62,16 @@ export async function POST(request) {
     if (uploads.length < 1) {
       return NextResponse.json(
         { error: "uploads array is required" },
+        { status: 400 },
+      );
+    }
+
+    if (!validUploads(uploads)) {
+      return NextResponse.json({ error: "Invalid uploads." }, { status: 400 });
+    }
+    if (uploads.filter((u) => u.type === "image").length < MIN_LISTING_IMAGES) {
+      return NextResponse.json(
+        { error: `At least ${MIN_LISTING_IMAGES} images are required.` },
         { status: 400 },
       );
     }
@@ -75,18 +107,6 @@ export async function POST(request) {
         .limit(1);
 
     if (imagesQueryErr) {
-      await paymentsSupabase
-        .from("listings_table")
-        .delete()
-        .eq("listing_id", listingId);
-
-      if (imagesQueryErr.code === "23505") {
-        return NextResponse.json(
-          { error: "Listing already has images" },
-          { status: 400 },
-        );
-      }
-
       return NextResponse.json(
         { error: imagesQueryErr.message },
         { status: 500 },
@@ -226,7 +246,7 @@ export async function PUT(request) {
 
     const { data: listingRow, error: ownerCheckError } = await paymentsSupabase
       .from("listings_table")
-      .select("lister_uuid")
+      .select("lister_uuid, created_at")
       .eq("listing_id", listingId)
       .maybeSingle();
 
@@ -243,12 +263,25 @@ export async function PUT(request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    const ageDays =
+      (Date.now() - new Date(listingRow.created_at).getTime()) / 86_400_000;
+    if (ageDays > EDIT_WINDOW_DAYS) {
+      return NextResponse.json(
+        { error: "Edit window has expired." },
+        { status: 403 },
+      );
+    }
+
     // No-op edit — metadata-only save, nothing to finalize.
     if (uploads.length === 0) {
       return NextResponse.json(
         { success: true, listing_id: listingId },
         { status: 200 },
       );
+    }
+
+    if (!validUploads(uploads)) {
+      return NextResponse.json({ error: "Invalid uploads." }, { status: 400 });
     }
 
     const completed = [];
@@ -300,7 +333,7 @@ export async function PUT(request) {
     const mergedImages = Array.from(mergedByPosition.values()).sort(
       (a, b) => a.position - b.position,
     );
-    
+
     const video_url =
       videoUploads.length === 1
         ? videoUploads[0].publicUrl

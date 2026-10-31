@@ -15,6 +15,7 @@ import { NextResponse } from "next/server";
 import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
 import { ScaleClient, ScaleError, ValidationError } from "@stravon/scale-sdk";
+import { EDIT_WINDOW_DAYS } from "@/lib/constants";
 
 export const revalidate = 0;
 const scale = new ScaleClient({ apiKey: process.env.SCALE_API_KEY });
@@ -76,7 +77,7 @@ export async function PATCH(request, { params }) {
 
   const { data: existing, error: fetchError } = await paymentsSupabase
     .from("listings_table")
-    .select("lister_uuid, created_at")
+    .select("lister_uuid, created_at, payment_status, listing_category")
     .eq("listing_id", listing_id)
     .maybeSingle();
 
@@ -88,6 +89,15 @@ export async function PATCH(request, { params }) {
   }
   if (existing.lister_uuid !== user.id) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const ageDays =
+    (Date.now() - new Date(existing.created_at).getTime()) / 86_400_000;
+  if (ageDays > EDIT_WINDOW_DAYS) {
+    return NextResponse.json(
+      { error: "Edit window has expired." },
+      { status: 403 },
+    );
   }
 
   try {
@@ -114,6 +124,47 @@ export async function PATCH(request, { params }) {
       );
     }
 
+     if (
+      existing.payment_status === "paid" &&
+      String(fields.category_name).trim() !== existing.listing_category
+    ) {
+      return NextResponse.json(
+        { error: "Category cannot change after payment." },
+        { status: 409 },
+      );
+    }
+
+    const { data: pair } = await paymentsSupabase
+      .from("category_types_table")
+      .select("category_type_name")
+      .eq("category_type_name", String(fields.category_type_name).trim())
+      .eq("category_name", String(fields.category_name).trim())
+      .maybeSingle();
+    if (!pair) {
+      return NextResponse.json(
+        { error: "Type does not belong to category." },
+        { status: 400 },
+      );
+    }
+
+    for (const file of files) {
+      if (
+        !file ||
+        typeof file.filename !== "string" ||
+        typeof file.contentType !== "string" ||
+        !Number.isFinite(file.fileSize) ||
+        file.fileSize <= 0 ||
+        !["image", "video"].includes(file.type) ||
+        !Number.isInteger(file.position)
+      ) {
+        return NextResponse.json(
+          { error: "Invalid file metadata." },
+          { status: 400 },
+        );
+      }
+    }
+
+    
     const listing_ward = Number.parseInt(fields.ward_id, 10);
     const price_kes = Number.parseInt(fields.property_price, 10);
     if (!Number.isInteger(listing_ward) || !Number.isInteger(price_kes)) {
