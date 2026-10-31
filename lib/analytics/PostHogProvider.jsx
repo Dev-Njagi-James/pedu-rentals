@@ -10,9 +10,16 @@ function PostHogPageview() {
 
   useEffect(() => {
     if (!pathname) return;
+    if (pathname.startsWith("/auth-complete")) return; // handshake landing page
+    initPostHogClient();
+
+    const params = new URLSearchParams(searchParams.toString());
+    ["__clerk_handshake", "__clerk_db_jwt", "__clerk_synced"].forEach((k) =>
+      params.delete(k),
+    );
     let url = window.origin + pathname;
-    if (searchParams.toString()) url += `?${searchParams.toString()}`;
-    posthog.capture('$pageview', { $current_url: url });
+    if (params.toString()) url += `?${params.toString()}`;
+    posthog.capture("$pageview", { $current_url: url });
   }, [pathname, searchParams]);
 
   return null;
