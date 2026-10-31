@@ -7,6 +7,7 @@ import ExecutiveOverview from "./components/overview";
 import TransactionsDashboard from './components/transactions'
 import AdminPropertiesDirectory from './components/listings'
 import AccountSecurityDashboard from './components/account'
+import AdminPricingTable from './components/pricingTable'
 
 function AdminPanelContent() {
   const searchParams = useSearchParams();
@@ -23,7 +24,8 @@ function AdminPanelContent() {
         overview: <ExecutiveOverview />,
         transactions: <TransactionsDashboard />,
         listings: <AdminPropertiesDirectory />,
-        account: <AccountSecurityDashboard/>
+        account: <AccountSecurityDashboard />,
+        pricing: < AdminPricingTable/>
       }}
     />
   );

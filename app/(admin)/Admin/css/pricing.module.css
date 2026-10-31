@@ -1,0 +1,150 @@
+.headerActions {
+   display: flex;
+   gap: 0.5rem;
+   align-items: center;
+}
+
+.secondaryBtn {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   background-color: transparent;
+   color: #0f172a;
+   font-weight: 500;
+   font-size: 0.875rem;
+   font-family: var(--font-geist-sans), sans-serif;
+   padding: 0.525rem 0.8rem;
+   border-radius: 0.4rem;
+   border: 1px solid #e2e8f0;
+   cursor: pointer;
+   transition: background-color 0.15s ease;
+}
+
+.secondaryBtn:hover:not(:disabled) {
+   background-color: #f1f5f9;
+}
+
+.secondaryBtn:disabled {
+   opacity: 0.5;
+   cursor: not-allowed;
+}
+
+.priceInput {
+   width: 8rem;
+   max-width: 100%;
+   box-sizing: border-box;
+   padding: 0.4rem 0.6rem;
+   background-color: #ffffff;
+   border: 1px solid #e2e8f0;
+   border-radius: 0.4rem;
+   font-size: 0.75rem;
+   font-weight: 500;
+   color: #0f172a;
+   font-family: var(--font-geist-mono), monospace;
+   outline: none;
+}
+
+.priceInput:focus {
+   border-color: #0f172a;
+}
+
+.priceChanged {
+   background-color: #eff6ff;
+   border-color: #2563eb;
+}
+
+.priceInvalid {
+   background-color: #fef2f2;
+   border-color: #dc2626;
+}
+
+.stateCell {
+   padding: 3rem 0;
+   text-align: center;
+   color: #94a3b8;
+}
+
+.errorBanner {
+   margin-top: 1rem;
+   padding: 0.6rem 0.8rem;
+   background-color: #fef2f2;
+   border: 1px solid #fecaca;
+   border-radius: 0.4rem;
+   color: #b91c1c;
+   font-size: 0.8rem;
+   font-family: var(--font-inter), sans-serif;
+}
+
+.overlay {
+   position: fixed;
+   inset: 0;
+   background-color: rgba(15, 23, 42, 0.5);
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: 1rem;
+   z-index: 50;
+}
+
+.modal {
+   width: 100%;
+   max-width: 32rem;
+   max-height: 85vh;
+   overflow-y: auto;
+   background-color: var(--sidebar, #ffffff);
+   border-radius: 0.75rem;
+   padding: 1.25rem;
+   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modalTitle {
+   margin: 0 0 0.75rem;
+   font-size: 1rem;
+   font-weight: 700;
+   color: #0f172a;
+   font-family: var(--font-geist-sans), sans-serif;
+}
+
+.changeList {
+   list-style: none;
+   margin: 0;
+   padding: 0;
+   display: flex;
+   flex-direction: column;
+   gap: 0.5rem;
+}
+
+.changeList li {
+   display: flex;
+   justify-content: space-between;
+   gap: 1rem;
+   padding: 0.5rem 0;
+   border-bottom: 1px solid #f1f5f9;
+   font-size: 0.75rem;
+   color: #475569;
+   font-family: var(--font-inter), sans-serif;
+}
+
+.modalActions {
+   display: flex;
+   justify-content: flex-end;
+   gap: 0.5rem;
+   margin-top: 1rem;
+}
+
+/* REMOVABLE: free-pass cosmetic. Delete with isFreePass in AdminPricingTable.jsx. */
+.freePass {
+   text-decoration: line-through;
+   color: #94a3b8;
+}
+
+.freeTag {
+   margin-left: 0.5rem;
+   padding: 2px 0.5rem;
+   border-radius: 9999px;
+   background-color: #ecfdf5;
+   color: #059669;
+   font-size: 0.6rem;
+   font-weight: 500;
+   font-family: var(--font-geist-mono), monospace;
+}
