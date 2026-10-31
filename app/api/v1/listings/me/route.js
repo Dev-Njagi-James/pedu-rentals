@@ -29,8 +29,9 @@ export async function GET(request) {
         `listing_id, listing_name, listing_category, category_type, furnishing,
          rent_duration, phone_number, price_kes, listing_ward, ward_display_name,
          ward_location, location_url, listing_description, plan_name, payment_status,
-         created_at, updated_at,
-         images_table (images_url, video_url)`,
+          created_at, updated_at,
+         images_table (images_url, video_url),
+         subscriptions_table (status, expires_at)`,
         { count: "exact" },
       )
       .eq("lister_uuid", user.id);

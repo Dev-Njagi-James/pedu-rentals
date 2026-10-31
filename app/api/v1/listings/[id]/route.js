@@ -22,7 +22,6 @@ const scale = new ScaleClient({ apiKey: process.env.SCALE_API_KEY });
 export async function GET(request, { params }) {
   const { id } = await params;
   const listing_id = parseInt(id, 10);
-
   if (isNaN(listing_id)) {
     return NextResponse.json({ error: "Invalid listing ID" }, { status: 400 });
   }
@@ -30,9 +29,9 @@ export async function GET(request, { params }) {
   const { data, error } = await paymentsSupabase
     .from("listings_table")
     .select(
-      `listing_id, listing_name, listing_category, category_type, furnishing,
-       rent_duration, phone_number, price_kes, listing_ward, ward_display_name,
-       ward_location, location_url, listing_description, plan_name, created_at, updated_at,
+      `listing_id, lister_uuid, payment_status, admin_unpublished_at, listing_name, listing_category, category_type, furnishing,
+       rent_duration, price_kes, listing_ward, ward_display_name,
+       listing_description, plan_name, created_at, updated_at,
        images_table (images_url, video_url)`,
     )
     .eq("listing_id", listing_id)
@@ -40,16 +39,24 @@ export async function GET(request, { params }) {
 
   if (error) {
     return NextResponse.json(
-      { error: "Failed to fetch listing", details: error.message },
+      { error: "Failed to fetch listing" },
       { status: 500 },
     );
   }
-
   if (!data) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ data });
+  const isPublic = data.payment_status === "paid" && !data.admin_unpublished_at;
+  if (!isPublic) {
+    const { user } = await requireAuth();
+    if (!user || user.id !== data.lister_uuid) {
+      return NextResponse.json({ error: "Listing not found" }, { status: 404 });
+    }
+  }
+
+  const { lister_uuid, ...rest } = data;
+  return NextResponse.json({ data: rest });
 }
 
 export async function PATCH(request, { params }) {
@@ -205,114 +212,44 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ error: "Invalid listing ID" }, { status: 400 });
   }
 
-  const { data: listing, error: fetchError } = await paymentsSupabase
-    .from("listings_table")
-    .select("lister_uuid, images_table (media_id, images_url)")
-    .eq("listing_id", listing_id)
-    .maybeSingle();
+  // Ownership check, child cleanup and listing delete happen in one transaction.
+  const { data, error } = await paymentsSupabase.rpc("delete_listing_cascade", {
+    p_listing_id: listing_id,
+    p_lister_uuid: user.id,
+  });
 
-  if (fetchError) {
-    return NextResponse.json({ error: fetchError.message }, { status: 500 });
-  }
-  if (!listing) {
-    return NextResponse.json({ error: "Listing not found" }, { status: 404 });
-  }
-  if (listing.lister_uuid !== user.id) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  if (error) {
+    console.error("[listings DELETE]", { listing_id }, error);
+    const status =
+      error.code === "P0002"
+        ? 404
+        : error.code === "42501"
+          ? 403
+          : error.code === "55000"
+            ? 409
+            : 500;
+    return NextResponse.json({ error: error.message }, { status });
   }
 
-  const imageKeys = (listing.images_table?.images_url ?? [])
-    .map((img) => img.key)
-    .filter(Boolean);
-
-  // Gate: every R2 object must delete successfully before any DB row is touched.
+  // DB is already clean. Storage cleanup is best effort: a failure leaves an
+  // orphaned file, never a broken listing.
+  const keys = data?.keys ?? [];
   const failedKeys = [];
-  for (const key of imageKeys) {
-    try {
-      const result = await scale.storage.delete({ key });
-      if (!result?.success) {
+  await Promise.all(
+    keys.map(async (key) => {
+      try {
+        const result = await scale.storage.delete({ key });
+        if (!result?.success) failedKeys.push(key);
+      } catch {
         failedKeys.push(key);
       }
-    } catch (err) {
-      failedKeys.push(key);
-      console.error(`SCALE delete failed for key ${key}:`, err.message);
-    }
-  }
-
+    }),
+  );
   if (failedKeys.length > 0) {
-    return NextResponse.json(
-      {
-        error:
-          "Failed to delete one or more storage files. Listing was not deleted.",
-        failedKeys,
-      },
-      { status: 500 },
-    );
-  }
-
-  // review_reactions FK's to reviews_table — must clear before reviews_table row deletion.
-  const { data: reviewRows, error: reviewLookupError } = await paymentsSupabase
-    .from("reviews_table")
-    .select("review_id")
-    .eq("listing_id", listing_id);
-
-  if (reviewLookupError) {
-    return NextResponse.json(
-      { error: reviewLookupError.message },
-      { status: 500 },
-    );
-  }
-
-  const reviewIds = (reviewRows ?? []).map((r) => r.review_id);
-
-  if (reviewIds.length > 0) {
-    const { error: reactionsDeleteError } = await paymentsSupabase
-      .from("review_reactions")
-      .delete()
-      .in("review_id", reviewIds);
-
-    if (reactionsDeleteError) {
-      return NextResponse.json(
-        { error: reactionsDeleteError.message },
-        { status: 500 },
-      );
-    }
-  }
-
-  const { error: reviewsDeleteError } = await paymentsSupabase
-    .from("reviews_table")
-    .delete()
-    .eq("listing_id", listing_id);
-
-  if (reviewsDeleteError) {
-    return NextResponse.json(
-      { error: reviewsDeleteError.message },
-      { status: 500 },
-    );
-  }
-
-  const { error: imagesDeleteError } = await paymentsSupabase
-    .from("images_table")
-    .delete()
-    .eq("listing_id", listing_id);
-
-  if (imagesDeleteError) {
-    return NextResponse.json(
-      { error: imagesDeleteError.message },
-      { status: 500 },
-    );
-  }
-
-  const { error: listingDeleteError } = await paymentsSupabase
-    .from("listings_table")
-    .delete()
-    .eq("listing_id", listing_id);
-
-  if (listingDeleteError) {
-    return NextResponse.json(
-      { error: listingDeleteError.message },
-      { status: 500 },
-    );
+    console.error("[listings DELETE] orphaned storage keys", {
+      listing_id,
+      failedKeys,
+    });
   }
 
   return NextResponse.json({ success: true });

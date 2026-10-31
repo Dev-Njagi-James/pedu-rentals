@@ -5,6 +5,8 @@ import PropertyHero from "./components/detailsHero";
 import styles from "./css/detailsPage.module.css";
 import RelatedListingsCarousel from "./components/RelatedListingsCarousel";
 import ReviewForm from "./components/reviewPrompt";
+import { cache } from "react";
+import { requireAuth } from "@/lib/auth/session";
 
 // Map a v1 row (payments listings_table shape) onto the legacy field names the
 // detail-page components read. Legacy names are added as aliases — v1-native
@@ -38,14 +40,15 @@ function normalizeV1Listing(v1Row) {
   };
 }
 
-async function getListing(id) {
+const getListing = cache(async (id) => {
   const listing_id = parseInt(id, 10);
   if (isNaN(listing_id)) return null;
 
   const { data, error } = await paymentsSupabase
     .from("listings_table")
     .select(
-      `listing_id, listing_name, listing_category, category_type, furnishing,
+      `listing_id, lister_uuid, payment_status, admin_unpublished_at,
+       listing_name, listing_category, category_type, furnishing,
        rent_duration, price_kes, listing_ward, ward_display_name,
        listing_description, plan_name, created_at, updated_at,
        images_table (images_url, video_url)`,
@@ -53,11 +56,25 @@ async function getListing(id) {
     .eq("listing_id", listing_id)
     .maybeSingle();
 
-  if (error) throw new Error("Failed to fetch listing");
-  if (!data) return null;
+    if (error) throw new Error("Failed to fetch listing");
+    if (!data) return null;
 
-  return normalizeV1Listing(data);
-}
+    const isPublic =
+      data.payment_status === "paid" && !data.admin_unpublished_at;
+
+    if (!isPublic) {
+      let user = null;
+      try {
+        ({ user } = await requireAuth());
+      } catch {
+        return null;
+      }
+      if (!user || user.id !== data.lister_uuid) return null;
+    }
+
+    const { lister_uuid, admin_unpublished_at, ...safe } = data;
+    return normalizeV1Listing(safe);
+});
 
 function FilterTags({ listing }) {
   const tags = [
@@ -120,6 +137,39 @@ export default async function PropertyDetailPage({ params }) {
           </Link>
 
           <FilterTags listing={listing} />
+
+          {listing.payment_status !== "paid" && (
+            <div className={styles.previewBanner} role="status">
+              <svg
+                className={styles.previewIcon}
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                aria-hidden="true">
+                <path
+                  d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="3"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                />
+              </svg>
+              <div className={styles.previewText}>
+                <strong>Preview only</strong>
+                <span>
+                  This listing is not public yet. Only you can see this page
+                  until payment is complete.
+                </span>
+              </div>
+            </div>
+          )}
 
           <PropertyHero listing={listing} />
 
