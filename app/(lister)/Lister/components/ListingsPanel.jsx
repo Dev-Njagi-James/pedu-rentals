@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, Fragment } from "react";
+import { useState, useEffect, useCallback, Fragment, useRef } from "react";
 import PropertyCard from "@/app/(user)/properties/components/PropertyCardV1";
 import styles from "../css/MyListing.module.css";
 import AddListing from "./AddListing";
@@ -10,6 +10,9 @@ import {
   isCacheFresh,
   setCachedPage,
 } from "@/lib/cache/myListingsCache";
+import CheckoutPopup from "./CheckoutPopup";
+import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
+import DeleteConfirm from "./DeleteConfirm";
 
 const PAGE_SIZE = 20;
 
@@ -21,9 +24,27 @@ export default function ListingsPanel({ onUploadStateChange }) {
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
-  const [confirmId, setConfirmId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
   const [editingListing, setEditingListing] = useState(null);
   const [wardPopup, setWardPopup] = useState(null);
+  const [checkoutListing, setCheckoutListing] = useState(null);
+  const deleteInFlight = useRef(false);
+
+  const openCheckout = (listing) => {
+    setCheckoutListing(listing);
+    onUploadStateChange?.(true);
+  };
+
+  const closeCheckout = () => {
+    setCheckoutListing(null);
+    onUploadStateChange?.(false);
+  };
+
+  const handlePaid = () => {
+    invalidateMyListingsCache();
+    closeCheckout();
+    fetchListings(currentPage, { showLoading: false, bypassCache: true });
+  };
 
   const fetchListings = useCallback(
     async (page, { showLoading = true, bypassCache = false } = {}) => {
@@ -97,46 +118,47 @@ export default function ListingsPanel({ onUploadStateChange }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleDeleteClick = (listing_id, source) => {
-    if (confirmId !== listing_id) {
-      setConfirmId(listing_id);
-      setDeleteError(null);
-      return;
-    }
-    executeDelete(listing_id, source);
-  };
-  const cancelConfirm = () => setConfirmId(null);
-
-  const executeDelete = async (listing_id, source) => {
-    setDeletingId(listing_id);
+  const handleDeleteClick = (listing) => {
     setDeleteError(null);
-
-    const prev = listings;
-    setListings((ls) => ls.filter((l) => l.listing_id !== listing_id));
-    setConfirmId(null);
-
-    const endpoint =
-      source === "v1"
-        ? `/api/v1/listings/${listing_id}`
-        : `/api/Listing?listing_id=${listing_id}`;
-
-    try {
-      const res = await fetch(endpoint, { method: "DELETE" });
-
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}));
-        throw new Error(json.error ?? "Delete failed.");
-      }
-
-      fetchListings(currentPage, { showLoading: false, bypassCache: true });
-    } catch (err) {
-      setListings(prev);
-      setDeleteError(err.message);
-    } finally {
-      setDeletingId(null);
-    }
+    setDeleteTarget(listing);
   };
+  const cancelConfirm = useCallback(() => setDeleteTarget(null), []);
 
+const executeDelete = async (listing_id, source) => {
+  if (deleteInFlight.current) return;
+  deleteInFlight.current = true;
+
+  setDeletingId(listing_id);
+  setDeleteError(null);
+
+  const prev = listings;
+
+  const endpoint =
+    source === "v1"
+      ? `/api/v1/listings/${listing_id}`
+      : `/api/Listing?listing_id=${listing_id}`;
+
+  try {
+    const res = await fetch(endpoint, { method: "DELETE" });
+
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.error ?? "Delete failed.");
+    }
+
+    setListings((ls) => ls.filter((l) => l.listing_id !== listing_id));
+    setDeleteTarget(null);
+    invalidateMyListingsCache();
+    fetchListings(currentPage, { showLoading: false, bypassCache: true });
+  } catch (err) {
+    setListings(prev);
+    setDeleteTarget(null);
+    setDeleteError(err.message);
+  } finally {
+    setDeletingId(null);
+    deleteInFlight.current = false;
+  }
+};
   const totalPages = pagination?.total_pages ?? 1;
 
   const pageNumbers = () => {
@@ -163,6 +185,18 @@ export default function ListingsPanel({ onUploadStateChange }) {
         : created_at.replace(" ", "T") + "Z";
     const diffMs = Date.now() - new Date(normalized).getTime();
     return diffMs / (1000 * 60 * 60 * 24) <= EDIT_WINDOW_DAYS;
+  }
+
+  if (checkoutListing) {
+    return (
+      <CheckoutPopup
+        listingId={checkoutListing.listing_id}
+        categoryName={checkoutListing.listing_category}
+        propertyLabel={checkoutListing.listing_category}
+        onClose={closeCheckout}
+        onPaid={handlePaid}
+      />
+    );
   }
 
   // Render edit form instead of listings grid
@@ -234,7 +268,8 @@ export default function ListingsPanel({ onUploadStateChange }) {
         <div className={styles.grid}>
           {listings.map((listing, i) => {
             const isPending = listing.payment_status === "pending";
-            const prevPending = i > 0 && listings[i - 1].payment_status === "pending";
+            const prevPending =
+              i > 0 && listings[i - 1].payment_status === "pending";
             return (
               <Fragment key={listing.listing_id}>
                 {isPending && i === 0 && (
@@ -244,6 +279,9 @@ export default function ListingsPanel({ onUploadStateChange }) {
                   <h3 className={styles.sectionHeading}>Published listings</h3>
                 )}
                 <div className={styles.cardWrapper}>
+                  {isPending && (
+                    <span className={styles.pendingBadge}>Pending payment</span>
+                  )}
                   <PropertyCard
                     listing={listing}
                     trackCalls={false}
@@ -252,43 +290,22 @@ export default function ListingsPanel({ onUploadStateChange }) {
                     }
                   />
 
+                  {isPending && (
+                    <button
+                      className={styles.payBtn}
+                      onClick={() => openCheckout(listing)}>
+                      Complete payment
+                    </button>
+                  )}
+
                   <div className={styles.cardActions}>
-                    {confirmId === listing.listing_id ? (
-                      <div className={styles.confirmRow}>
-                        <span className={styles.confirmText}>
-                          Delete this listing?
-                        </span>
-                        <button
-                          className={styles.confirmYes}
-                          onClick={() =>
-                            handleDeleteClick(
-                              listing.listing_id,
-                              listing._source,
-                            )
-                          }
-                          disabled={deletingId === listing.listing_id}>
-                          {deletingId === listing.listing_id
-                            ? "Deleting…"
-                            : "Yes, delete"}
-                        </button>
-                        <button
-                          className={styles.confirmNo}
-                          onClick={cancelConfirm}
-                          disabled={deletingId === listing.listing_id}>
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        className={styles.deleteBtn}
-                        onClick={() =>
-                          handleDeleteClick(listing.listing_id, listing._source)
-                        }
-                        disabled={deletingId === listing.listing_id}
-                        aria-label={`Delete ${listing.property_name}`}>
-                        <i className="hgi hgi-stroke hgi-rounded hgi-delete-02"></i>
-                      </button>
-                    )}
+                    <button
+                      className={styles.deleteBtn}
+                      onClick={() => handleDeleteClick(listing)}
+                      disabled={deletingId === listing.listing_id}
+                      aria-label={`Delete ${listing.listing_name}`}>
+                      <i className="hgi hgi-stroke hgi-rounded hgi-delete-02"></i>
+                    </button>
                     <button
                       className={styles.editBtn}
                       onClick={() => setEditingListing(listing)}
@@ -374,6 +391,18 @@ export default function ListingsPanel({ onUploadStateChange }) {
           </div>
         </div>
       )}
+
+      {deleteTarget && (
+        <DeleteConfirm
+          listing={deleteTarget}
+          deleting={deletingId === deleteTarget.listing_id}
+          onCancel={cancelConfirm}
+          onConfirm={() =>
+            executeDelete(deleteTarget.listing_id, deleteTarget._source)
+          }
+        />
+      )}
+
     </div>
   );
 }

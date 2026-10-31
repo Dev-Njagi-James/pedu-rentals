@@ -390,23 +390,28 @@ export default function AddListing({
 
   useEffect(() => {
     if (!prefill || filtersLoading) return;
+
+    const wardMatch = filters.wards.find(
+      (w) => String(w.ward_id) === String(prefill.listing_ward),
+    );
+
     setForm({
-      name: prefill.property_name ?? "",
-      ward: prefill.ward_name ?? "",
+      name: prefill.listing_name ?? "",
+      ward: wardMatch?.ward_name ?? prefill.ward_display_name ?? "",
       ward_location: prefill.ward_location ?? "",
-      property_location: prefill.property_location ?? "",
-      category: prefill.category_id ?? "",
-      type: prefill.property_type_id ?? "",
+      property_location: prefill.location_url ?? "",
+      category: prefill.listing_category ?? "",
+      type: prefill.category_type ?? "",
       duration: prefill.rent_duration ?? "",
-      furniture: prefill.property_interior ?? "",
+      furniture: prefill.furnishing ?? "",
       phone: String(prefill.phone_number ?? ""),
-      price: prefill.property_price ?? "",
-      description: normalizeDescription(prefill.description),
+      price: prefill.price_kes ?? "",
+      description: normalizeDescription(prefill.listing_description),
       images: [null, null, null, null],
       video: null,
     });
     setIsDirty(false);
-  }, [prefill, filtersLoading]);
+  }, [prefill, filtersLoading, filters.wards]);
 
   useEffect(() => {
     if (isEdit) return;

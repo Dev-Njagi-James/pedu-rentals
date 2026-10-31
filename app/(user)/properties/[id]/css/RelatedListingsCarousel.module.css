@@ -43,7 +43,7 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 580px) {
   .track {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;

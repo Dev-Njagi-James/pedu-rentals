@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import styles from '../css/PricingTable.module.css';
 
-const CACHE_KEY = 'owl-nest:plan-category-pricing:v1';
-const CACHE_TTL = 24 * 60 * 60 * 1000;
+const CACHE_KEY = 'owl-nest:plan-category-pricing:v2'; 
+const CACHE_TTL = 5 * 60 * 1000;
 const PLAN_ORDER = ['Regular', 'Premium', 'Enterprise'];
 
 // Prevents duplicate requests when several components mount in the same page.

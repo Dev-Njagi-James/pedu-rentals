@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import ListerNav from "./ListerNav";
 import AccountSettings from "./components/Accountsetting";
 import AddListing from "./components/AddListing";
-import DashboardPanel from "./components/DashboardPanel";
 import ListingsPanel from "./components/ListingsPanel";
 import Analytics from "./components/Analytics";
 import PricingTable from "./components/PricingTable";
@@ -87,7 +86,6 @@ function ListerLandContent() {
             onUploadStateChange={setIsUploading}
           />
         ),
-        dashboard: <DashboardPanel />,
         listings: <ListingsPanel onUploadStateChange={setIsUploading} />,
         analytics: <Analytics />,
         pricing: <PricingTable />,

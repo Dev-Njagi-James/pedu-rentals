@@ -1,5 +1,13 @@
 .checkoutPanel {
   display: block;
+  font-family: var(--font-geist-sans);
+  box-sizing: border-box;
+}
+
+.cancelBtn,
+.confirmContinue,
+.confirmDelist {
+  font-family: inherit;
 }
 
 .popup {

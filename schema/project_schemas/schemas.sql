@@ -497,3 +497,44 @@ create table public.admin_actions (
 
 create index on public.admin_actions (listing_id, created_at desc);
 create index on public.admin_actions (lister_uuid);
+
+create table public.pricing_audit (
+  audit_id bigint generated always as identity primary key,
+  plan_name text not null,
+  category_name text not null,
+  old_price_kes integer not null,
+  new_price_kes integer not null,
+  admin_clerk_id text not null,
+  created_at timestamptz not null default now()
+);
+create index pricing_audit_created_idx on public.pricing_audit (created_at desc);
+
+create or replace function public.admin_update_pricing(
+  p_changes jsonb,
+  p_admin_clerk_id text
+) returns void
+language plpgsql
+as $$
+declare c jsonb;
+begin
+  for c in select * from jsonb_array_elements(p_changes) loop
+    update plan_category_pricing
+       set price_kes = (c->>'new_price_kes')::int
+     where plan_name = c->>'plan_name'
+       and category_name = c->>'category_name'
+       and price_kes = (c->>'old_price_kes')::int;
+    if not found then
+      raise exception 'Price changed or row missing: % / %',
+        c->>'plan_name', c->>'category_name' using errcode = '40001';
+    end if;
+    insert into pricing_audit
+      (plan_name, category_name, old_price_kes, new_price_kes, admin_clerk_id)
+    values
+      (c->>'plan_name', c->>'category_name',
+       (c->>'old_price_kes')::int, (c->>'new_price_kes')::int, p_admin_clerk_id);
+  end loop;
+end $$;
+
+revoke all on function public.admin_update_pricing(jsonb, text)
+  from public, anon, authenticated;
+grant execute on function public.admin_update_pricing(jsonb, text) to service_role;

@@ -55,11 +55,9 @@ export async function GET() {
       {
         status: 200,
         headers: {
-          // The browser component has its own 24-hour cache. This header also
-          // prevents unnecessary server-side revalidation for one day.
-          'Cache-Control': 'private, max-age=86400',
+          "Cache-Control": "private, max-age=60",
         },
-      }
+      },
     );
   } catch (error) {
     return NextResponse.json(

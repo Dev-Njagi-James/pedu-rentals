@@ -130,14 +130,16 @@ export default function CheckoutPopup({
     );
   };
 
-  const token = { cancelled: false };
-  pollRef.current = token;
+
   const handleCheckout = async () => {
     if (!selectedPlan) {
       setErrorMsg("Select a package.");
       return;
     }
 
+    const token = { cancelled: false };
+    pollRef.current = token;
+    
     setErrorMsg("");
     setStep("processing");
 

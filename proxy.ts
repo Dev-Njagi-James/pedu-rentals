@@ -16,7 +16,8 @@ export const proxy = clerkMiddleware(async (auth, request) => {
   await auth.protect();
 
   const { sessionClaims } = await auth();
-  const rawRole = (sessionClaims?.metadata as { role?: string } | undefined)?.role;
+  const rawRole = (sessionClaims?.metadata as { role?: string } | undefined)
+    ?.role;
 
   // Claim absent from token: do not guess. Server-side requireRole/requireAdmin decides.
   if (rawRole === undefined) return;
@@ -45,6 +46,7 @@ export const config = {
     "/Admin/(.*)",
     "/Lister",
     "/Lister/(.*)",
+    "/properties/(.*)",
     "/api/v1/((?!listings/public|listings/filters|payments/ipn|contact-access/ipn).*)",
     "/api/analytics/(.*)",
   ],

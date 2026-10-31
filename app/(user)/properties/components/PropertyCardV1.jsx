@@ -66,8 +66,10 @@ export default function PropertyCardV1({
     category_type,
     listing_category,
     plan_name,
+    payment_status,
     images_table,
   } = listing;
+
   const [contact, setContact] = useState(
     () => getCachedContact(listing_id)?.data ?? null,
   );
@@ -238,7 +240,7 @@ export default function PropertyCardV1({
           </div>
         )}
 
-        {plan_name && (
+        {plan_name && payment_status !== "pending" && (
           <span className={`${styles.planBadge} ${planClassName}`}>
             {planDisplayLabelMap[plan_name] ?? plan_name}
           </span>
