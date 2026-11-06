@@ -26,6 +26,7 @@ export default function AdminPricingTable() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
 
+
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -139,10 +140,11 @@ export default function AdminPricingTable() {
     const key = keyOf(cat, plan);
     const current = priceMap.get(key);
     const free = isFreePass(cat, plan);
+    const tdClass = `${base.td} ${styles[plan.toLowerCase()]}`;
 
     if (current === undefined) {
       return (
-        <td key={plan} className={base.td}>
+        <td key={plan} className={tdClass}>
           <span className={base.mono}>—</span>
         </td>
       );
@@ -150,7 +152,7 @@ export default function AdminPricingTable() {
 
     if (!editing) {
       return (
-        <td key={plan} className={base.td}>
+        <td key={plan} className={tdClass}>
           <span className={`${base.mono} ${free ? styles.freePass : ""}`}>
             {formatKES(current)}
           </span>
@@ -164,7 +166,7 @@ export default function AdminPricingTable() {
       (c) => c.plan_name === plan && c.category_name === cat,
     );
     return (
-      <td key={plan} className={base.td}>
+      <td key={plan} className={tdClass}>
         <input
           type="number"
           inputMode="numeric"
@@ -265,7 +267,9 @@ export default function AdminPricingTable() {
               <tr>
                 <th className={base.th}>Category</th>
                 {PLAN_ORDER.map((p) => (
-                  <th key={p} className={base.th}>
+                  <th
+                    key={p}
+                    className={`${base.th} ${styles[p.toLowerCase()]}`}>
                     {p}
                   </th>
                 ))}

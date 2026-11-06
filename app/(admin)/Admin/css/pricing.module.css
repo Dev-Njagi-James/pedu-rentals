@@ -148,3 +148,19 @@
    font-weight: 500;
    font-family: var(--font-geist-mono), monospace;
 }
+
+/* Column tints, matching the lister PricingTable. */
+th.regular,
+td.regular {
+   background-color: rgba(239, 246, 255, 0.48);
+}
+
+th.premium,
+td.premium {
+   background-color: rgba(255, 251, 235, 0.56);
+}
+
+th.enterprise,
+td.enterprise {
+   background-color: rgba(240, 253, 244, 0.56);
+}

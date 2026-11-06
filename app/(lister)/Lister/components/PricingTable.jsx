@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import styles from '../css/PricingTable.module.css';
+import { useEffect, useMemo, useState } from "react";
+import styles from "../css/PricingTable.module.css";
 
-const CACHE_KEY = 'owl-nest:plan-category-pricing:v2'; 
+const CACHE_KEY = "owl-nest:plan-category-pricing:v2";
 const CACHE_TTL = 5 * 60 * 1000;
-const PLAN_ORDER = ['Regular', 'Premium', 'Enterprise'];
+const PLAN_ORDER = ["Regular", "Premium", "Enterprise"];
 
 // Prevents duplicate requests when several components mount in the same page.
 let memoryCache = null;
@@ -16,7 +16,7 @@ function isFresh(timestamp) {
 }
 
 function readBrowserCache() {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === "undefined") return null;
 
   try {
     const stored = window.localStorage.getItem(CACHE_KEY);
@@ -35,33 +35,30 @@ function readBrowserCache() {
 }
 
 function saveBrowserCache(data, timestamp) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({ data, timestamp })
-    );
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp }));
   } catch {
     // Continue normally if browser storage is unavailable or full.
   }
 }
 
 async function fetchPricingOnce() {
-  const response = await fetch('/api/v1/plans/pricing', {
-    credentials: 'include',
-    cache: 'no-store',
+  const response = await fetch("/api/v1/plans/pricing", {
+    credentials: "include",
+    cache: "no-store",
   });
 
   if (!response.ok) {
-    throw new Error('Failed to load pricing.');
+    throw new Error("Failed to load pricing.");
   }
 
   const json = await response.json();
   const rows = Array.isArray(json) ? json : json.pricing;
 
   if (!Array.isArray(rows)) {
-    throw new Error('Pricing response has an invalid format.');
+    throw new Error("Pricing response has an invalid format.");
   }
 
   const timestamp = Date.now();
@@ -92,7 +89,8 @@ function getPricing() {
   return memoryRequest;
 }
 
-const formatPrice = (price) => `KES ${Number(price ?? 0).toLocaleString('en-KE')}`;
+const formatPrice = (price) =>
+  `KES ${Number(price ?? 0).toLocaleString("en-KE")}`;
 
 function SearchIcon() {
   return (
@@ -122,9 +120,14 @@ function ChevronIcon() {
 export default function PricingTable() {
   const [pricing, setPricing] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [search, setSearch] = useState('');
-  const [category, setCategory] = useState('All Categories');
+  const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("All Categories");
+
+  // REMOVABLE: free-pass cosmetic. Delete with .freePass/.freeTag in PricingTable.module.css
+  // and the free-pass conditions in the table body.
+  const isFreePass = (category, plan) =>
+    category === "Rentals" && plan === "Regular";
 
   useEffect(() => {
     let cancelled = false;
@@ -133,12 +136,12 @@ export default function PricingTable() {
       .then((rows) => {
         if (!cancelled) {
           setPricing(rows);
-          setError('');
+          setError("");
         }
       })
       .catch((requestError) => {
         if (!cancelled) {
-          setError(requestError.message || 'Failed to load pricing.');
+          setError(requestError.message || "Failed to load pricing.");
         }
       })
       .finally(() => {
@@ -159,7 +162,7 @@ export default function PricingTable() {
 
     return categories.filter((item) => {
       const matchesCategory =
-        category === 'All Categories' || item === category;
+        category === "All Categories" || item === category;
       const matchesSearch = item.toLowerCase().includes(normalizedSearch);
       return matchesCategory && matchesSearch;
     });
@@ -168,10 +171,10 @@ export default function PricingTable() {
   const priceFor = (categoryName, planName) => {
     const match = pricing.find(
       (item) =>
-        item.category_name === categoryName && item.plan_name === planName
+        item.category_name === categoryName && item.plan_name === planName,
     );
 
-    return match ? formatPrice(match.price_kes) : '—';
+    return match ? formatPrice(match.price_kes) : "—";
   };
 
   return (
@@ -202,8 +205,7 @@ export default function PricingTable() {
           <span className={styles.srOnly}>Filter by category</span>
           <select
             value={category}
-            onChange={(event) => setCategory(event.target.value)}
-          >
+            onChange={(event) => setCategory(event.target.value)}>
             <option>All Categories</option>
             {categories.map((item) => (
               <option key={item}>{item}</option>
@@ -228,8 +230,7 @@ export default function PricingTable() {
                     <th
                       key={plan}
                       scope="col"
-                      className={styles[plan.toLowerCase()]}
-                    >
+                      className={styles[plan.toLowerCase()]}>
                       {plan}
                     </th>
                   ))}
@@ -241,11 +242,17 @@ export default function PricingTable() {
                     <tr key={item}>
                       <th scope="row">{item}</th>
                       {PLAN_ORDER.map((plan) => (
-                        <td
-                          key={plan}
-                          className={styles[plan.toLowerCase()]}
-                        >
-                          {priceFor(item, plan)}
+                        <td key={plan} className={styles[plan.toLowerCase()]}>
+                           <span
+                            className={
+                              isFreePass(item, plan) ? styles.freePass : ''
+                            }
+                          >
+                            {priceFor(item, plan)}
+                          </span>
+                          {isFreePass(item, plan) && (
+                            <span className={styles.freeTag}>Free pass</span>
+                          )}
                         </td>
                       ))}
                     </tr>

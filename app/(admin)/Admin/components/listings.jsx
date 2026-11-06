@@ -79,8 +79,11 @@ const handleRepublish = async (view) =>
   patchListing(view.id, await callAdmin(view, "PATCH", { action: "republish" }));
 
 // Must reject on failure so the popup rolls the select back.
-const handleTagChange = async (tag, view) =>
-  patchListing(view.id, await callAdmin(view, "PATCH", { action: "tag", tag }));
+const handleTagChange = async (tag, view) => {
+  const value = tag || null; // "No tag" -> null, not ""
+  await callAdmin(view, "PATCH", { action: "tag", tag: value });
+  patchListing(view.id, { review_tag: value });
+};
 
 const handleDelete = (view) => {
   if (deleting.includes(view.id)) return;
