@@ -208,6 +208,23 @@
   color: #374151;
 }
 
+/* REMOVABLE: free-pass cosmetic. Delete with isFreePass in PricingTable.jsx. */
+.freePass {
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.freeTag {
+  margin-left: 0.5rem;
+  padding: 2px 0.5rem;
+  border-radius: 9999px;
+  background-color: #ecfdf5;
+  color: #059669;
+  font-family: var(--font-geist-mono);
+  font-size: 0.6rem;
+  font-weight: 500;
+}
+
 .emptyState {
   padding: 28px 18px !important;
   color: #9ca3af !important;

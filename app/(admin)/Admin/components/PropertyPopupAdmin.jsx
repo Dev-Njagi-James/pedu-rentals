@@ -192,10 +192,10 @@ export default function PropertyAdminPopup({
 
   const run = async (kind, fn) => {
     setPending(kind);
-    setBusy(true);
     setActionError(null);
     try {
       await fn();
+      setAttempt((n) => n + 1);
     } catch (e) {
       setActionError(e.message);
     } finally {
@@ -670,12 +670,12 @@ export default function PropertyAdminPopup({
                 onClick={() =>
                   confirmDelete ? onDelete(view) : setConfirmDelete(true)
                 }>
-                {actionError && <p className="pap-error">{actionError}</p>}
                 <Icon name="trash" />
                 <span>
                   {confirmDelete ? "Click again to confirm" : "Delete property"}
                 </span>
               </button>
+              {actionError && <p className="pap-error">{actionError}</p>}const 
               <p className="pap-help pap-danger-help">
                 This action cannot be undone.
               </p>
