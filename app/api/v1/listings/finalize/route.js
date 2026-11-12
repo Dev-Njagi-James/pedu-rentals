@@ -339,6 +339,22 @@ export async function PUT(request) {
         ? videoUploads[0].publicUrl
         : (existingRow?.video_url ?? null);
 
+    // Keys replaced by this edit. Deleted only after images_table points at the
+    // new keys. Legacy entries without a platform key are skipped.
+    const staleKeys = [];
+    for (const u of imageUploads) {
+      const old = existingImages.find((img) => img.position === u.position);
+      if (old?.key && old.key !== u.key) staleKeys.push(old.key);
+    }
+    if (
+      videoUploads.length === 1 &&
+      typeof existingRow?.video_url === "string" &&
+      existingRow.video_url.startsWith(CDN)
+    ) {
+      const oldVideoKey = existingRow.video_url.slice(CDN.length);
+      if (oldVideoKey !== videoUploads[0].key) staleKeys.push(oldVideoKey);
+    }
+
     if (existingRow) {
       const { error: updateErr } = await paymentsSupabase
         .from("images_table")
@@ -354,6 +370,28 @@ export async function PUT(request) {
       if (insertErr) {
         return NextResponse.json({ error: insertErr.message }, { status: 500 });
       }
+    }
+
+    // DB now points at the new keys. Storage cleanup is best effort: a failure
+    // leaves an orphaned file, never a broken listing (same rule as DELETE).
+    const failedKeys = [];
+    await Promise.all(
+      staleKeys
+        .filter((key) => typeof key === "string" && key.includes("/uploads/"))
+        .map(async (key) => {
+          try {
+            const r = await scale.storage.delete({ key });
+            if (!r?.success) failedKeys.push(key);
+          } catch {
+            failedKeys.push(key);
+          }
+        }),
+    );
+    if (failedKeys.length > 0) {
+      console.error("[finalize PUT] orphaned storage keys", {
+        listing_id: listingId,
+        failedKeys,
+      });
     }
 
     return NextResponse.json(
