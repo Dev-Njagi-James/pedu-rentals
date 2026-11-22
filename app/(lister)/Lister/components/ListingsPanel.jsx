@@ -311,6 +311,8 @@ const executeDelete = async (listing_id, source) => {
       !Boolean(l.is_unsubscribed),
   );
 
+  const showGrouped = status === "";
+
   const statusLabels = {
     active: "Active listings",
     pending: "Pending listings",
