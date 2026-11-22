@@ -12,6 +12,7 @@ export default function CheckoutPopup({
   listingId,
   categoryName,
   propertyLabel,
+  defaultPlan,
   onClose,
   onPaid,
 }) {
@@ -39,8 +40,13 @@ export default function CheckoutPopup({
       })
       .then((json) => {
         setPlans(json.plans ?? []);
-        // Default to the first (highest-priority) plan, matching Figma default.
-        if (json.plans?.length) setSelectedPlan(json.plans[0].plan_name);
+        const planNames = new Set((json.plans ?? []).map((p) => p.plan_name));
+        if (defaultPlan && planNames.has(defaultPlan)) {
+          setSelectedPlan(defaultPlan);
+        } else if (json.plans?.length) {
+          // Default to the first (highest-priority) plan, matching Figma default.
+          setSelectedPlan(json.plans[0].plan_name);
+        }
       })
       .catch((err) => setPlansError(err.message))
       .finally(() => setPlansLoading(false));

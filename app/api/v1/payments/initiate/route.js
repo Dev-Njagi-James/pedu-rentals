@@ -3,7 +3,7 @@ import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
 import { randomUUID } from "crypto";
 import { initiatePayment } from "@/lib/payments";
-import { MIN_LISTING_IMAGES } from "@/lib/constants";
+import { MIN_LISTING_IMAGES, PAYMENT_PENDING_WINDOW_MINUTES } from "@/lib/constants";
 
 export async function POST(request) {
   let payment_id = null;
@@ -34,7 +34,9 @@ export async function POST(request) {
 
     const { data: listingRow, error: listingErr } = await paymentsSupabase
       .from("listings_table")
-      .select("listing_category, lister_uuid, payment_status, phone_number")
+      .select(
+        "listing_category, lister_uuid, payment_status, phone_number, admin_unpublished_at, subscriptions_table (status, expires_at)",
+      )
       .eq("listing_id", listing_id)
       .single();
 
@@ -58,9 +60,27 @@ export async function POST(request) {
         { status: 403 },
       );
     }
-    if (listingRow.payment_status === "paid") {
+
+    const hasActiveSub = (subs) => {
+      if (!Array.isArray(subs)) return false;
+      const now = new Date();
+      return subs.some(
+        (s) => s.status === "active" && s.expires_at && new Date(s.expires_at) > now,
+      );
+    };
+
+    if (listingRow.admin_unpublished_at != null) {
       return NextResponse.json(
-        { success: false, error: "Listing is already published." },
+        { success: false, error: "Listing is unpublished by admin." },
+        { status: 409 },
+      );
+    }
+    if (
+      listingRow.payment_status === "paid" &&
+      hasActiveSub(listingRow.subscriptions_table)
+    ) {
+      return NextResponse.json(
+        { success: false, error: "Listing already has an active subscription." },
         { status: 409 },
       );
     }
@@ -82,30 +102,84 @@ export async function POST(request) {
 
     // REMOVABLE: temporary free pass. Delete this block to end the promotion.
     if (listingRow.listing_category === "Rentals" && plan_name === "Regular") {
-      const { data: updated, error: freeErr } = await paymentsSupabase
-        .from("listings_table")
-        .update({
-          payment_status: "paid",
-          plan_name: "Regular",
-          updated_at: new Date().toISOString(),
-        })
-        .eq("listing_id", listing_id)
-        .eq("lister_uuid", user.id)
-        .eq("payment_status", "pending")
-        .select("listing_id");
+      let paid = false;
 
-      if (freeErr) {
-        return NextResponse.json(
-          { success: false, error: freeErr.message },
-          { status: 500 },
-        );
+      if (listingRow.payment_status === "pending") {
+        const { data: updated, error: freeErr } = await paymentsSupabase
+          .from("listings_table")
+          .update({
+            payment_status: "paid",
+            plan_name: "Regular",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("listing_id", listing_id)
+          .eq("lister_uuid", user.id)
+          .eq("payment_status", "pending")
+          .select("listing_id");
+
+        if (freeErr) {
+          return NextResponse.json(
+            { success: false, error: freeErr.message },
+            { status: 500 },
+          );
+        }
+        if (!updated?.length) {
+          return NextResponse.json(
+            { success: false, error: "Listing is no longer pending." },
+            { status: 409 },
+          );
+        }
+        paid = true;
+      } else {
+        const { error: freeErr } = await paymentsSupabase
+          .from("listings_table")
+          .update({
+            plan_name: "Regular",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("listing_id", listing_id)
+          .eq("lister_uuid", user.id);
+
+        if (freeErr) {
+          return NextResponse.json(
+            { success: false, error: freeErr.message },
+            { status: 500 },
+          );
+        }
       }
-      if (!updated?.length) {
-        return NextResponse.json(
-          { success: false, error: "Listing is no longer pending." },
-          { status: 409 },
-        );
+
+      // Re-query for an active subscription before inserting.
+      const now = new Date();
+      const { data: activeSubs } = await paymentsSupabase
+        .from("subscriptions_table")
+        .select("subscription_id")
+        .eq("listing_id", listing_id)
+        .eq("status", "active")
+        .gte("expires_at", now.toISOString())
+        .limit(1);
+
+      if (!activeSubs?.length) {
+        const expires_at = new Date(
+          Date.now() + 30 * 24 * 60 * 60 * 1000,
+        ).toISOString();
+        const { error: subErr } = await paymentsSupabase
+          .from("subscriptions_table")
+          .insert({
+            listing_id,
+            plan_name: "Regular",
+            payment_id: null,
+            status: "active",
+            expires_at,
+          });
+
+        if (subErr) {
+          return NextResponse.json(
+            { success: false, error: "Could not activate listing." },
+            { status: 500 },
+          );
+        }
       }
+
       return NextResponse.json({ success: true, free_pass: true });
     }
 
@@ -152,6 +226,35 @@ export async function POST(request) {
           error: "Add an email or phone number to your account first.",
         },
         { status: 400 },
+      );
+    }
+
+    const windowStart = new Date(
+      Date.now() - PAYMENT_PENDING_WINDOW_MINUTES * 60 * 1000,
+    ).toISOString();
+
+    const { data: existingRows, error: existingErr } = await paymentsSupabase
+      .from("payments_table")
+      .select("payment_id")
+      .eq("listing_id", listing_id)
+      .eq("status", "pending")
+      .gte("created_at", windowStart)
+      .limit(1);
+
+    if (existingErr) {
+      return NextResponse.json(
+        { success: false, error: "Could not start payment." },
+        { status: 500 },
+      );
+    }
+
+    if (existingRows?.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "A payment is already in progress for this listing.",
+        },
+        { status: 409 },
       );
     }
 
