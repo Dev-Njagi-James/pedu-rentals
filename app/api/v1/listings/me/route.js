@@ -15,14 +15,15 @@ export async function GET(request) {
 
   try {
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
+    const PAGE_SIZE = 12;
+    let page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
     const limit = Math.min(
       50,
-      Math.max(1, parseInt(searchParams.get("limit") || "20", 10)),
+      Math.max(1, parseInt(searchParams.get("limit") || String(PAGE_SIZE), 10)),
     );
     const status = (searchParams.get("status") || "").toLowerCase();
-    const from = (page - 1) * limit;
-    const to = from + limit - 1;
+    let from = (page - 1) * limit;
+    let to = from + limit - 1;
 
     const { data, error } = await paymentsSupabase
       .from("listings_table")
@@ -104,6 +105,11 @@ export async function GET(request) {
         r.admin_unpublished_at == null &&
         !hasActiveSub(r),
     }));
+
+    const totalPages = Math.ceil(ordered.length / limit) || 1;
+    if (page > totalPages) page = totalPages;
+    from = (page - 1) * limit;
+    to = from + limit - 1;
 
     return NextResponse.json({
       listings: ordered.slice(from, to + 1),

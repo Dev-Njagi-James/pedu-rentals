@@ -94,6 +94,27 @@
   }
 }
 
+/* ── Results area fade ── */
+.results {
+  transition: opacity 0.15s ease, filter 0.15s ease;
+}
+
+.results.fetching {
+  opacity: 0.5;
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .results,
+  .results.fetching {
+    transition: none;
+    filter: none;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
 /* ── Card wrapper — positions delete strip below the card ── */
 .cardWrapper {
   display: flex;
