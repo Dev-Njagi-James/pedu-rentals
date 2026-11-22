@@ -7,6 +7,7 @@ import RelatedListingsCarousel from "./components/RelatedListingsCarousel";
 import ReviewForm from "./components/reviewPrompt";
 import { cache } from "react";
 import { requireAuth } from "@/lib/auth/session";
+import { hasActiveSub } from "@/lib/listings/subscription";
 
 // Map a v1 row (payments listings_table shape) onto the legacy field names the
 // detail-page components read. Legacy names are added as aliases — v1-native
@@ -51,7 +52,8 @@ const getListing = cache(async (id) => {
        listing_name, listing_category, category_type, furnishing,
        rent_duration, price_kes, listing_ward, ward_display_name,
        listing_description, plan_name, created_at, updated_at,
-       images_table (images_url, video_url)`,
+       images_table (images_url, video_url),
+       subscriptions_table (status, expires_at)`,
     )
     .eq("listing_id", listing_id)
     .maybeSingle();
@@ -60,7 +62,9 @@ const getListing = cache(async (id) => {
     if (!data) return null;
 
     const isPublic =
-      data.payment_status === "paid" && !data.admin_unpublished_at;
+      data.payment_status === "paid" &&
+      !data.admin_unpublished_at &&
+      hasActiveSub(data.subscriptions_table);
 
     if (!isPublic) {
       let user = null;
@@ -72,7 +76,7 @@ const getListing = cache(async (id) => {
       if (!user || user.id !== data.lister_uuid) return null;
     }
 
-    const { lister_uuid, admin_unpublished_at, ...safe } = data;
+    const { lister_uuid, admin_unpublished_at, subscriptions_table, ...safe } = data;
     return normalizeV1Listing(safe);
 });
 

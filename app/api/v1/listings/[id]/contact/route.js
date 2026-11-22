@@ -3,6 +3,7 @@ import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
 import { canViewContact } from "@/lib/auth/contactAccess";
 import { getCallerRole, hasActiveViewAccess } from "@/lib/auth/viewAccess";
+import { hasActiveSub } from "@/lib/listings/subscription";
 
 export const revalidate = 0;
 
@@ -26,7 +27,7 @@ export async function GET(request, { params }) {
   const { data, error: queryError } = await paymentsSupabase
     .from("listings_table")
     .select(
-      "phone_number, location_url, ward_location, lister_uuid, payment_status",
+      "phone_number, location_url, ward_location, lister_uuid, payment_status, admin_unpublished_at, subscriptions_table (status, expires_at)",
     )
     .eq("listing_id", listing_id)
     .maybeSingle();
@@ -38,10 +39,15 @@ export async function GET(request, { params }) {
     );
   }
 
-  // Unpaid listings are not public. Only the owner can reach their contact data.
+  // Unpaid/unpublished/unsubscribed listings are not public. Only the owner
+  // can reach their contact data.
+  const isOwner = data.lister_uuid === user.id;
   if (
     !data ||
-    (data.payment_status !== "paid" && data.lister_uuid !== user.id)
+    (!isOwner &&
+      (data.payment_status !== "paid" ||
+        data.admin_unpublished_at != null ||
+        !hasActiveSub(data.subscriptions_table)))
   ) {
     return NextResponse.json(
       { error: "Listing not found" },

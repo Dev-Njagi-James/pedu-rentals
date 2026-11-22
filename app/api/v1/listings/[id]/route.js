@@ -16,6 +16,7 @@ import { paymentsSupabase } from "@/lib/supabase/paymentsClient";
 import { requireAuth } from "@/lib/auth/session";
 import { ScaleClient, ScaleError, ValidationError } from "@stravon/scale-sdk";
 import { EDIT_WINDOW_DAYS } from "@/lib/constants";
+import { hasActiveSub } from "@/lib/listings/subscription";
 
 export const revalidate = 0;
 const scale = new ScaleClient({ apiKey: process.env.SCALE_API_KEY });
@@ -33,7 +34,8 @@ export async function GET(request, { params }) {
       `listing_id, lister_uuid, payment_status, admin_unpublished_at, listing_name, listing_category, category_type, furnishing,
        rent_duration, price_kes, listing_ward, ward_display_name,
        listing_description, plan_name, created_at, updated_at,
-       images_table (images_url, video_url)`,
+       images_table (images_url, video_url),
+       subscriptions_table (status, expires_at)`,
     )
     .eq("listing_id", listing_id)
     .maybeSingle();
@@ -48,7 +50,10 @@ export async function GET(request, { params }) {
     return NextResponse.json({ error: "Listing not found" }, { status: 404 });
   }
 
-  const isPublic = data.payment_status === "paid" && !data.admin_unpublished_at;
+  const isPublic =
+    data.payment_status === "paid" &&
+    !data.admin_unpublished_at &&
+    hasActiveSub(data.subscriptions_table);
   if (!isPublic) {
     const { user } = await requireAuth();
     if (!user || user.id !== data.lister_uuid) {
@@ -56,7 +61,7 @@ export async function GET(request, { params }) {
     }
   }
 
-  const { lister_uuid, ...rest } = data;
+  const { lister_uuid, subscriptions_table, ...rest } = data;
   return NextResponse.json({ data: rest });
 }
 
