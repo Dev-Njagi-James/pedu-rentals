@@ -20,6 +20,7 @@ export default function ListingsPanel({ onUploadStateChange }) {
   const [listings, setListings] = useState([]);
   const [pagination, setPagination] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -31,7 +32,20 @@ export default function ListingsPanel({ onUploadStateChange }) {
   const deleteInFlight = useRef(false);
 
   const openCheckout = (listing) => {
-    setCheckoutListing(listing);
+    let defaultPlan = null;
+    if (
+      listing.payment_status === "paid" &&
+      listing.admin_unpublished_at == null
+    ) {
+      const subs = Array.isArray(listing.subscriptions_table)
+        ? listing.subscriptions_table
+        : [];
+      const latest = subs.sort(
+        (a, b) => new Date(b.expires_at) - new Date(a.expires_at),
+      )[0];
+      defaultPlan = latest?.plan_name ?? null;
+    }
+    setCheckoutListing({ ...listing, defaultPlan });
     onUploadStateChange?.(true);
   };
 
@@ -48,7 +62,8 @@ export default function ListingsPanel({ onUploadStateChange }) {
 
   const fetchListings = useCallback(
     async (page, { showLoading = true, bypassCache = false } = {}) => {
-      const cached = !bypassCache ? getCachedPage(page) : null;
+      const cacheKey = status ? `${page}:${status}` : String(page);
+      const cached = !bypassCache ? getCachedPage(cacheKey) : null;
 
       // Cache hit — render instantly, no skeleton.
       if (cached) {
@@ -70,7 +85,9 @@ export default function ListingsPanel({ onUploadStateChange }) {
       }
 
       try {
-        const res = await fetch(`/api/v1/listings/me?page=${page}`);
+        const res = await fetch(
+          `/api/v1/listings/me?page=${page}&status=${status}`,
+        );
         if (!res.ok) throw new Error("Failed to fetch listings.");
         const json = await res.json();
 
@@ -80,7 +97,7 @@ export default function ListingsPanel({ onUploadStateChange }) {
           total_records: json.total ?? 0,
         };
 
-        setCachedPage(page, {
+        setCachedPage(cacheKey, {
           listings: nextListings,
           pagination: nextPagination,
         });
@@ -100,7 +117,7 @@ export default function ListingsPanel({ onUploadStateChange }) {
         if (showLoading) setLoading(false);
       }
     },
-    [],
+    [status],
   );
 
   useEffect(() => {
@@ -193,6 +210,7 @@ const executeDelete = async (listing_id, source) => {
         listingId={checkoutListing.listing_id}
         categoryName={checkoutListing.listing_category}
         propertyLabel={checkoutListing.listing_category}
+        defaultPlan={checkoutListing.defaultPlan}
         onClose={closeCheckout}
         onPaid={handlePaid}
       />
@@ -222,6 +240,19 @@ const executeDelete = async (listing_id, source) => {
               {pagination.total_records !== 1 ? "s" : ""}
             </span>
           )}
+          <select
+            value={status}
+            onChange={(e) => {
+              setStatus(e.target.value);
+              setCurrentPage(1);
+            }}
+            className={styles.statusSelect}>
+            <option value="">All</option>
+            <option value="active">Active</option>
+            <option value="pending">Pending</option>
+            <option value="unpublished">Unpublished</option>
+            <option value="unsubscribed">Unsubscribed</option>
+          </select>
         </div>
       </div>
 
@@ -267,20 +298,81 @@ const executeDelete = async (listing_id, source) => {
       {!loading && listings.length > 0 && (
         <div className={styles.grid}>
           {listings.map((listing, i) => {
-            const isPending = listing.payment_status === "pending";
-            const prevPending =
-              i > 0 && listings[i - 1].payment_status === "pending";
+            const isUnpublished = Boolean(listing.admin_unpublished_at);
+            const isPending =
+              listing.payment_status === "pending" && !isUnpublished;
+            const isUnsubscribed = Boolean(listing.is_unsubscribed);
+            const showGrouped = status === "";
+            const group = isUnpublished
+              ? "unpublished"
+              : isPending
+                ? "pending"
+                : isUnsubscribed
+                  ? "unsubscribed"
+                  : "published";
+            const prevGroup =
+              i > 0
+                ? (() => {
+                    const prev = listings[i - 1];
+                    const pUnpub = Boolean(prev.admin_unpublished_at);
+                    if (pUnpub) return "unpublished";
+                    const pPending =
+                      prev.payment_status === "pending" && !pUnpub;
+                    if (pPending) return "pending";
+                    if (Boolean(prev.is_unsubscribed)) return "unsubscribed";
+                    return "published";
+                  })()
+                : null;
+            const statusLabels = {
+              active: "Active listings",
+              pending: "Pending listings",
+              unpublished: "Unpublished listings",
+              unsubscribed: "Unsubscribed listings",
+            };
             return (
               <Fragment key={listing.listing_id}>
-                {isPending && i === 0 && (
-                  <h3 className={styles.sectionHeading}>Pending listings</h3>
-                )}
-                {!isPending && prevPending && (
-                  <h3 className={styles.sectionHeading}>Published listings</h3>
+                {showGrouped && group === "unpublished" &&
+                  prevGroup !== "unpublished" && (
+                    <h3 className={styles.sectionHeading}>
+                      Unpublished listings
+                    </h3>
+                  )}
+                {showGrouped && group === "pending" &&
+                  prevGroup !== "pending" && (
+                    <h3 className={styles.sectionHeading}>
+                      Pending listings
+                    </h3>
+                  )}
+                {showGrouped && group === "unsubscribed" &&
+                  prevGroup !== "unsubscribed" && (
+                    <h3 className={styles.sectionHeading}>
+                      Unsubscribed listings
+                    </h3>
+                  )}
+                {showGrouped && group === "published" &&
+                  prevGroup !== "published" && (
+                    <h3 className={styles.sectionHeading}>
+                      Published listings
+                    </h3>
+                  )}
+                {!showGrouped && i === 0 && (
+                  <h3 className={styles.sectionHeading}>
+                    {statusLabels[status] || "My listings"}
+                  </h3>
                 )}
                 <div className={styles.cardWrapper}>
+                  {isUnpublished && (
+                    <span className={styles.unpublishedBadge}>
+                      Unpublished by admin
+                    </span>
+                  )}
                   {isPending && (
                     <span className={styles.pendingBadge}>Pending payment</span>
+                  )}
+                  {isUnsubscribed && (
+                    <span className={styles.unsubscribedBadge}>
+                      Unsubscribed
+                    </span>
                   )}
                   <PropertyCard
                     listing={listing}
@@ -295,6 +387,13 @@ const executeDelete = async (listing_id, source) => {
                       className={styles.payBtn}
                       onClick={() => openCheckout(listing)}>
                       Complete payment
+                    </button>
+                  )}
+                  {isUnsubscribed && (
+                    <button
+                      className={styles.payBtn}
+                      onClick={() => openCheckout(listing)}>
+                      Re-subscribe
                     </button>
                   )}
 

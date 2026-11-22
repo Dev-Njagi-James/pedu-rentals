@@ -4,8 +4,8 @@
    --pap-blue: #1765e8;
    --pap-blue-dark: #0f4fbd;
    --pap-line: #e2e7ee;
-   --pap-surface: #ffffff;
-   --pap-canvas: #f3f6fa;
+   --pap-surface: var(--sidebar);
+   --pap-canvas: var(--background);
    --pap-warn: #f3a900;
    --pap-danger: #d92e35;
 }

@@ -20,6 +20,7 @@ export async function GET(request) {
       50,
       Math.max(1, parseInt(searchParams.get("limit") || "20", 10)),
     );
+    const status = (searchParams.get("status") || "").toLowerCase();
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
@@ -31,7 +32,8 @@ export async function GET(request) {
          ward_location, location_url, listing_description, plan_name, payment_status,
           created_at, updated_at,
          images_table (images_url, video_url),
-         subscriptions_table (status, expires_at)`,
+         subscriptions_table (status, expires_at, plan_name),
+         admin_unpublished_at`,
         { count: "exact" },
       )
       .eq("lister_uuid", user.id);
@@ -41,11 +43,56 @@ export async function GET(request) {
     }
 
     const all = data.map((row) => ({ ...row, _source: "v1" }));
-    const pending = all
+
+    const hasActiveSub = (listing) => {
+      const subs = listing.subscriptions_table;
+      if (!Array.isArray(subs)) return false;
+      const now = new Date();
+      return subs.some(
+        (s) =>
+          s.status === "active" &&
+          s.expires_at &&
+          new Date(s.expires_at) > now,
+      );
+    };
+
+    let filtered = all;
+    if (status === "active") {
+      filtered = all.filter(
+        (r) =>
+          r.payment_status === "paid" &&
+          r.admin_unpublished_at == null &&
+          hasActiveSub(r),
+      );
+    } else if (status === "pending") {
+      filtered = all.filter(
+        (r) =>
+          r.payment_status === "pending" && r.admin_unpublished_at == null,
+      );
+    } else if (status === "unpublished") {
+      filtered = all.filter((r) => r.admin_unpublished_at != null);
+    } else if (status === "unsubscribed") {
+      filtered = all.filter(
+        (r) =>
+          r.payment_status === "paid" &&
+          r.admin_unpublished_at == null &&
+          !hasActiveSub(r),
+      );
+    }
+
+    const pending = filtered
       .filter((r) => r.payment_status !== "paid")
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    const paid = rankListings(all.filter((r) => r.payment_status === "paid"));
-    const ordered = [...pending, ...paid];
+    const paid = rankListings(
+      filtered.filter((r) => r.payment_status === "paid"),
+    );
+    const ordered = [...pending, ...paid].map((r) => ({
+      ...r,
+      is_unsubscribed:
+        r.payment_status === "paid" &&
+        r.admin_unpublished_at == null &&
+        !hasActiveSub(r),
+    }));
 
     return NextResponse.json({
       listings: ordered.slice(from, to + 1),

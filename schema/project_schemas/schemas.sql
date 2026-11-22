@@ -45,6 +45,7 @@ create table listings_table (
   payment_status text not null default 'pending'::text,
   lister_uuid uuid not null,
   ward_display_name text null,
+  admin_unpublished_at timestamp with time zone null,
   constraint listings_table_pkey primary key (listing_id),
   constraint listings_table_category_type_fkey foreign KEY (category_type) references category_types_table (category_type_name),
   constraint listings_table_lister_uuid_fkey foreign KEY (lister_uuid) references users_table (lister_uuid),
@@ -78,7 +79,7 @@ CREATE TABLE subscriptions_table (
     subscription_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     listing_id      BIGINT NOT NULL REFERENCES listings_table(listing_id),
     plan_name       TEXT NOT NULL REFERENCES plans_table(plan_name),
-    payment_id      BIGINT NOT NULL REFERENCES payments_table(payment_id),
+    payment_id      BIGINT NULL REFERENCES payments_table(payment_id),
     status          TEXT NOT NULL DEFAULT 'active',
     expires_at      TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT now()
