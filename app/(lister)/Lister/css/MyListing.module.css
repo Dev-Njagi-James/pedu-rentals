@@ -149,7 +149,7 @@
 
 .unpublishedBadge {
   position: absolute;
-  top: 8px;
+  top: 48px;
   right: 0;
   z-index: 3;
   display: inline-flex;
@@ -189,6 +189,7 @@
     font-size: 0.6rem;
     padding: 0 8px 0 20px;
     min-height: 30px;
+    top: 44px;
   }
 }
 
@@ -196,12 +197,13 @@
   .unpublishedBadge {
     padding: 0 6px 0 18px;
     min-height: 26px;
+    top: 40px;
   }
 }
 
 .unsubscribedBadge {
   position: absolute;
-  top: 8px;
+  top: 48px;
   right: 0;
   z-index: 3;
   display: inline-flex;
@@ -241,6 +243,7 @@
     font-size: 0.6rem;
     padding: 0 8px 0 20px;
     min-height: 30px;
+    top: 44px;
   }
 }
 
@@ -248,6 +251,7 @@
   .unsubscribedBadge {
     padding: 0 6px 0 18px;
     min-height: 26px;
+    top: 40px;
   }
 }
 

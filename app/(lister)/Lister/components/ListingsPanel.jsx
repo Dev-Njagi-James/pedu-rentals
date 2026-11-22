@@ -228,6 +228,96 @@ const executeDelete = async (listing_id, source) => {
     );
   }
 
+  const renderCard = (listing) => {
+    const isUnpublished = Boolean(listing.admin_unpublished_at);
+    const isPending =
+      listing.payment_status === "pending" && !isUnpublished;
+    const isUnsubscribed = Boolean(listing.is_unsubscribed);
+    return (
+      <Fragment key={listing.listing_id}>
+        <div className={styles.cardWrapper}>
+          {isUnpublished && (
+            <span className={styles.unpublishedBadge}>
+              Unpublished by admin
+            </span>
+          )}
+          {isPending && (
+            <span className={styles.pendingBadge}>Pending payment</span>
+          )}
+          {isUnsubscribed && (
+            <span className={styles.unsubscribedBadge}>
+              Unsubscribed
+            </span>
+          )}
+          <PropertyCard
+            listing={listing}
+            trackCalls={false}
+            onWardClick={(ward_id, ward_name, property_location) =>
+              setWardPopup({ ward_id, ward_name, property_location })
+            }
+          />
+
+          {isPending && (
+            <button
+              className={styles.payBtn}
+              onClick={() => openCheckout(listing)}>
+              Complete payment
+            </button>
+          )}
+          {isUnsubscribed && (
+            <button
+              className={styles.payBtn}
+              onClick={() => openCheckout(listing)}>
+              Re-subscribe
+            </button>
+          )}
+
+          <div className={styles.cardActions}>
+            <button
+              className={styles.deleteBtn}
+              onClick={() => handleDeleteClick(listing)}
+              disabled={deletingId === listing.listing_id}
+              aria-label={`Delete ${listing.listing_name}`}>
+              <i className="hgi hgi-stroke hgi-rounded hgi-delete-02"></i>
+            </button>
+            <button
+              className={styles.editBtn}
+              onClick={() => setEditingListing(listing)}
+              disabled={!canEdit(listing.created_at)}
+              title={
+                !canEdit(listing.created_at)
+                  ? "Edit window has expired"
+                  : "Edit listing"
+              }>
+              <i className="hgi hgi-stroke hgi-rounded hgi-edit-02"></i>
+            </button>
+          </div>
+        </div>
+      </Fragment>
+    );
+  };
+
+  const unpublishedItems = listings.filter(
+    (l) => Boolean(l.admin_unpublished_at),
+  );
+  const pendingItems = listings.filter(
+    (l) => l.payment_status === "pending" && !Boolean(l.admin_unpublished_at),
+  );
+  const unsubscribedItems = listings.filter((l) => Boolean(l.is_unsubscribed));
+  const publishedItems = listings.filter(
+    (l) =>
+      !Boolean(l.admin_unpublished_at) &&
+      l.payment_status !== "pending" &&
+      !Boolean(l.is_unsubscribed),
+  );
+
+  const statusLabels = {
+    active: "Active listings",
+    pending: "Pending listings",
+    unpublished: "Unpublished listings",
+    unsubscribed: "Unsubscribed listings",
+  };
+
   return (
     <div className={styles.root}>
       {/* ── Header ── */}
@@ -297,130 +387,49 @@ const executeDelete = async (listing_id, source) => {
       {/* ── Grid ── */}
       {!loading && listings.length > 0 && (
         <div className={styles.grid}>
-          {listings.map((listing, i) => {
-            const isUnpublished = Boolean(listing.admin_unpublished_at);
-            const isPending =
-              listing.payment_status === "pending" && !isUnpublished;
-            const isUnsubscribed = Boolean(listing.is_unsubscribed);
-            const showGrouped = status === "";
-            const group = isUnpublished
-              ? "unpublished"
-              : isPending
-                ? "pending"
-                : isUnsubscribed
-                  ? "unsubscribed"
-                  : "published";
-            const prevGroup =
-              i > 0
-                ? (() => {
-                    const prev = listings[i - 1];
-                    const pUnpub = Boolean(prev.admin_unpublished_at);
-                    if (pUnpub) return "unpublished";
-                    const pPending =
-                      prev.payment_status === "pending" && !pUnpub;
-                    if (pPending) return "pending";
-                    if (Boolean(prev.is_unsubscribed)) return "unsubscribed";
-                    return "published";
-                  })()
-                : null;
-            const statusLabels = {
-              active: "Active listings",
-              pending: "Pending listings",
-              unpublished: "Unpublished listings",
-              unsubscribed: "Unsubscribed listings",
-            };
-            return (
-              <Fragment key={listing.listing_id}>
-                {showGrouped && group === "unpublished" &&
-                  prevGroup !== "unpublished" && (
-                    <h3 className={styles.sectionHeading}>
-                      Unpublished listings
-                    </h3>
-                  )}
-                {showGrouped && group === "pending" &&
-                  prevGroup !== "pending" && (
-                    <h3 className={styles.sectionHeading}>
-                      Pending listings
-                    </h3>
-                  )}
-                {showGrouped && group === "unsubscribed" &&
-                  prevGroup !== "unsubscribed" && (
-                    <h3 className={styles.sectionHeading}>
-                      Unsubscribed listings
-                    </h3>
-                  )}
-                {showGrouped && group === "published" &&
-                  prevGroup !== "published" && (
-                    <h3 className={styles.sectionHeading}>
-                      Published listings
-                    </h3>
-                  )}
-                {!showGrouped && i === 0 && (
+          {showGrouped ? (
+            <>
+              {unpublishedItems.length > 0 && (
+                <>
                   <h3 className={styles.sectionHeading}>
-                    {statusLabels[status] || "My listings"}
+                    Unpublished listings
                   </h3>
-                )}
-                <div className={styles.cardWrapper}>
-                  {isUnpublished && (
-                    <span className={styles.unpublishedBadge}>
-                      Unpublished by admin
-                    </span>
-                  )}
-                  {isPending && (
-                    <span className={styles.pendingBadge}>Pending payment</span>
-                  )}
-                  {isUnsubscribed && (
-                    <span className={styles.unsubscribedBadge}>
-                      Unsubscribed
-                    </span>
-                  )}
-                  <PropertyCard
-                    listing={listing}
-                    trackCalls={false}
-                    onWardClick={(ward_id, ward_name, property_location) =>
-                      setWardPopup({ ward_id, ward_name, property_location })
-                    }
-                  />
-
-                  {isPending && (
-                    <button
-                      className={styles.payBtn}
-                      onClick={() => openCheckout(listing)}>
-                      Complete payment
-                    </button>
-                  )}
-                  {isUnsubscribed && (
-                    <button
-                      className={styles.payBtn}
-                      onClick={() => openCheckout(listing)}>
-                      Re-subscribe
-                    </button>
-                  )}
-
-                  <div className={styles.cardActions}>
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => handleDeleteClick(listing)}
-                      disabled={deletingId === listing.listing_id}
-                      aria-label={`Delete ${listing.listing_name}`}>
-                      <i className="hgi hgi-stroke hgi-rounded hgi-delete-02"></i>
-                    </button>
-                    <button
-                      className={styles.editBtn}
-                      onClick={() => setEditingListing(listing)}
-                      disabled={!canEdit(listing.created_at)}
-                      title={
-                        !canEdit(listing.created_at)
-                          ? "Edit window has expired"
-                          : "Edit listing"
-                      }>
-                      <i className="hgi hgi-stroke hgi-rounded hgi-edit-02"></i>
-                    </button>
-                  </div>
-                </div>
-              </Fragment>
-            );
-          })}
+                  {unpublishedItems.map(renderCard)}
+                </>
+              )}
+              {pendingItems.length > 0 && (
+                <>
+                  <h3 className={styles.sectionHeading}>
+                    Pending listings
+                  </h3>
+                  {pendingItems.map(renderCard)}
+                </>
+              )}
+              {unsubscribedItems.length > 0 && (
+                <>
+                  <h3 className={styles.sectionHeading}>
+                    Unsubscribed listings
+                  </h3>
+                  {unsubscribedItems.map(renderCard)}
+                </>
+              )}
+              {publishedItems.length > 0 && (
+                <>
+                  <h3 className={styles.sectionHeading}>
+                    Published listings
+                  </h3>
+                  {publishedItems.map(renderCard)}
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <h3 className={styles.sectionHeading}>
+                {statusLabels[status] || "My listings"}
+              </h3>
+              {listings.map(renderCard)}
+            </>
+          )}
         </div>
       )}
 
