@@ -80,13 +80,24 @@ export async function GET(request) {
       );
     }
 
-    const pending = filtered
-      .filter((r) => r.payment_status !== "paid")
+    const isPublished = (r) =>
+      r.payment_status === "paid" && r.admin_unpublished_at == null;
+
+    const unpublished = filtered
+      .filter((r) => r.admin_unpublished_at != null)
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    const paid = rankListings(
-      filtered.filter((r) => r.payment_status === "paid"),
+    const pending = filtered
+      .filter((r) => r.payment_status === "pending" && r.admin_unpublished_at == null)
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const unsubscribed = filtered
+      .filter((r) => isPublished(r) && !hasActiveSub(r))
+      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    const published = rankListings(
+      filtered.filter((r) => isPublished(r) && hasActiveSub(r)),
     );
-    const ordered = [...pending, ...paid].map((r) => ({
+
+    const ordered = [...unpublished, ...pending, ...unsubscribed, ...published]
+      .map((r) => ({
       ...r,
       is_unsubscribed:
         r.payment_status === "paid" &&
