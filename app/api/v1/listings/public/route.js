@@ -43,11 +43,14 @@ export async function GET(request) {
         `listing_id, listing_name, listing_category, category_type, furnishing,
          rent_duration, price_kes, listing_ward, ward_display_name,
          listing_description, plan_name, created_at, updated_at,
-         images_table (images_url, video_url)`,
+         images_table (images_url, video_url),
+         subscriptions_table!inner(status, expires_at)`,
         { count: "exact" },
       )
       .eq("payment_status", "paid")
-      .is("admin_unpublished_at", null);
+      .is("admin_unpublished_at", null)
+      .eq("subscriptions_table.status", "active")
+      .gt("subscriptions_table.expires_at", new Date().toISOString());
     if (ward_id) v1Query = v1Query.eq("listing_ward", ward_id);
     if (category && category !== "all") {
       v1Query = v1Query.eq("listing_category", category);
@@ -67,7 +70,10 @@ export async function GET(request) {
     if (error) {
       console.error("V1 listings query failed:", error.message);
     } else {
-      v1Data = (data ?? []).map((row) => ({ _source: "v1", ...row }));
+      v1Data = (data ?? []).map(({ subscriptions_table, ...row }) => ({
+        _source: "v1",
+        ...row,
+      }));
       v1Count = count ?? 0;
     }
   } catch (err) {
