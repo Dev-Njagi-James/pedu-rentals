@@ -22,6 +22,7 @@ export default function ListingsPanel({ onUploadStateChange }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
   const [deleteError, setDeleteError] = useState(null);
@@ -30,6 +31,7 @@ export default function ListingsPanel({ onUploadStateChange }) {
   const [wardPopup, setWardPopup] = useState(null);
   const [checkoutListing, setCheckoutListing] = useState(null);
   const deleteInFlight = useRef(false);
+  const requestIdRef = useRef(0);
 
   const openCheckout = (listing) => {
     let defaultPlan = null;
@@ -65,12 +67,16 @@ export default function ListingsPanel({ onUploadStateChange }) {
       const cacheKey = status ? `${page}:${status}` : String(page);
       const cached = !bypassCache ? getCachedPage(cacheKey) : null;
 
-      // Cache hit — render instantly, no skeleton.
+      // Cache hit — render instantly, no fade.
       if (cached) {
         setListings(cached.data.listings);
         setPagination(cached.data.pagination);
         setLoading(false);
         setError(null);
+        if (requestIdRef.current > 0) {
+          setIsFetching(false);
+          requestIdRef.current = 0;
+        }
 
         // Stale — refresh silently in the background, UI stays as-is until it resolves.
         if (!isCacheFresh(cached)) {
@@ -79,9 +85,16 @@ export default function ListingsPanel({ onUploadStateChange }) {
         return;
       }
 
+      const isFirstLoad = listings.length === 0 && pagination === null;
+      const myRequestId = ++requestIdRef.current;
+
       if (showLoading) {
-        setLoading(true);
         setError(null);
+        if (isFirstLoad) {
+          setLoading(true);
+        } else {
+          setIsFetching(true);
+        }
       }
 
       try {
@@ -90,6 +103,9 @@ export default function ListingsPanel({ onUploadStateChange }) {
         );
         if (!res.ok) throw new Error("Failed to fetch listings.");
         const json = await res.json();
+
+        // Race guard: ignore stale responses.
+        if (myRequestId !== requestIdRef.current) return;
 
         const nextListings = json.listings ?? [];
         const nextPagination = {
@@ -102,19 +118,28 @@ export default function ListingsPanel({ onUploadStateChange }) {
           pagination: nextPagination,
         });
 
-        // Avoid a redundant re-render/flicker if nothing actually changed.
         setListings((prev) =>
           JSON.stringify(prev) !== JSON.stringify(nextListings)
             ? nextListings
             : prev,
         );
         setPagination(nextPagination);
+        setError(null);
+        if (showLoading) {
+          if (isFirstLoad) setLoading(false);
+          setIsFetching(false);
+          requestIdRef.current = 0;
+        }
       } catch (err) {
+        // Race guard: ignore stale responses.
+        if (myRequestId !== requestIdRef.current) return;
         // Only surface the error banner on a user-facing (showLoading) fetch.
-        // A failed silent background refresh just leaves the stale data on screen.
-        if (showLoading) setError(err.message);
-      } finally {
-        if (showLoading) setLoading(false);
+        if (showLoading) {
+          if (isFirstLoad) setLoading(false);
+          setIsFetching(false);
+          requestIdRef.current = 0;
+          setError(err.message);
+        }
       }
     },
     [status],
@@ -354,7 +379,7 @@ const executeDelete = async (listing_id, source) => {
       {/* ── Fetch error ── */}
       {error && <div className={styles.errorState}>{error}</div>}
 
-      {/* ── Skeletons ── */}
+      {/* ── Skeletons (first load only) ── */}
       {loading && (
         <div className={styles.grid}>
           {Array.from({ length: 6 }).map((_, i) => (
@@ -363,74 +388,82 @@ const executeDelete = async (listing_id, source) => {
         </div>
       )}
 
-      {/* ── Empty ── */}
-      {!loading && !error && listings.length === 0 && (
-        <div className={styles.emptyState}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
-            <path
-              d="M3 10V20M21 10V20M3 10h18M3 10L12 3l9 7"
-              stroke="currentColor"
-              strokeWidth="1.2"
-              strokeLinejoin="round"
-            />
-            <rect
-              x="9"
-              y="14"
-              width="6"
-              height="6"
-              stroke="currentColor"
-              strokeWidth="1.2"
-            />
-          </svg>
-          <p>You have no listings yet.</p>
-        </div>
-      )}
+      {/* ── Results area ── */}
+      {!loading && (
+        <div
+          className={`${styles.results} ${isFetching ? styles.fetching : ""}`}
+          aria-busy={isFetching}
+        >
+          {/* ── Empty ── */}
+          {!error && listings.length === 0 && (
+            <div className={styles.emptyState}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M3 10V20M21 10V20M3 10h18M3 10L12 3l9 7"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinejoin="round"
+                />
+                <rect
+                  x="9"
+                  y="14"
+                  width="6"
+                  height="6"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                />
+              </svg>
+              <p>You have no listings yet.</p>
+            </div>
+          )}
 
-      {/* ── Grid ── */}
-      {!loading && listings.length > 0 && (
-        <div className={styles.grid}>
-          {showGrouped ? (
-            <>
-              {unpublishedItems.length > 0 && (
+          {/* ── Grid ── */}
+          {listings.length > 0 && (
+            <div className={styles.grid}>
+              {showGrouped ? (
+                <>
+                  {unpublishedItems.length > 0 && (
+                    <>
+                      <h3 className={styles.sectionHeading}>
+                        Unpublished listings
+                      </h3>
+                      {unpublishedItems.map(renderCard)}
+                    </>
+                  )}
+                  {pendingItems.length > 0 && (
+                    <>
+                      <h3 className={styles.sectionHeading}>
+                        Pending listings
+                      </h3>
+                      {pendingItems.map(renderCard)}
+                    </>
+                  )}
+                  {unsubscribedItems.length > 0 && (
+                    <>
+                      <h3 className={styles.sectionHeading}>
+                        Unsubscribed listings
+                      </h3>
+                      {unsubscribedItems.map(renderCard)}
+                    </>
+                  )}
+                  {publishedItems.length > 0 && (
+                    <>
+                      <h3 className={styles.sectionHeading}>
+                        Published listings
+                      </h3>
+                      {publishedItems.map(renderCard)}
+                    </>
+                  )}
+                </>
+              ) : (
                 <>
                   <h3 className={styles.sectionHeading}>
-                    Unpublished listings
+                    {statusLabels[status] || "My listings"}
                   </h3>
-                  {unpublishedItems.map(renderCard)}
+                  {listings.map(renderCard)}
                 </>
               )}
-              {pendingItems.length > 0 && (
-                <>
-                  <h3 className={styles.sectionHeading}>
-                    Pending listings
-                  </h3>
-                  {pendingItems.map(renderCard)}
-                </>
-              )}
-              {unsubscribedItems.length > 0 && (
-                <>
-                  <h3 className={styles.sectionHeading}>
-                    Unsubscribed listings
-                  </h3>
-                  {unsubscribedItems.map(renderCard)}
-                </>
-              )}
-              {publishedItems.length > 0 && (
-                <>
-                  <h3 className={styles.sectionHeading}>
-                    Published listings
-                  </h3>
-                  {publishedItems.map(renderCard)}
-                </>
-              )}
-            </>
-          ) : (
-            <>
-              <h3 className={styles.sectionHeading}>
-                {statusLabels[status] || "My listings"}
-              </h3>
-              {listings.map(renderCard)}
-            </>
+            </div>
           )}
         </div>
       )}
