@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireRole } from '@/lib/auth/session';
 
 // POST /api/adminRo/analytics — record a visit
 export async function POST(req) {
   try {
+    const { error: authError, status: authStatus } = await requireRole('admin');
+    if (authError) {
+      return NextResponse.json({ error: authError }, { status: authStatus });
+    }
+
     const supabase = await createServerSupabaseClient();
     const { path } = await req.json();
     if (!path) return NextResponse.json({ error: 'No path' }, { status: 400 });
@@ -23,6 +29,11 @@ export async function POST(req) {
 // GET /api/adminRo/analytics?range=week — fetch aggregated visits
 export async function GET(req) {
   try {
+    const { error: authError, status: authStatus } = await requireRole('admin');
+    if (authError) {
+      return NextResponse.json({ error: authError }, { status: authStatus });
+    }
+
     const supabase = await createServerSupabaseClient();
     const { searchParams } = new URL(req.url);
     const start = searchParams.get('start');

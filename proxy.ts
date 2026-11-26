@@ -1,42 +1,49 @@
 // proxy.ts
 import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
-import { normalizeRole, homeForRole } from "@/lib/auth/routes";
+import { normalizeRole } from "@/lib/auth/routes";
 
 const matchesPath = (pathname: string, base: string) =>
   pathname === base || pathname.startsWith(`${base}/`);
 
 export const proxy = clerkMiddleware(async (auth, request) => {
-  const { pathname } = request.nextUrl;
+  const { pathname, search } = request.nextUrl;
   const isAdminPage = matchesPath(pathname, "/Admin");
   const isListerPage = matchesPath(pathname, "/Lister");
 
   if (!isAdminPage && !isListerPage) return;
 
-  await auth.protect();
+  const { userId, sessionClaims } = await auth();
 
-  const { sessionClaims } = await auth();
+  // Signed out: send to /Auth and return here after sign-in.
+  if (!userId) {
+    const redirectUrl = encodeURIComponent(pathname + search);
+    return NextResponse.redirect(
+      new URL(`/Auth?redirect_url=${redirectUrl}`, request.url),
+    );
+  }
+
   const rawRole = (sessionClaims?.metadata as { role?: string } | undefined)
     ?.role;
 
-  // Claim absent from token: do not guess. Server-side requireRole/requireAdmin decides.
+  // Claim absent from token: do not guess. Page-level check decides.
   if (rawRole === undefined) return;
 
   const role = normalizeRole(rawRole);
 
-  if (
-    (isAdminPage && role === "admin") ||
-    (isListerPage && role === "lister")
-  ) {
+  if (isListerPage) {
+    // Admins must never see the lister dashboard.
+    if (role === "admin") {
+      return NextResponse.redirect(new URL("/Admin", request.url));
+    }
     return;
   }
 
-  const target = homeForRole(role);
-
-  // Loop guard: never redirect to the path already being served.
-  if (matchesPath(pathname, target)) return;
-
-  return NextResponse.redirect(new URL(target, request.url));
+  // isAdminPage: signed-in non-admins are redirected away.
+  if (role !== "admin") {
+    const target = role === "user" ? "/" : "/Lister";
+    return NextResponse.redirect(new URL(target, request.url));
+  }
 });
 
 export const config = {
@@ -49,5 +56,6 @@ export const config = {
     "/properties/(.*)",
     "/api/v1/((?!listings/public|listings/filters|payments/ipn|contact-access/ipn).*)",
     "/api/analytics/(.*)",
+    "/api/adminRo/(.*)",
   ],
 };

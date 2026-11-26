@@ -142,7 +142,14 @@ async function handler(request) {
 
   const emailMap = await resolveEmails(supabase, clerkUserIds, listerUuidToEmail);
 
-  const dashboardUrl = `${(process.env.NEXT_PUBLIC_BASE_URL ?? '').replace(/\/$/, '')}/Lister?tab=listings`;
+  const PROD_BASE = 'https://www.pedurentals.com';
+  const envBase = (process.env.NEXT_PUBLIC_BASE_URL || '').replace(/\/$/, '');
+  const baseUrl =
+    process.env.NODE_ENV === 'production' &&
+    (!envBase || /localhost|127\.0\.0\.1/.test(envBase))
+      ? PROD_BASE
+      : (envBase || PROD_BASE);
+  const dashboardUrl = `${baseUrl}/Lister?tab=listings`;
 
   let sent = 0;
   let failed = 0;
