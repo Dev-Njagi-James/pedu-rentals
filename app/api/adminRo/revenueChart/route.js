@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { requireRole } from '@/lib/auth/session';
 
 export async function GET(req) {
    try {
+      const { error: authError, status: authStatus } = await requireRole('admin');
+      if (authError) {
+         return NextResponse.json({ error: authError }, { status: authStatus });
+      }
+
       const supabase = await createServerSupabaseClient();
       const { searchParams } = new URL(req.url);
       const start = searchParams.get('start');

@@ -1,0 +1,864 @@
+"use client";
+
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useSignUp, useSignIn } from "@clerk/nextjs/legacy";
+import { toast } from "sonner";
+import "./css/AuthForm.css";
+import "./css/AuthForm.v2.css";
+import { createBrowserSupabaseClient } from "@/lib/supabase/client";
+import { invalidateMyListingsCache } from "@/lib/cache/myListingsCache";
+import { invalidateAnalyticsCache } from "@/lib/cache/analyticsCache";
+import { homeForRole } from "@/lib/auth/routes";
+import { useUser, useAuth } from "@clerk/nextjs";
+
+const supabase = createBrowserSupabaseClient();
+
+function validateEmail(email) {
+  const trimmed = email.trim();
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!trimmed) {
+    return "Email is required.";
+  }
+
+  if (!EMAIL_RE.test(trimmed)) {
+    return "Enter a valid email address.";
+  }
+
+  return null;
+}
+
+function validateCode(code) {
+  const trimmed = code.trim();
+
+  if (!trimmed) {
+    return "Verification code is required.";
+  }
+
+  return null;
+}
+
+const MailIcon = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="input-icon"
+    aria-hidden="true">
+    <path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 0l8 8 8-8" />
+  </svg>
+);
+
+const GoogleIcon = () => (
+  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+    <path
+      fill="#EA4335"
+      d="M12 5.04c1.62 0 3.06.56 4.2 1.66l3.12-3.12C17.46 1.8 14.96.75 12 .75 7.7.75 3.99 3.22 2.18 6.81l3.64 2.83C6.71 7.03 9.14 5.04 12 5.04z"
+    />
+    <path
+      fill="#4285F4"
+      d="M23.25 12.27c0-.79-.07-1.54-.19-2.27H12v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58l3.68 2.86c2.15-1.99 3.5-4.92 3.5-8.68z"
+    />
+    <path
+      fill="#FBBC05"
+      d="M5.82 14.36c-.25-.74-.39-1.53-.39-2.36s.14-1.62.39-2.36L2.18 6.81C1.43 8.33 1 10.04 1 11.88s.43 3.55 1.18 5.07l3.64-2.59z"
+    />
+    <path
+      fill="#34A853"
+      d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.68-2.86c-1.02.69-2.36 1.09-3.6 1.09-2.86 0-5.29-1.93-6.18-4.55l-3.64 2.83C3.99 20.55 7.7 23 12 23z"
+    />
+  </svg>
+);
+
+function Field({
+  icon: IconComp,
+  name,
+  placeholder,
+  type = "text",
+  value,
+  onChange,
+  error,
+}) {
+  return (
+    <div className={`field-wrap${error ? " field-error" : ""}`}>
+      <div className="input-row">
+        <IconComp />
+        <input
+          type={type}
+          placeholder={placeholder}
+          autoComplete={name === "code" ? "one-time-code" : "email"}
+          name={name}
+          value={value}
+          onChange={onChange}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${name}-error` : undefined}
+        />
+      </div>
+      {error && (
+        <span
+          className="field-hint error-msg"
+          id={`${name}-error`}
+          role="alert">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// Number of digits Clerk sends for the email_code strategy. Change this if
+// your Clerk instance is configured for a different code length — everything
+// else adapts automatically since this is the only hardcoded constant.
+const OTP_LENGTH = 6;
+
+function OtpInput({ value, onChange, onComplete, error, disabled }) {
+  const inputsRef = useRef([]);
+  const digits = value.padEnd(OTP_LENGTH, " ").split("").slice(0, OTP_LENGTH);
+
+  const setDigitAt = (index, char) => {
+    const next = value.split("");
+    next[index] = char;
+    onChange(next.join("").slice(0, OTP_LENGTH));
+  };
+
+  const handleChange = (index, e) => {
+    const raw = e.target.value;
+    const char = raw.replace(/[^0-9]/g, "").slice(-1);
+
+    if (!char) {
+      setDigitAt(index, "");
+      return;
+    }
+
+    const next = value.split("");
+    next[index] = char;
+    const nextValue = next.join("").slice(0, OTP_LENGTH);
+    onChange(nextValue);
+
+    if (index < OTP_LENGTH - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+
+    if (nextValue.replace(/[^0-9]/g, "").length === OTP_LENGTH) {
+      onComplete?.(nextValue);
+    }
+  };
+
+  const handleKeyDown = (index, e) => {
+    if (e.key === "Backspace") {
+      if (value[index]) {
+        setDigitAt(index, "");
+      } else if (index > 0) {
+        inputsRef.current[index - 1]?.focus();
+        setDigitAt(index - 1, "");
+      }
+      return;
+    }
+    if (e.key === "ArrowLeft" && index > 0) {
+      inputsRef.current[index - 1]?.focus();
+    }
+    if (e.key === "ArrowRight" && index < OTP_LENGTH - 1) {
+      inputsRef.current[index + 1]?.focus();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData
+      .getData("text")
+      .replace(/[^0-9]/g, "")
+      .slice(0, OTP_LENGTH);
+    if (!pasted) return;
+    const nextValue = pasted
+      .padEnd(OTP_LENGTH, "")
+      .slice(0, OTP_LENGTH)
+      .trimEnd();
+    onChange(nextValue);
+    const focusIndex = Math.min(pasted.length, OTP_LENGTH - 1);
+    inputsRef.current[focusIndex]?.focus();
+
+    if (pasted.length === OTP_LENGTH) {
+      onComplete?.(pasted);
+    }
+  };
+
+  return (
+    <div className="otp-wrap">
+      <div className={`otp-row${error ? " otp-row-error" : ""}`}>
+        {digits.map((digit, index) => (
+          <input
+            key={index}
+            ref={(el) => (inputsRef.current[index] = el)}
+            type="text"
+            inputMode="numeric"
+            maxLength={1}
+            className="otp-box"
+            value={digit.trim()}
+            onChange={(e) => handleChange(index, e)}
+            onKeyDown={(e) => handleKeyDown(index, e)}
+            onPaste={handlePaste}
+            disabled={disabled}
+            aria-label={`Digit ${index + 1} of verification code`}
+          />
+        ))}
+      </div>
+      {error && (
+        <span className="field-hint error-msg" role="alert">
+          {error}
+        </span>
+      )}
+    </div>
+  );
+}
+
+const COPY = {
+  login: {
+    title: "Welcome back.",
+    subtitle: "Log in to continue.",
+    submitLabel: "Log In",
+    toggleQuestion: "Don't have an account?",
+    toggleAction: "Create Account",
+  },
+  signup: {
+    title: "Post your property. Start receiving inquiries.",
+    subtitle:
+      "You're steps away from meeting your first tenant. Let's get your property listed.",
+    submitLabel: "Sign Up",
+    toggleQuestion: "Already have an account?",
+    toggleAction: "Log In",
+  },
+};
+
+const ACCOUNT_TYPES = [
+  {
+    value: "user",
+    label: "Find a property",
+    desc: "Browse listings and view property details.",
+  },
+  {
+    value: "lister",
+    label: "List a property",
+    desc: "Post and manage your own listings.",
+  },
+];
+
+const SIGNUP_COPY_BY_TYPE = {
+  user: {
+    title: "Find your next home.",
+    subtitle: "Create an account to browse properties and view their details.",
+  },
+  lister: {
+    title: "Post your property. Start receiving inquiries.",
+    subtitle:
+      "You're steps away from meeting your first tenant. Let's get your property listed.",
+  },
+};
+
+const RESEND_COOLDOWN_SECONDS = 30;
+
+const AUTO_SUBMIT_DISABLE_AFTER = 3;
+const LOCKOUT_AFTER = 6;
+const LOCKOUT_SECONDS = 60;
+
+export default function AuthForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const rawRedirect = searchParams.get("redirect_url");
+  const safeRedirect =
+    rawRedirect &&
+    rawRedirect.startsWith("/") &&
+    !rawRedirect.startsWith("//") &&
+    !rawRedirect.includes("\\")
+      ? rawRedirect
+      : null;
+
+  const {
+    isLoaded: signUpLoaded,
+    signUp,
+    setActive: setActiveFromSignUp,
+  } = useSignUp();
+  const {
+    isLoaded: signInLoaded,
+    signIn,
+    setActive: setActiveFromSignIn,
+  } = useSignIn();
+  const { user } = useUser();
+
+  const [topTab, setTopTab] = useState("login");
+
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState(null);
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState(null);
+  const [pendingVerification, setPendingVerification] = useState(false);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [accountType, setAccountType] = useState("user");
+
+  // Needed to re-issue signin.prepareFirstFactor on resend.
+  const [emailFactorId, setEmailFactorId] = useState(null);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Failed-attempt escalation state. See runVerifyCode for the ladder logic.
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [autoSubmitDisabled, setAutoSubmitDisabled] = useState(false);
+  const [lockedOut, setLockedOut] = useState(false);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
+
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  useEffect(() => {
+    if (lockoutRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setLockoutRemaining((s) => (s <= 1 ? 0 : s - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [lockoutRemaining]);
+
+  useEffect(() => {
+    if (lockedOut && lockoutRemaining === 0) {
+      // Cooldown expired — force the user back to the email step to
+      // re-authenticate rather than silently re-enabling this code entry.
+      setLockedOut(false);
+      setPendingVerification(false);
+      setCode("");
+      setFailedAttempts(0);
+      setAutoSubmitDisabled(false);
+      setEmailFactorId(null);
+      setError(null);
+      toast.info("You can try signing in again now.");
+    }
+  }, [lockedOut, lockoutRemaining]);
+
+  // Browser Back from Google restores this page from bfcache with state
+  // intact. Reset so the button is not stuck on "Signing you in…".
+  useEffect(() => {
+    const onPageShow = (e) => {
+      if (e.persisted) setGoogleLoading(false);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => window.removeEventListener("pageshow", onPageShow);
+  }, []);
+
+  // Already signed in: go straight to the validated destination.
+  useEffect(() => {
+    if (user?.id) {
+      router.replace(safeRedirect ?? "/");
+    }
+  }, [user?.id, safeRedirect, router]);
+
+  // /Auth?type=lister (from the "Become a Lister" CTA) preselects Lister
+  // and opens the Sign Up tab.
+  useEffect(() => {
+    const type = new URLSearchParams(window.location.search).get("type");
+    if (type === "lister") {
+      setAccountType("lister");
+      setTopTab("signup");
+    }
+  }, []);
+
+  const toggleTopTab = useCallback(() => {
+    setTopTab((value) => (value === "login" ? "signup" : "login"));
+    setError(null);
+    setEmailError(null);
+    setCodeError(null);
+    setPendingVerification(false);
+    setCode("");
+    setEmailFactorId(null);
+    setResendCooldown(0);
+    setFailedAttempts(0);
+    setAutoSubmitDisabled(false);
+    setLockedOut(false);
+    setLockoutRemaining(0);
+  }, []);
+
+  const handleEmailChange = useCallback((event) => {
+    setEmail(event.target.value);
+    setEmailError(null);
+  }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (googleLoading) return;
+
+    console.log("SUBMIT FIRED");
+    console.log("topTab:", topTab);
+    console.log("email:", email);
+    console.log("signUpLoaded:", signUpLoaded);
+    console.log("signInLoaded:", signInLoaded);
+
+    setError(null);
+
+    const validationError = validateEmail(email);
+
+    if (validationError) {
+      console.log("VALIDATION ERROR:", validationError);
+      setEmailError(validationError);
+      return;
+    }
+
+    setEmailError(null);
+    setLoading(true);
+
+    try {
+      if (topTab === "signup") {
+        console.log("STARTING CLERK SIGNUP");
+
+        if (!signUpLoaded) {
+          throw new Error("Clerk SignUp is not loaded yet.");
+        }
+
+        const result = await signUp.create({
+          emailAddress: email.trim(),
+        });
+
+        console.log("SIGNUP CREATED:", result);
+
+        await signUp.prepareEmailAddressVerification({
+          strategy: "email_code",
+        });
+
+        console.log("VERIFICATION EMAIL PREPARED");
+
+        setFailedAttempts(0);
+        setAutoSubmitDisabled(false);
+        setPendingVerification(true);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      } else {
+        console.log("STARTING CLERK SIGNIN");
+
+        if (!signInLoaded) {
+          throw new Error("Clerk SignIn is not loaded yet.");
+        }
+
+        const attempt = await signIn.create({
+          identifier: email.trim(),
+        });
+
+        console.log("SIGNIN CREATED:", attempt);
+
+        const emailFactor = attempt.supportedFirstFactors?.find(
+          (factor) => factor.strategy === "email_code",
+        );
+
+        if (!emailFactor) {
+          throw new Error(
+            "Email code sign-in is not available for this account.",
+          );
+        }
+
+        setEmailFactorId(emailFactor.emailAddressId);
+
+        await signIn.prepareFirstFactor({
+          strategy: "email_code",
+          emailAddressId: emailFactor.emailAddressId,
+        });
+
+        console.log("SIGNIN VERIFICATION PREPARED");
+
+        setFailedAttempts(0);
+        setAutoSubmitDisabled(false);
+        setPendingVerification(true);
+        setResendCooldown(RESEND_COOLDOWN_SECONDS);
+      }
+    } catch (err) {
+      console.error("CLERK AUTH ERROR:", err);
+
+      setError(
+        err?.errors?.[0]?.longMessage ??
+          err?.errors?.[0]?.message ??
+          err?.message ??
+          "Something went wrong.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Pure verification runner — callable from the manual Verify button
+  // (via handleVerifyCode) or automatically from OtpInput's onComplete.
+  // Tracks consecutive failures and escalates: after
+  // AUTO_SUBMIT_DISABLE_AFTER failures, auto-submit turns off and the user
+  // must review the code and press Verify manually; after LOCKOUT_AFTER
+  // failures, the flow locks for LOCKOUT_SECONDS and then resets to the
+  // email step so the user re-authenticates from scratch.
+  const runVerifyCode = async (codeValue) => {
+    if (lockedOut) return;
+
+    setError(null);
+
+    const validationError = validateCode(codeValue);
+    if (validationError) {
+      setCodeError(validationError);
+      return;
+    }
+
+    setCodeError(null);
+    setLoading(true);
+
+    try {
+      let result;
+
+      if (topTab === "signup") {
+        if (!signUpLoaded) return;
+        result = await signUp.attemptEmailAddressVerification({
+          code: codeValue.trim(),
+        });
+      } else {
+        if (!signInLoaded) return;
+        result = await signIn.attemptFirstFactor({
+          strategy: "email_code",
+          code: codeValue.trim(),
+        });
+      }
+
+      if (result.status !== "complete") {
+        throw new Error("Verification incomplete. Please try again.");
+      }
+
+      if (topTab === "signup") {
+        await setActiveFromSignUp({ session: result.createdSessionId });
+      } else {
+        await setActiveFromSignIn({ session: result.createdSessionId });
+      }
+
+      const syncResponse = await fetch("/api/v1/auth/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          accountType: topTab === "signup" ? accountType : "user",
+        }),
+      });
+
+      if (!syncResponse.ok) {
+        setError("Account sync failed. Contact support.");
+        return;
+      }
+
+      const syncData = await syncResponse.json().catch(() => null);
+      console.log("SYNC ROLE:", syncData?.role);
+
+      invalidateAnalyticsCache();
+      invalidateMyListingsCache();
+
+      await getToken({ skipCache: true });
+      if (safeRedirect) {
+        router.replace(safeRedirect);
+      } else {
+        router.replace(homeForRole(syncData?.role));
+      }
+    } catch (err) {
+      const nextAttempts = failedAttempts + 1;
+      setFailedAttempts(nextAttempts);
+      setCode("");
+
+      const message = err?.errors?.[0]?.message ?? "Invalid or expired code.";
+      setError(message);
+
+      if (nextAttempts >= LOCKOUT_AFTER) {
+        setLockedOut(true);
+        setLockoutRemaining(LOCKOUT_SECONDS);
+        toast.error("Too many failed attempts", {
+          description: `You need to recheck your code and reauthenticate. Try again in ${LOCKOUT_SECONDS} seconds.`,
+          duration: 8000,
+        });
+      } else if (nextAttempts >= AUTO_SUBMIT_DISABLE_AFTER) {
+        setAutoSubmitDisabled(true);
+        toast.warning("Code didn't match", {
+          description: "Double-check the code and press Verify to try again.",
+          duration: 6000,
+        });
+      } else {
+        toast.error("Code didn't match", {
+          description: "Check the code and try again.",
+          duration: 5000,
+        });
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = (event) => {
+    event.preventDefault();
+    if (lockedOut) return;
+    runVerifyCode(code);
+  };
+
+  const handleResend = async () => {
+    if (resendCooldown > 0 || loading) return;
+
+    setError(null);
+    setCodeError(null);
+    setLoading(true);
+
+    try {
+      if (topTab === "signup") {
+        if (!signUpLoaded) return;
+
+        await signUp.prepareEmailAddressVerification({
+          strategy: "email_code",
+        });
+      } else {
+        if (!signInLoaded || !emailFactorId) {
+          throw new Error("Session expired. Restart sign in.");
+        }
+
+        await signIn.prepareFirstFactor({
+          strategy: "email_code",
+          emailAddressId: emailFactorId,
+        });
+      }
+
+      setFailedAttempts(0);
+      setAutoSubmitDisabled(false);
+      setResendCooldown(RESEND_COOLDOWN_SECONDS);
+    } catch (err) {
+      setError(
+        err?.errors?.[0]?.longMessage ??
+          err?.errors?.[0]?.message ??
+          err?.message ??
+          "Could not resend code.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleAuth = async () => {
+    setError(null);
+    if (googleLoading) return;
+    const resource = topTab === "signup" ? signUp : signIn;
+    const loaded = topTab === "signup" ? signUpLoaded : signInLoaded;
+
+    try {
+      if (!loaded) throw new Error("Clerk is not loaded yet.");
+      setGoogleLoading(true);
+
+      try {
+        sessionStorage.setItem(
+          "pedu_account_type",
+          topTab === "signup" ? accountType : "user",
+        );
+        if (safeRedirect) {
+          sessionStorage.setItem("pedu_redirect_url", safeRedirect);
+        } else {
+          sessionStorage.removeItem("pedu_redirect_url");
+        }
+      } catch {}
+
+      await resource.authenticateWithRedirect({
+        strategy: "oauth_google",
+        redirectUrl: "/sso-callback",
+        redirectUrlComplete: "/auth-complete",
+      });
+    } catch (err) {
+      setGoogleLoading(false);
+      setError(
+        err?.errors?.[0]?.longMessage ??
+          err?.errors?.[0]?.message ??
+          err?.message ??
+          "Google sign-in failed.",
+      );
+    }
+  };
+
+  const copy =
+    topTab === "signup"
+      ? { ...COPY.signup, ...SIGNUP_COPY_BY_TYPE[accountType] }
+      : COPY.login;
+
+  return (
+    <main className="auth-scene-v2">
+      <div className="auth-card-v2">
+        <div className="photo-panel">
+          <img
+            src="/auth/login-building.png"
+            alt=""
+            className="photo-panel-img"
+          />
+        </div>
+
+        <section className="form-panel-v2">
+          <div className="form-content-v2">
+            <div className="form-header-v2">
+              <img
+                src="/logo2.png"
+                alt="Pedu Rentals"
+                className="form-logo-v2"
+              />
+              <a href="/" className="back-link-v2">
+                Back →
+              </a>
+            </div>
+            <div className="auth-login-panel">
+              {pendingVerification ? (
+                <>
+                  <h1 className="form-title-v2">Check your email</h1>
+                  <p className="form-sub-v2">
+                    We sent a verification code to {email.trim()}. Enter it
+                    below to continue.
+                  </p>
+
+                  <form
+                    className="login-form-v2"
+                    onSubmit={handleVerifyCode}
+                    noValidate>
+                    <OtpInput
+                      value={code}
+                      onChange={(val) => {
+                        setCode(val);
+                        setCodeError(null);
+                      }}
+                      onComplete={(val) => {
+                        if (!autoSubmitDisabled && !lockedOut)
+                          runVerifyCode(val);
+                      }}
+                      error={codeError}
+                      disabled={loading || lockedOut}
+                    />
+
+                    {error && (
+                      <p className="form-error-v2" role="alert">
+                        {error}
+                      </p>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="submit-btn-v2"
+                      disabled={loading || lockedOut}>
+                      {lockedOut
+                        ? `Locked (${lockoutRemaining}s)`
+                        : loading
+                          ? "Please wait…"
+                          : "Verify"}
+                      <span aria-hidden="true">→</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className="toggle-link"
+                      onClick={handleResend}
+                      disabled={resendCooldown > 0 || loading || lockedOut}>
+                      {resendCooldown > 0
+                        ? `Resend code (${resendCooldown}s)`
+                        : "Resend code"}
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <>
+                  <h1 className="form-title-v2">{copy.title}</h1>
+                  <p className="form-sub-v2">{copy.subtitle}</p>
+
+                  <form
+                    className="login-form-v2"
+                    onSubmit={handleSubmit}
+                    noValidate>
+                    {topTab === "signup" && (
+                      <fieldset
+                        className="account-type-v2"
+                        disabled={loading || googleLoading}>
+                        <legend>Account type</legend>
+                        {ACCOUNT_TYPES.map((t) => (
+                          <label
+                            key={t.value}
+                            className={`account-type-option${accountType === t.value ? " is-selected" : ""}`}>
+                            <input
+                              type="radio"
+                              name="accountType"
+                              value={t.value}
+                              checked={accountType === t.value}
+                              onChange={() => setAccountType(t.value)}
+                            />
+                            <span className="account-type-title">
+                              {t.label}
+                            </span>
+                            <span className="account-type-desc">{t.desc}</span>
+                          </label>
+                        ))}
+                      </fieldset>
+                    )}
+                    <button
+                      type="button"
+                      className="google-btn-v2"
+                      onClick={handleGoogleAuth}
+                      disabled={googleLoading || loading}
+                      aria-busy={googleLoading}>
+                      {googleLoading ? (
+                        <>
+                          <span className="google-spinner" aria-hidden="true" />
+                          {topTab === "signup"
+                            ? "Signing you up…"
+                            : "Signing you in…"}
+                        </>
+                      ) : (
+                        <>
+                          <GoogleIcon /> Continue with Google
+                        </>
+                      )}
+                    </button>
+                    <div className="or-divider-v2">Or</div>
+                    <Field
+                      icon={MailIcon}
+                      name="email"
+                      placeholder="Email"
+                      type="email"
+                      value={email}
+                      onChange={handleEmailChange}
+                      error={emailError}
+                    />
+
+                    {error && (
+                      <p className="form-error-v2" role="alert">
+                        {error}
+                      </p>
+                    )}
+
+                    <div id="clerk-captcha" />
+
+                    <button
+                      type="submit"
+                      className="submit-btn-v2"
+                      disabled={loading || googleLoading}>
+                      {loading ? "Please wait…" : copy.submitLabel}
+                      <span aria-hidden="true">→</span>
+                    </button>
+                  </form>
+                </>
+              )}
+            </div>
+
+            {!pendingVerification && (
+              <p className="toggle-line">
+                {copy.toggleQuestion}{" "}
+                <button
+                  type="button"
+                  className="toggle-link"
+                  onClick={toggleTopTab}
+                  disabled={googleLoading}>
+                  {copy.toggleAction}
+                </button>
+              </p>
+            )}
+          </div>
+        </section>
+      </div>
+    </main>
+  );
+}

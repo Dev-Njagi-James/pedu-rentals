@@ -175,16 +175,14 @@ const executeDelete = async (listing_id, source) => {
 
   const prev = listings;
 
-  const endpoint =
-    source === "v1"
-      ? `/api/v1/listings/${listing_id}`
-      : `/api/Listing?listing_id=${listing_id}`;
-
   try {
-    const res = await fetch(endpoint, { method: "DELETE" });
+    const res = await fetch(`/api/v1/listings/${listing_id}`, { method: "DELETE" });
 
     if (!res.ok) {
       const json = await res.json().catch(() => ({}));
+      if (res.status === 403) {
+        throw new Error("You can't delete this listing");
+      }
       throw new Error(json.error ?? "Delete failed.");
     }
 

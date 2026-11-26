@@ -1,19 +1,19 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/session';
 
 export async function GET(request, { params }) {
   try {
+    const { error, status } = await requireRole('admin');
+    if (error) {
+      return NextResponse.json({ error }, { status });
+    }
+
     const { id } = await params;
     const listing_id = parseInt(id, 10);
 
     if (isNaN(listing_id)) {
       return NextResponse.json({ error: 'Listing not found.' }, { status: 404 });
-    }
-
-    const { user, error, status } = await requireAuth();
-    if (error) {
-      return NextResponse.json({ error }, { status });
     }
 
     const admin = createAdminClient();

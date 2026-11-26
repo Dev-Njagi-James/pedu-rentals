@@ -2,12 +2,17 @@
 
 import { NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
-import { requireAuth } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/session';
 
 // GET /api/adminRo/settings
 // Returns all system settings as { mpesa_enabled: bool, edit_window_days: number }
 export async function GET() {
   try {
+    const { error: authError, status: authStatus } = await requireRole('admin');
+    if (authError) {
+      return NextResponse.json({ error: authError }, { status: authStatus });
+    }
+
     const supabase = await createServerSupabaseClient();
 
     const { data, error } = await supabase
@@ -32,7 +37,7 @@ export async function GET() {
 // Body: { action: 'mpesa_enabled' | 'edit_window_days', value: string }
 export async function PATCH(req) {
   try {
-    const { user, error, status } = await requireAuth();
+    const { error, status } = await requireRole('admin');
     if (error) return NextResponse.json({ error }, { status });
 
     const supabase = await createServerSupabaseClient();

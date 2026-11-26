@@ -28,9 +28,19 @@ export default function AuthComplete() {
     started.current = true;
 
     let storedType = null;
+    let storedRedirect: string | null = null;
     try {
       storedType = sessionStorage.getItem("pedu_account_type");
+      storedRedirect = sessionStorage.getItem("pedu_redirect_url");
     } catch {}
+
+    const safeRedirect =
+      storedRedirect &&
+      storedRedirect.startsWith("/") &&
+      !storedRedirect.startsWith("//") &&
+      !storedRedirect.includes("\\")
+        ? storedRedirect
+        : null;
 
     fetch("/api/v1/auth/sync", {
       method: "POST",
@@ -47,11 +57,12 @@ export default function AuthComplete() {
         const data = await res.json().catch(() => null);
         try {
           sessionStorage.removeItem("pedu_account_type");
+          sessionStorage.removeItem("pedu_redirect_url");
         } catch {}
         invalidateAnalyticsCache();
         invalidateMyListingsCache();
         await getToken({ skipCache: true });
-        router.replace(homeForRole(data?.role));
+        router.replace(safeRedirect ?? homeForRole(data?.role));
       })
 
       .catch(() => router.replace("/Auth?error=sync_failed"));

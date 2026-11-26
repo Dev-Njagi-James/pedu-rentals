@@ -32,7 +32,7 @@ export async function requireAuth() {
 }
 
 // Role from the session token claim; falls back to a Clerk API read.
-async function resolveRole() {
+export async function resolveRole() {
   const { userId: clerkUserId, sessionClaims } = await auth();
   if (!clerkUserId) return { clerkUserId: null, role: null };
 

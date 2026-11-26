@@ -2,11 +2,11 @@
 import { createAdminClient } from '@/lib/supabase/server';
 import { resolveWardNames } from '@/lib/resolveWardName';
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/session';
 
 export async function GET() {
   try {
-    const { user, error, status } = await requireAuth();
+    const { error, status } = await requireRole('admin');
     if (error) {
       return NextResponse.json({ error }, { status });
     }

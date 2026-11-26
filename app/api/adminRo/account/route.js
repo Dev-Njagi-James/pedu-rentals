@@ -1,9 +1,9 @@
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/auth/session';
+import { requireRole } from '@/lib/auth/session';
 
 export async function GET() {
-  const { user, error, status } = await requireAuth();
+  const { user, error, status } = await requireRole('admin');
   if (error) {
     return NextResponse.json({ error }, { status });
   }
@@ -22,7 +22,7 @@ export async function GET() {
 }
 
 export async function PATCH(request) {
-  const { user, error, status } = await requireAuth();
+  const { user, error, status } = await requireRole('admin');
   if (error) {
     return NextResponse.json({ error }, { status });
   }
