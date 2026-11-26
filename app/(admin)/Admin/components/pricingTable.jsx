@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import base from "../css/transaction.module.css";
 import styles from "../css/pricing.module.css";
+import UsageWidget from "./UsageWidget";
 
 const PLAN_ORDER = ["Regular", "Premium", "Enterprise"];
 
@@ -186,129 +187,154 @@ export default function AdminPricingTable() {
 
   return (
     <div className={base.container}>
-      <div className={base.headerFlex}>
-        <div>
-          <h1 className={base.title}>Pricing</h1>
-          <p className={base.subtitle}>
-            Listing package prices per category. Changes apply to new payments
-            immediately.
-          </p>
-        </div>
-        <div className={styles.headerActions}>
-          {editing ? (
-            <>
-              <button
-                className={styles.secondaryBtn}
-                onClick={cancelEdit}
-                disabled={saving}>
-                Cancel
-              </button>
-              <button
-                className={base.exportBtn}
-                onClick={() => setConfirming(true)}
-                disabled={!canSave}>
-                Save{changes.length ? ` (${changes.length})` : ""}
-              </button>
-            </>
-          ) : (
-            <button
-              className={base.exportBtn}
-              onClick={startEdit}
-              disabled={loading || !!error}>
-              Edit prices
-            </button>
-          )}
-        </div>
+      <div>
+        <h1 className={base.title}>Pricing &amp; Storage</h1>
+        <p className={base.subtitle}>
+          Manage listing package prices and monitor your storage plan.
+        </p>
       </div>
 
       {saveError && <p className={styles.errorBanner}>{saveError}</p>}
 
-      <div className={base.tableContainer}>
-        <div className={base.toolbar}>
-          <div className={base.searchBox}>
-            <svg
-              className={base.searchIcon}
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
-            <input
-              type="text"
-              placeholder="Search categories..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className={base.searchInput}
-            />
-          </div>
-          <div className={base.filterGroup}>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className={base.selectInput}>
-              <option value="all">All Categories</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className={base.tableWrapper}>
-          <table className={base.table}>
-            <thead className={base.thead}>
-              <tr>
-                <th className={base.th}>Category</th>
-                {PLAN_ORDER.map((p) => (
-                  <th
-                    key={p}
-                    className={`${base.th} ${styles[p.toLowerCase()]}`}>
-                    {p}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {loading ? (
-                <tr>
-                  <td colSpan={4} className={styles.stateCell}>
-                    Loading pricing...
-                  </td>
-                </tr>
-              ) : error ? (
-                <tr>
-                  <td colSpan={4} className={styles.stateCell}>
-                    {error}
-                  </td>
-                </tr>
-              ) : visible.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className={styles.stateCell}>
-                    No categories match your search.
-                  </td>
-                </tr>
+      <div className={styles.pageStack}>
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div>
+              <h2 className={styles.sectionTitle}>Listing package prices</h2>
+              <p className={styles.sectionDesc}>
+                Prices lister customers pay per category and plan. Changes apply
+                to new payments immediately.
+              </p>
+            </div>
+            <div className={styles.headerActions}>
+              {editing ? (
+                <>
+                  <button
+                    className={styles.secondaryBtn}
+                    onClick={cancelEdit}
+                    disabled={saving}>
+                    Cancel
+                  </button>
+                  <button
+                    className={base.exportBtn}
+                    onClick={() => setConfirming(true)}
+                    disabled={!canSave}>
+                    Save{changes.length ? ` (${changes.length})` : ""}
+                  </button>
+                </>
               ) : (
-                visible.map((cat) => (
-                  <tr key={cat} className={base.tr}>
-                    <td
-                      className={base.td}
-                      style={{ fontWeight: 600, color: "#0f172a" }}>
-                      {cat}
-                    </td>
-                    {PLAN_ORDER.map((plan) => renderCell(cat, plan))}
-                  </tr>
-                ))
+                <button
+                  className={base.exportBtn}
+                  onClick={startEdit}
+                  disabled={loading || !!error}>
+                  Edit prices
+                </button>
               )}
-            </tbody>
-          </table>
-        </div>
+            </div>
+          </div>
+
+          <div className={base.tableContainer}>
+            <div className={base.toolbar}>
+              <div className={base.searchBox}>
+                <svg
+                  className={base.searchIcon}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search categories..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className={base.searchInput}
+                />
+              </div>
+              <div className={base.filterGroup}>
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className={base.selectInput}>
+                  <option value="all">All Categories</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div id="pricing-table" className={base.tableWrapper}>
+              <table className={base.table}>
+                <thead className={base.thead}>
+                  <tr>
+                    <th className={base.th}>Category</th>
+                    {PLAN_ORDER.map((p) => (
+                      <th
+                        key={p}
+                        className={`${base.th} ${styles[p.toLowerCase()]}`}>
+                        {p}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={4} className={styles.stateCell}>
+                        Loading pricing...
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td colSpan={4} className={styles.stateCell}>
+                        {error}
+                      </td>
+                    </tr>
+                  ) : visible.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className={styles.stateCell}>
+                        No categories match your search.
+                      </td>
+                    </tr>
+                  ) : (
+                    visible.map((cat) => (
+                      <tr key={cat} className={base.tr}>
+                        <td
+                          className={base.td}
+                          style={{ fontWeight: 600, color: "#0f172a" }}>
+                          {cat}
+                        </td>
+                        {PLAN_ORDER.map((plan) => renderCell(cat, plan))}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div>
+            <h2 className={styles.sectionTitle}>Storage plan</h2>
+            <p className={styles.sectionDesc}>
+              Your platform storage allowance, current usage, and billing period.
+              Storage is managed by Stravon Tech Labs; contact us to change your
+              plan.
+            </p>
+          </div>
+          <div className={styles.widgetFrame}>
+            <UsageWidget />
+          </div>
+        </section>
       </div>
 
       {confirming && (
