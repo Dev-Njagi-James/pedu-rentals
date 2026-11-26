@@ -108,7 +108,6 @@
   overflow: hidden;
   transition: width 0.18s ease, color 0.2s ease;
 }
-
 .navItem:hover {
   color: #000000;
 }
@@ -127,9 +126,29 @@
   height: 28px;
   border-radius: 5px;
   background: transparent;
+  position: relative;
   transition:
     background 0.22s ease,
     color 0.22s ease;
+}
+
+.navBadge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e0353c;
+  color: #ffffff;
+  font-family: var(--font-inter);
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: 999px;
+  line-height: 1;
 }
 
 .navItem:not(.navItemActive):hover .navIcon {

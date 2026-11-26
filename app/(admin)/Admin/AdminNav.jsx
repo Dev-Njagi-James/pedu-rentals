@@ -2,17 +2,19 @@
 
 import { useState, useRef, useEffect } from "react";
 import { toast } from 'sonner'
+import { useNotifications } from "@/app/hooks/useNotifications";
 import styles from "./css/AdminNav.module.css";
 
 const TABS = [
   { id: "overview", label: "Overview", iconName: "dashboard-circle" },
+  { id: "inbox", label: "Inbox", iconName: "mail-02" },
   { id: "transactions", label: "Transactions", iconName: "money-exchange-02" },
+  { id: "pricing", label: "Pricing", iconName: "dollar-circle" },
   { id: "listings", label: "Listings", iconName: "building-06" },
   { id: "account", label: "Account", iconName: "user-circle" },
-  { id: "pricing", label: "Pricing", iconName: "dollar-circle" },
+  { id: "help", label: "Documentation", iconName: "important-book" },
 ];
 
-const UTILITY_TABS = [{ id: "help", label: "Help", iconName: "help-circle" }];
 
 const DefaultPanel = ({ label }) => (
   <div
@@ -51,6 +53,7 @@ export default function AdminNav({
 }) {
   const [active, setActive] = useState(defaultTab);
   const [sidebarHovered, setSidebarHovered] = useState(false);
+  const { count: notificationCount } = useNotifications();
 
   const currentActive = controlledTab ?? active;
 
@@ -159,41 +162,31 @@ export default function AdminNav({
         }}>
         {/* main tabs */}
         <nav className={styles.nav} aria-label="Main navigation">
-          {TABS.map(({ id, label, iconName }) => (
-            <button
-              key={id}
-              type="button"
-              className={`${styles.navItem} ${currentActive === id ? styles.navItemActive : ""}`}
-              onClick={() => selectTab(id)}
-              aria-label={label}
-              title={label}
-              aria-current={currentActive === id ? "page" : undefined}>
-              <span className={styles.navIcon}>
-                <HugeIcon name={iconName} size={20} />
-              </span>
-              <span className={styles.navLabel}>{label}</span>
-            </button>
-          ))}
-        </nav>
-
-        {/* utility tabs — pinned to bottom */}
-        <nav className={styles.navUtility} aria-label="Utility navigation">
-          {UTILITY_TABS.map(({ id, label, iconName }) => (
-            <button
-              key={id}
-              type="button"
-              className={`${styles.navItem} ${currentActive === id ? styles.navItemActive : ""}`}
-              onClick={() => selectTab(id)}
-              aria-label={label}
-              title={label}
-              aria-current={currentActive === id ? "page" : undefined}>
-              <span className={styles.navIcon}>
-                <HugeIcon name={iconName} size={20} />
-              </span>
-              <span className={styles.navLabel}>{label}</span>
-            </button>
-          ))}
-        </nav>
+          {TABS.map(({ id, label, iconName }) => {
+            const isInbox = id === "inbox";
+            const showBadge = isInbox && notificationCount > 0;
+            const badgeCount = notificationCount > 9 ? "9+" : notificationCount;
+            const ariaLabel = showBadge ? `${label}, ${notificationCount} unread` : label;
+            return (
+              <button
+                key={id}
+                type="button"
+                className={`${styles.navItem} ${currentActive === id ? styles.navItemActive : ""}`}
+                onClick={() => selectTab(id)}
+                aria-label={ariaLabel}
+                title={label}
+                aria-current={currentActive === id ? "page" : undefined}>
+                <span className={styles.navIcon}>
+                  <HugeIcon name={iconName} size={20} />
+                  {showBadge && (
+                    <span className={styles.navBadge}>{badgeCount}</span>
+                  )}
+                </span>
+                <span className={styles.navLabel}>{label}</span>
+              </button>
+            );
+          })}
+        </nav>       
       </aside>
 
       {/* ── CONTENT ── */}

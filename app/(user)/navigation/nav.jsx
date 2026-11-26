@@ -20,12 +20,8 @@ import AccessButton from "./AccessButton";
 import { resetAccess } from "@/lib/contact/accessStore";
 import AccessBadge from "./AccessBadge";
 import AccessCheckoutModal from "./AccessCheckoutModal";
-import {
-  STAFF_ROLES,
-  ROLE_DASHBOARDS,
-  resolveAccountItems,
-  resolveUtilityItems,
-} from "./navConfig";
+import { STAFF_ROLES, ROLE_DASHBOARDS } from "./navConfig";
+import { useNotifications } from "@/app/hooks/useNotifications";
 
 // ────────────────────────────────────────────────────────────────────────
 // Config — single source of truth for nav content. Desktop bar, mobile
@@ -54,158 +50,30 @@ function getPrimaryNavItems(role) {
 // Tiny inline icon set — outline style, no external icon dependency.
 // ────────────────────────────────────────────────────────────────────────
 
+const make = (name, defaultSize = 18) =>
+  function HugeIcon({ size, width, height, className = "", style, ...p }) {
+    const px = Number(size ?? width ?? height ?? defaultSize);
+    return (
+      <i
+        className={`hgi hgi-stroke hgi-rounded hgi-${name} ${className}`.trim()}
+        style={{ fontSize: px, lineHeight: 1, display: "inline-block", ...style }}
+        aria-hidden="true"
+        {...p}
+      />
+    );
+  };
+
 const Icon = {
-  bell: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  ),
-  insights: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <path d="M9 18h6" />
-      <path d="M10 22h4" />
-      <path d="M12 2a7 7 0 0 0-4 12.7c.5.4.9 1 1 1.7v.6h6v-.6c.1-.7.5-1.3 1-1.7A7 7 0 0 0 12 2Z" />
-    </svg>
-  ),
-  boards: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <rect x="3" y="4" width="18" height="16" rx="2" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-      <line x1="9" y1="10" x2="9" y2="20" />
-    </svg>
-  ),
-  chevronDown: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="16"
-      height="16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <polyline points="6 9 12 15 18 9" />
-    </svg>
-  ),
-  chevronRight: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="16"
-      height="16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <polyline points="9 6 15 12 9 18" />
-    </svg>
-  ),
-  x: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="14"
-      height="14"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  ),
-  user: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M4 20c0-3.3 3.6-6 8-6s8 2.7 8 6" />
-    </svg>
-  ),
-  settings: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-    </svg>
-  ),
-  help: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="18"
-      height="18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...p}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9.5 9a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 1.9-2.4 3.5" />
-      <line x1="12" y1="17" x2="12" y2="17" />
-    </svg>
-  ),
-  hamburger: (p) => (
-    <svg
-      viewBox="0 0 24 24"
-      width="20"
-      height="20"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      {...p}>
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="18" x2="21" y2="18" />
-    </svg>
-  ),
+  bell: make("notification-01"),
+  documentation: make("important-book"),
+  boards: make("layout-table-01"),
+  chevronDown: make("arrow-down-01", 16),
+  chevronRight: make("arrow-right-01", 16),
+  x: make("cancel-01", 14),
+  user: make("user"),
+  settings: make("settings-01"),
+  inbox: make("mail-02"),
+  hamburger: make("menu-01", 20),
 };
 
 // ────────────────────────────────────────────────────────────────────────
@@ -213,12 +81,6 @@ const Icon = {
 // for real calls (SWR/React Query/etc); every consumer below only reads
 // from this hook, so there's one source of truth either way.
 // ────────────────────────────────────────────────────────────────────────
-
-function useNotifications() {
-  // TODO: replace with the real notification data source (e.g. useSWR("/api/notifications"))
-  const [count] = useState(2);
-  return { count, hasUnread: count > 0 };
-}
 
 function useIsMobile(breakpoint = NAV_BREAKPOINT) {
   const [isMobile, setIsMobile] = useState(false);
@@ -239,12 +101,13 @@ export default function AppNav() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false); // desktop avatar dropdown
   const [scrolled, setScrolled] = useState(false);
 
+  const { count: notificationCount } = useNotifications();
+
   const navbarRef = useRef(null);
   const accountMenuRef = useRef(null);
 
   const { isLoaded, isSignedIn, user } = useUser();
   const { signOut } = useClerk();
-  const { count: notificationCount, hasUnread } = useNotifications();
   const [profileUsername, setProfileUsername] = useState(null);
   const [profileOrgName, setProfileOrgName] = useState(null);
 
@@ -298,16 +161,6 @@ export default function AppNav() {
   const canSee = (item) =>
     !item.roles || (isLoaded && isSignedIn && item.roles.includes(role));
   const visiblePrimaryItems = primaryNavItems.filter(canSee);
-  const visibleAccountItems = useMemo(
-    () => resolveAccountItems(isLoaded && isSignedIn ? role : undefined),
-    [isLoaded, isSignedIn, role],
-  );
-  const visibleUtilityItems = useMemo(
-    () => resolveUtilityItems(isLoaded && isSignedIn ? role : undefined),
-    [isLoaded, isSignedIn, role],
-  );
-  const showUnreadDot =
-    hasUnread && visibleAccountItems.some((i) => i.key === "notifications");
   const canUpgrade = isLoaded && isSignedIn && !STAFF_ROLES.includes(role);
   const canActivate = isLoaded && isSignedIn && role !== "admin";
 
@@ -434,35 +287,12 @@ export default function AppNav() {
     </Link>
   );
 
-  const Avatar = ({ showDot }) => (
+  const Avatar = () => (
     <span className={styles.avatarWrap}>
       <span className={styles.avatar}>{initial}</span>
-      {showDot && <span className={styles.avatarDot} aria-hidden="true" />}
     </span>
   );
 
-  const AccountMenuList = ({ onItemClick }) => (
-    <>
-      {visibleAccountItems.map((item) => {
-        const ItemIcon = Icon[item.icon];
-        return (
-          <Link
-            key={item.key}
-            href={item.href}
-            className={styles.accountMenuItem}
-            onClick={onItemClick}>
-            <ItemIcon />
-            {item.label}
-            {item.showBadge && notificationCount > 0 && (
-              <span className={styles.accountMenuBadge}>
-                {notificationCount}
-              </span>
-            )}
-          </Link>
-        );
-      })}
-    </>
-  );
 
   return (
     <>
@@ -519,7 +349,7 @@ export default function AppNav() {
                 aria-haspopup="menu"
                 aria-expanded={accountMenuOpen}
                 aria-label="Account menu">
-                <Avatar showDot={showUnreadDot} />
+                <Avatar />
                 <Icon.chevronDown />
               </button>
 
@@ -539,12 +369,6 @@ export default function AppNav() {
                     )}
                   </div>
 
-                  {visibleAccountItems.length > 0 && (
-                    <>
-                      <div className={styles.accountMenuDivider} />
-                      <AccountMenuList onItemClick={closeAccountMenu} />
-                    </>
-                  )}
                   {canActivate && (
                     <>
                       <div className={styles.accountMenuDivider} />
@@ -632,6 +456,9 @@ export default function AppNav() {
                               className={`${styles.drawerLink} ${dashboardActive && activeTab === sub.id ? styles.drawerLinkActive : ""}`}
                               onClick={closeMenu}>
                               {sub.label}
+                              {sub.id === "inbox" && notificationCount > 0 && (
+                                <span className={styles.drawerBadge}>{notificationCount > 9 ? "9+" : notificationCount}</span>
+                              )}
                             </Link>
                           </li>
                         ))}
@@ -661,31 +488,9 @@ export default function AppNav() {
 
           {isSignedIn && (
             <>
-              {visibleUtilityItems.length > 0 && (
-                <div className={styles.drawerDivider} />
-              )}
-              <ul className={styles.drawerLinks}>
-                {visibleUtilityItems.map((item) => {
-                  const ItemIcon = Icon[item.icon];
-                  return (
-                    <li key={item.key}>
-                      <Link
-                        href={item.href}
-                        className={styles.drawerLink}
-                        onClick={closeMenu}>
-                        <span className={styles.drawerLinkIcon}>
-                          <ItemIcon />
-                        </span>
-                        {item.label}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-
               <div className={styles.drawerDivider} />
               <div className={styles.drawerAccountHeader}>
-                <Avatar showDot={showUnreadDot} />
+                <Avatar />
                 <div>
                   <div>{displayName}</div>
                   {profileOrgName && (
@@ -695,29 +500,6 @@ export default function AppNav() {
                   )}
                 </div>
               </div>
-              <ul className={styles.drawerLinks}>
-                {visibleAccountItems.map((item) => {
-                  const ItemIcon = Icon[item.icon];
-                  return (
-                    <li key={item.key}>
-                      <Link
-                        href={item.href}
-                        className={styles.drawerLink}
-                        onClick={closeMenu}>
-                        <span className={styles.drawerLinkIcon}>
-                          <ItemIcon />
-                        </span>
-                        {item.label}
-                        {item.showBadge && notificationCount > 0 && (
-                          <span className={styles.drawerBadge}>
-                            {notificationCount}
-                          </span>
-                        )}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
             </>
           )}
         </div>
