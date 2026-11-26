@@ -12,7 +12,8 @@ export const ROLE_DASHBOARDS = {
       { id: "analytics", label: "Analytics" },
       { id: "account", label: "Account" },
       { id: "pricing", label: "Pricing" },
-      { id: "help", label: "Help" },
+      { id: "help", label: "Documentation" },
+      { id: "inbox", label: "Inbox"},
     ],
   },
   admin: {
@@ -24,63 +25,8 @@ export const ROLE_DASHBOARDS = {
       { id: "listings", label: "Listings" },
       { id: "account", label: "Account" },
       { id: "pricing", label: "Pricing" },
+      { id: "inbox", label: "Inbox" },
+      { id: "help", label: "Documentation" },
     ],
   },
 };
-
-// roleTabs maps role -> tab on that role's dashboard. A role absent from
-// roleTabs does not see the item. Admin is deliberately absent everywhere
-// until the alert channel and admin account page are decided.
-const ACCOUNT_MENU_ITEMS = [
-  {
-    key: "notifications",
-    label: "Notifications",
-    icon: "bell",
-    showBadge: true,
-    roleTabs: { lister: "account" },
-  },
-  {
-    key: "profile",
-    label: "Account",
-    icon: "user",
-    roleTabs: { lister: "account" },
-  },
-  {
-    key: "documentation",
-    label: "Documentation",
-    icon: "insights",
-    roleTabs: { lister: "help" },
-  },
-  {
-    key: "support",
-    label: "Help & Support",
-    icon: "help",
-    roleTabs: { lister: "help" },
-  },
-];
-// Role absent from roleHrefs = item hidden for that role.
-const STANDALONE_UTILITY_ITEMS = [
-  {
-    key: "boards",
-    label: "Boards",
-    icon: "boards",
-    roleHrefs: { lister: "/boards", admin: "/Admin/boards" },
-  },
-];
-
-export function resolveUtilityItems(role) {
-  return STANDALONE_UTILITY_ITEMS.filter((i) => i.roleHrefs[role]).map(
-    (i) => ({ ...i, href: i.roleHrefs[role] }),
-  );
-   }
-
-export function resolveAccountItems(role) {
-  const dashboard = ROLE_DASHBOARDS[role];
-  if (!dashboard) return [];
-  return ACCOUNT_MENU_ITEMS.filter((item) => item.roleTabs[role]).map(
-    (item) => ({
-      ...item,
-      href: `${dashboard.base}?tab=${item.roleTabs[role]}`,
-    }),
-  );
-}
