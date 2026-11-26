@@ -14,17 +14,35 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  overflow: hidden;
+  position: relative;
+  overflow: visible;
   z-index: 10;
   flex-shrink: 0;
-  transition: width 0.18s ease, min-width 0.18s ease;
 }
 
 /* Hover expands only toward the content area on the right.
-   It does not change sidebar padding, item dimensions, icon size, or label size. */
-.sidebarExpanded {
-  width: 92px;
-  min-width: 92px;
+   The sidebar width stays fixed; the icon stays put and the
+   label is revealed beside it. */
+.sidebar::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 68px;
+  background: var(--sidebar);
+  z-index: 0;
+  transition: width 0.18s ease, box-shadow 0.18s ease;
+}
+
+.sidebarExpanded::before {
+  width: 172px;
+  box-shadow: 4px 0 16px rgba(15, 23, 42, 0.08);
+}
+
+.sidebarExpanded .navItem {
+  width: 148px;
+  min-width: 148px;
 }
 
 /* ─────────────────────────────────────────
@@ -47,31 +65,39 @@
 .nav {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   width: 100%;
+  padding: 0 0 0 12px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .navUtility {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   width: 100%;
   margin-top: auto;
+  padding: 0 0 0 12px;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
 }
 
 .navItem {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  gap: 2px;
+  justify-content: flex-start;
+  gap: 0;
   width: 44px;
   min-width: 44px;
   height: 44px;
-  min-height: 48px;
-  padding: 0;
+  min-height: 44px;
+  padding: 0 0 0 5px;
   box-sizing: border-box;
   background: transparent;
   border: none;
@@ -79,7 +105,8 @@
   cursor: pointer;
   color: #4a4a4a;
   position: relative;
-  transition: color 0.2s ease;
+  overflow: hidden;
+  transition: width 0.18s ease, color 0.2s ease;
 }
 
 .navItem:hover {
@@ -95,6 +122,7 @@
   align-items: center;
   justify-content: center;
   flex: 0 0 auto;
+  flex-shrink: 0;
   width: 34px;
   height: 28px;
   border-radius: 5px;
@@ -112,24 +140,40 @@
   background: #ffffff;
 }
 
+.sidebarExpanded .navItemActive {
+  background: #ffffff;
+}
+
+.sidebarExpanded .navItemActive .navIcon {
+  background: transparent;
+}
+
 /* Hidden in the collapsed rail. The label uses the same compact size in
-   both states; it is revealed without changing the button dimensions. */
+   both states; it is revealed without changing the icon position. */
 .navLabel {
-  display: none;
-  max-width: 72px;
+  display: block;
+  opacity: 0;
+  max-width: 0;
+  margin-left: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   color: currentColor;
   font-family: var(--font-geist-sans);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -0.01em;
+  transition:
+    opacity 0.15s ease 0.04s,
+    max-width 0.18s ease,
+    margin-left 0.18s ease;
 }
 
 .sidebarExpanded .navLabel {
-  display: block;
+  opacity: 1;
+  max-width: 100px;
+  margin-left: 6px;
 }
 
 /* ─────────────────────────────────────────
@@ -194,5 +238,13 @@
 
   .panelWrap {
     padding: 6px 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navItem,
+  .navLabel,
+  .sidebar::before {
+    transition: none;
   }
 }

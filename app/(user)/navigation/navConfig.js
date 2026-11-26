@@ -33,12 +33,6 @@ export const ROLE_DASHBOARDS = {
 // until the alert channel and admin account page are decided.
 const ACCOUNT_MENU_ITEMS = [
   {
-    key: "insights",
-    label: "Insights",
-    icon: "insights",
-    roleTabs: { lister: "help" },
-  },
-  {
     key: "notifications",
     label: "Notifications",
     icon: "bell",
@@ -47,15 +41,15 @@ const ACCOUNT_MENU_ITEMS = [
   },
   {
     key: "profile",
-    label: "Profile",
+    label: "Account",
     icon: "user",
     roleTabs: { lister: "account" },
   },
   {
-    key: "settings",
-    label: "Settings",
-    icon: "settings",
-    roleTabs: { lister: "account" },
+    key: "documentation",
+    label: "Documentation",
+    icon: "insights",
+    roleTabs: { lister: "help" },
   },
   {
     key: "support",
